@@ -417,6 +417,30 @@ export function getHourlyAnalysis(
   return { hours, bestWindows, badWindows };
 }
 
+// ── Outdoor window summary sentence ─────────────────────────────────
+
+export function getOutdoorSummary(
+  bestWindows: OutdoorWindow[],
+  badWindows: OutdoorWindow[],
+): string {
+  if (bestWindows.length === 0 && badWindows.length > 0) {
+    return `Stay in during ${badWindows[0].timeLabel} — conditions are poor. Limited outdoor opportunities today.`;
+  }
+  if (bestWindows.length === 0) {
+    return "No standout outdoor windows today, but conditions are broadly reasonable.";
+  }
+  const best = bestWindows[0];
+  const acts =
+    best.activities && best.activities.length > 0
+      ? best.activities.slice(0, 2).join(" or ").toLowerCase()
+      : "outdoor activity";
+  if (best.rating === "Excellent")
+    return `Excellent conditions — ideal for ${acts} between ${best.timeLabel}${best.tempRange ? ` (${best.tempRange})` : ""}.`;
+  if (best.rating === "Good")
+    return `Good window for ${acts}: ${best.timeLabel}${best.tempRange ? ` at ${best.tempRange}` : ""}.`;
+  return `Decent conditions around ${best.timeLabel} for ${acts}.`;
+}
+
 // ── Weather alert banner ─────────────────────────────────────────────
 
 export interface WeatherAlert {

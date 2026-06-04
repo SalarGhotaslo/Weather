@@ -17,6 +17,8 @@ import {
   getWeatherAlert,
   getWindDirection,
   getWindArrow,
+  getOutdoorSummary,
+  type OutdoorWindow,
   type HourlyForecastResponse,
   type GeocodingResult,
 } from "./weather";
@@ -416,6 +418,61 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("getOutdoorSummary", () => {
+  const makeWindow = (
+    rating: OutdoorWindow["rating"],
+    timeLabel: string,
+    activities: string[],
+    isBad: boolean,
+    tempRange?: string,
+  ): OutdoorWindow => ({
+    timeLabel,
+    rating,
+    conditions: "20°C, dry, calm",
+    isBad,
+    activities,
+    tempRange,
+  });
+
+  it("returns excellent summary when best window is Excellent", () => {
+    const w = makeWindow("Excellent", "9am – 1pm", ["Running", "Cycling"], false, "18–22°C");
+    const s = getOutdoorSummary([w], []);
+    expect(s).toContain("Excellent");
+    expect(s).toContain("9am – 1pm");
+  });
+
+  it("returns good summary for Good rating", () => {
+    const w = makeWindow("Good", "2pm – 4pm", ["Walking"], false, "15–18°C");
+    const s = getOutdoorSummary([w], []);
+    expect(s).toContain("Good");
+    expect(s).toContain("2pm – 4pm");
+  });
+
+  it("returns decent summary for Fair rating", () => {
+    const w = makeWindow("Fair", "11am – 1pm", ["Walking"], false);
+    const s = getOutdoorSummary([w], []);
+    expect(s.toLowerCase()).toContain("decent");
+  });
+
+  it("mentions stay in when no best windows but bad window exists", () => {
+    const bad = makeWindow("Poor", "1pm – 5pm", [], true);
+    const s = getOutdoorSummary([], [bad]);
+    expect(s.toLowerCase()).toContain("1pm – 5pm");
+  });
+
+  it("returns generic message when no windows at all", () => {
+    const s = getOutdoorSummary([], []);
+    expect(typeof s).toBe("string");
+    expect(s.length).toBeGreaterThan(10);
+  });
+
+  it("returns a non-empty string in all cases", () => {
+    const w = makeWindow("Good", "10am – 12pm", [], false);
+    expect(getOutdoorSummary([w], [])).toBeTruthy();
+    expect(getOutdoorSummary([], [])).toBeTruthy();
   });
 });
 

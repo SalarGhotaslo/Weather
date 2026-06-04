@@ -122,6 +122,9 @@ interface OutdoorWindow {
 }
 ```
 
+## Loading States
+Each dynamic route has a `loading.tsx` skeleton that mirrors the page layout and animates with `animate-pulse` while data is fetching.
+
 ## Implemented
 
 - [x] City search with autocomplete dropdown
@@ -144,4 +147,20 @@ interface OutdoorWindow {
 - [x] Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
 - [x] API route input validation + sanitisation
 - [x] TypeScript declarations for react-simple-maps + d3-geo
-- [x] 81 unit tests covering all lib functions including new ones
+- [x] 111 unit tests covering all lib functions
+- [x] Weather alert banners (thunderstorm, snow, wind, rain, UV)
+- [x] Dynamic SEO metadata on all pages (`generateMetadata`)
+- [x] Recent searches (localStorage chips on landing page)
+- [x] Popular cities quick-links on landing page
+- [x] Countries page: search by name/capital + region filter dropdown
+- [x] Map panel: "Browse all cities" deep link to `/countries?search=X`
+- [x] 5-day temperature trend indicator (warming/cooling/steady + sparkline)
+- [x] Outdoor window summary sentence at top of Best Times section
+- [x] Custom 404 not-found page (animated fog, three nav links)
+- [x] Custom error boundary (`error.tsx`) with try-again button
+- [x] Loading skeleton pages for home, day, and countries routes
+- [x] Wind direction compass (arrow + cardinal label) in stats cards
+- [x] Surface pressure in stats with High/Low/Normal context
+- [x] Server-rendered SVG temperature curve in hourly forecast section
+- [x] Skip to main content accessibility link
+- [x] ARIA labels, roles, and aria-hidden on decorative elements

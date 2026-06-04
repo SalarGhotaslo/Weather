@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ComposableMap,
   Geographies,
@@ -316,8 +317,10 @@ export default function WorldMap() {
 
             <div className="flex-1 overflow-y-auto">
               {panelLoading ? (
-                <div className="p-4 text-[#5a7d99] text-xs text-center animate-pulse">
-                  Loading cities…
+                <div className="p-4 space-y-2">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="h-7 bg-[#162535] rounded animate-pulse" style={{ width: `${60 + (i % 3) * 15}%` }} />
+                  ))}
                 </div>
               ) : displayedCities.length > 0 ? (
                 <>
@@ -348,6 +351,15 @@ export default function WorldMap() {
                 </p>
               )}
             </div>
+            {/* Footer: deep link to country page */}
+            <div className="shrink-0 border-t border-[#1e3347] p-3">
+              <a
+                href={`/countries?search=${encodeURIComponent(panelCountry ?? "")}`}
+                className="block text-center text-[#3b87d6] hover:text-white text-xs py-1.5 transition-colors"
+              >
+                Browse all cities in {panelCountry} →
+              </a>
+            </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center p-6">
@@ -360,6 +372,12 @@ export default function WorldMap() {
                 Hover a country to see its cities
               </p>
               <p className="text-[#5a7d99] text-xs">Click to zoom in</p>
+              <Link
+                href="/countries"
+                className="mt-4 inline-block text-[#3b87d6] hover:text-white text-xs transition-colors"
+              >
+                Or browse all countries →
+              </Link>
             </div>
           </div>
         )}

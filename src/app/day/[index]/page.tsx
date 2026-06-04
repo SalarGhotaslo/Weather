@@ -19,6 +19,7 @@ import {
   getWeatherAlert,
   getWindDirection,
   getWindArrow,
+  getOutdoorSummary,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
@@ -506,6 +507,10 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         {outdoorAnalysis && (
           <div className="bg-[#162535] rounded-xl p-5 mb-3">
             <h2 className="text-white font-semibold mb-1">Best Times Outside</h2>
+            {/* Summary sentence */}
+            <p className="text-[#c8dae7] text-sm mb-3 leading-relaxed">
+              {getOutdoorSummary(outdoorAnalysis.bestWindows, outdoorAnalysis.badWindows)}
+            </p>
             <p className="text-[#5a7d99] text-xs mb-4">
               Scored by temperature, rain chance and wind
             </p>

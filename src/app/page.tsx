@@ -257,9 +257,19 @@ export default async function Home({ searchParams }: Props) {
 
         {/* 5-day forecast */}
         <div className="mb-6">
-          <h2 className="text-[#5a7d99] text-xs font-semibold uppercase tracking-widest mb-3">
-            5-Day Forecast
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[#5a7d99] text-xs font-semibold uppercase tracking-widest">
+              5-Day Forecast
+            </h2>
+            {/* Trend indicator */}
+            {(() => {
+              const temps = daily.temperature_2m_max.slice(0, 5);
+              const diff = Math.round(temps[4] - temps[0]);
+              if (diff > 2) return <span className="text-[10px] text-orange-400">↑ warming {diff}°</span>;
+              if (diff < -2) return <span className="text-[10px] text-blue-400">↓ cooling {Math.abs(diff)}°</span>;
+              return <span className="text-[10px] text-[#5a7d99]">→ steady</span>;
+            })()}
+          </div>
           <div className="grid grid-cols-5 gap-2" role="list">
             {daily.time.slice(0, 5).map((dateStr, i) => {
               const info = getWeatherInfo(daily.weather_code[i]);
@@ -300,6 +310,33 @@ export default async function Home({ searchParams }: Props) {
               );
             })}
           </div>
+
+          {/* 5-day temperature sparkline */}
+          {(() => {
+            const maxTemps = daily.temperature_2m_max.slice(0, 5);
+            const minT = Math.min(...maxTemps);
+            const maxT = Math.max(...maxTemps);
+            const range = maxT - minT || 1;
+            const W = 100; const H = 20; const PAD = 3;
+            const px = (i: number) => (i / 4) * W;
+            const py = (t: number) => PAD + (1 - (t - minT) / range) * (H - PAD * 2);
+            const pts = maxTemps.map((t, i) => `${px(i).toFixed(1)},${py(t).toFixed(1)}`);
+            const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p}`).join(" ");
+            return (
+              <div className="mt-3 bg-[#162535] rounded-lg px-3 py-2 flex items-center gap-3">
+                <span className="text-[#5a7d99] text-[10px] shrink-0">Temp trend</span>
+                <svg viewBox={`0 0 ${W} ${H}`} className="flex-1 h-5" aria-hidden="true" preserveAspectRatio="none">
+                  <path d={d} fill="none" stroke="#3b87d6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  {maxTemps.map((t, i) => (
+                    <circle key={i} cx={px(i)} cy={py(t)} r="2" fill="#3b87d6" />
+                  ))}
+                </svg>
+                <span className="text-[#5a7d99] text-[10px] shrink-0">
+                  {Math.round(maxTemps[0])}° → {Math.round(maxTemps[4])}°
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Fun weather fact */}
