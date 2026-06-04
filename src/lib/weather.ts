@@ -64,6 +64,66 @@ export function getFeelsLikeExplanation(
   return "";
 }
 
+// ── Local time within a city / timezone ──────────────────────────────
+//
+// Server-safe: relies only on Intl, so it produces the same value during SSR
+// and on the client. Live second-by-second updates are handled by the
+// `LocalTime` client component; these helpers give a correct snapshot.
+
+/** Current hour (0–23) in the given IANA timezone. Falls back to the host hour. */
+export function getCityHour(timezone?: string, now: Date = new Date()): number {
+  if (!timezone) return now.getHours();
+  try {
+    const hour = new Intl.DateTimeFormat("en", {
+      timeZone: timezone,
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(now);
+    const parsed = parseInt(hour, 10);
+    return isNaN(parsed) ? now.getHours() : parsed;
+  } catch {
+    return now.getHours();
+  }
+}
+
+/** Formatted local time string (e.g. "14:32") for the given timezone. */
+export function formatCityTime(timezone?: string, now: Date = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: timezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).format(now);
+  } catch {
+    return new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).format(now);
+  }
+}
+
+/**
+ * Is the given hour during night (before sunrise or at/after sunset)?
+ * Sunrise/sunset are passed as 0–23 hour integers.
+ */
+export function isNightHour(hour: number, sunriseHour: number, sunsetHour: number): boolean {
+  return hour < sunriseHour || hour >= sunsetHour;
+}
+
+/** Human label for a time of day, used in "right now" copy. */
+export function getTimeOfDayLabel(hour: number): string {
+  if (hour < 5) return "Night";
+  if (hour < 8) return "Early morning";
+  if (hour < 12) return "Morning";
+  if (hour < 14) return "Midday";
+  if (hour < 17) return "Afternoon";
+  if (hour < 20) return "Evening";
+  if (hour < 23) return "Night";
+  return "Night";
+}
+
 export function validateCoord(
   value: string | undefined,
   min: number,

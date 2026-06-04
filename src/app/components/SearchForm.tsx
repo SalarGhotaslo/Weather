@@ -19,7 +19,7 @@ export default function SearchForm({
         />
         <button
           type="submit"
-          className="bg-[#3b87d6] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-7 py-4 rounded-lg font-semibold transition-colors text-lg whitespace-nowrap"
+          className="bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-7 py-4 rounded-lg font-semibold transition-colors text-lg whitespace-nowrap"
         >
           Search
         </button>
@@ -40,7 +40,7 @@ export default function SearchForm({
       />
       <button
         type="submit"
-        className="bg-[#3b87d6] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap"
+        className="bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap"
       >
         Search
       </button>

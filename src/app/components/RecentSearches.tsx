@@ -45,12 +45,12 @@ export default function RecentSearches() {
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[#78a8c4] text-xs font-semibold uppercase tracking-wider">
+        <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider">
           Recent searches
         </p>
         <button
           onClick={handleClear}
-          className="text-[#3a5a72] hover:text-[#7ea8c2] text-[10px] transition-colors"
+          className="text-[var(--text-faint)] hover:text-white text-[10px] transition-colors"
           aria-label="Clear recent searches"
         >
           Clear
@@ -61,7 +61,7 @@ export default function RecentSearches() {
           <Link
             key={city}
             href={`/?q=${encodeURIComponent(city)}`}
-            className="bg-[#162535] hover:bg-[#1c2f3f] border border-[#2a4055] text-[#7ea8c2] hover:text-white text-xs px-3 py-1.5 rounded-full transition-colors"
+            className="bg-[#162535] hover:bg-[#1c2f3f] border border-[#2a4055] text-[var(--text-muted)] hover:text-white text-xs px-3 py-1.5 rounded-full transition-colors"
           >
             🕐 {city}
           </Link>

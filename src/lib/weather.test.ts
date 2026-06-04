@@ -24,6 +24,10 @@ import {
   getWindArrow,
   getOutdoorSummary,
   getDressCode,
+  getCityHour,
+  formatCityTime,
+  isNightHour,
+  getTimeOfDayLabel,
   type OutdoorWindow,
   type HourlyForecastResponse,
   type GeocodingResult,
@@ -1000,5 +1004,79 @@ describe("normalizeCountryName", () => {
 
   it("maps Lao PDR to Laos", () => {
     expect(normalizeCountryName("Lao PDR")).toBe("Laos");
+  });
+});
+
+describe("getCityHour", () => {
+  const fixed = new Date("2026-06-04T12:00:00Z"); // 12:00 UTC
+
+  it("returns the UTC hour for a UTC timezone", () => {
+    expect(getCityHour("UTC", fixed)).toBe(12);
+  });
+
+  it("applies a positive timezone offset", () => {
+    // Tokyo is UTC+9 → 21:00
+    expect(getCityHour("Asia/Tokyo", fixed)).toBe(21);
+  });
+
+  it("applies a negative timezone offset", () => {
+    // New York is UTC-4 in June (DST) → 08:00
+    expect(getCityHour("America/New_York", fixed)).toBe(8);
+  });
+
+  it("falls back to host hour for an invalid timezone", () => {
+    const result = getCityHour("Not/AZone", fixed);
+    expect(result).toBe(fixed.getHours());
+  });
+
+  it("returns an hour in range 0-23 with no timezone", () => {
+    const h = getCityHour(undefined, fixed);
+    expect(h).toBeGreaterThanOrEqual(0);
+    expect(h).toBeLessThanOrEqual(23);
+  });
+});
+
+describe("formatCityTime", () => {
+  const fixed = new Date("2026-06-04T12:05:00Z");
+
+  it("formats time HH:MM in 24-hour clock", () => {
+    expect(formatCityTime("UTC", fixed)).toBe("12:05");
+  });
+
+  it("applies the timezone offset", () => {
+    expect(formatCityTime("Asia/Tokyo", fixed)).toBe("21:05");
+  });
+
+  it("falls back gracefully for an invalid timezone", () => {
+    expect(formatCityTime("Not/AZone", fixed)).toMatch(/^\d{2}:\d{2}$/);
+  });
+});
+
+describe("isNightHour", () => {
+  it("is night before sunrise", () => {
+    expect(isNightHour(4, 6, 21)).toBe(true);
+  });
+
+  it("is night at and after sunset", () => {
+    expect(isNightHour(21, 6, 21)).toBe(true);
+    expect(isNightHour(23, 6, 21)).toBe(true);
+  });
+
+  it("is day between sunrise and sunset", () => {
+    expect(isNightHour(6, 6, 21)).toBe(false);
+    expect(isNightHour(12, 6, 21)).toBe(false);
+    expect(isNightHour(20, 6, 21)).toBe(false);
+  });
+});
+
+describe("getTimeOfDayLabel", () => {
+  it("labels the parts of the day", () => {
+    expect(getTimeOfDayLabel(2)).toBe("Night");
+    expect(getTimeOfDayLabel(6)).toBe("Early morning");
+    expect(getTimeOfDayLabel(10)).toBe("Morning");
+    expect(getTimeOfDayLabel(13)).toBe("Midday");
+    expect(getTimeOfDayLabel(15)).toBe("Afternoon");
+    expect(getTimeOfDayLabel(19)).toBe("Evening");
+    expect(getTimeOfDayLabel(23)).toBe("Night");
   });
 });

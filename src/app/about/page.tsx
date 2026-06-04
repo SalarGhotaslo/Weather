@@ -67,10 +67,10 @@ export default function AboutPage() {
 
       <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-8 flex-1">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#78a8c4] mb-6">
-          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-6">
+          <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[#7ea8c2]">About</span>
+          <span className="text-[var(--text-muted)]">About</span>
         </nav>
 
         {/* Hero */}
@@ -79,7 +79,7 @@ export default function AboutPage() {
             <span className="text-5xl weather-sunny-glow inline-block" aria-hidden="true">⛅</span>
             <div>
               <h1 className="text-3xl font-bold text-white">Salar Weather</h1>
-              <p className="text-[#7ea8c2] mt-1">Global city weather, beautifully presented.</p>
+              <p className="text-[var(--text-muted)] mt-1">Global city weather, beautifully presented.</p>
             </div>
           </div>
           <p className="text-[#c8dae7] leading-relaxed max-w-2xl">
@@ -99,7 +99,7 @@ export default function AboutPage() {
                 <span className="text-xl shrink-0" aria-hidden="true">{f.icon}</span>
                 <div>
                   <p className="text-white text-sm font-semibold mb-0.5">{f.title}</p>
-                  <p className="text-[#7ea8c2] text-xs leading-relaxed">{f.desc}</p>
+                  <p className="text-[var(--text-muted)] text-xs leading-relaxed">{f.desc}</p>
                 </div>
               </div>
             ))}
@@ -115,16 +115,16 @@ export default function AboutPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-white text-sm font-semibold">{src.name}</span>
-                    <span className="text-[10px] bg-[#1c3450] text-[#3b87d6] px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] bg-[#1c3450] text-[var(--text-accent)] px-2 py-0.5 rounded-full">
                       {src.badge}
                     </span>
                   </div>
-                  <p className="text-[#7ea8c2] text-xs leading-relaxed">{src.description}</p>
+                  <p className="text-[var(--text-muted)] text-xs leading-relaxed">{src.description}</p>
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-[#78a8c4] text-xs mt-4">
+          <p className="text-[var(--text-muted)] text-xs mt-4">
             No API keys are required. All data is fetched server-side with ISR caching (weather: 30 min, country/city data: 24 h).
           </p>
         </section>
@@ -152,20 +152,20 @@ export default function AboutPage() {
         {/* Security note */}
         <section className="mb-10">
           <h2 className="text-white font-semibold text-lg mb-3">Security</h2>
-          <div className="bg-[#162535] rounded-lg p-4 text-[#7ea8c2] text-sm leading-relaxed">
+          <div className="bg-[#162535] rounded-lg p-4 text-[var(--text-muted)] text-sm leading-relaxed">
             <p>All API route inputs are validated and sanitised. HTTP security headers are set on every response (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy). Recent city searches are stored only in your browser&apos;s <code className="bg-[#1c2f3f] px-1 rounded text-xs">localStorage</code> — no data leaves your device.</p>
           </div>
         </section>
 
         {/* Navigation */}
         <div className="flex flex-wrap gap-3 justify-center pt-4 border-t border-[#1e3347]">
-          <Link href="/" className="bg-[#3b87d6] hover:bg-[#2d6fb8] text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
+          <Link href="/" className="bg-[#2f6fb5] hover:bg-[#2d6fb8] text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
             Search weather
           </Link>
-          <Link href="/countries" className="bg-[#162535] hover:bg-[#1c2f3f] text-[#7ea8c2] hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
+          <Link href="/countries" className="bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
             Browse countries
           </Link>
-          <Link href="/map" className="bg-[#162535] hover:bg-[#1c2f3f] text-[#7ea8c2] hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
+          <Link href="/map" className="bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
             World map
           </Link>
         </div>

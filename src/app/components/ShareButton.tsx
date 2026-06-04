@@ -28,7 +28,7 @@ export default function ShareButton({ url, title }: { url: string; title: string
           ? "bg-green-500/20 border-green-500/40 text-green-400"
           : state === "error"
             ? "bg-red-500/10 border-red-500/30 text-red-400"
-            : "bg-[#162535] border-[#2a4055] text-[#7ea8c2] hover:text-white hover:border-[#3b87d6]"
+            : "bg-[#162535] border-[#2a4055] text-[var(--text-muted)] hover:text-white hover:border-[#3b87d6]"
       }`}
       aria-label="Share or copy forecast link"
     >

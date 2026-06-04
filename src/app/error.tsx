@@ -19,19 +19,19 @@ export default function Error({
       <div className="text-center max-w-md">
         <div className="text-7xl mb-6 weather-thunder inline-block" aria-hidden="true">⛈️</div>
         <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
-        <p className="text-[#7ea8c2] mb-6 leading-relaxed">
+        <p className="text-[var(--text-muted)] mb-6 leading-relaxed">
           Weather data couldn&apos;t be loaded right now. This is usually temporary.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={reset}
-            className="bg-[#3b87d6] hover:bg-[#2d6fb8] text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            className="bg-[#2f6fb5] hover:bg-[#2d6fb8] text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Try again
           </button>
           <Link
             href="/"
-            className="bg-[#162535] hover:bg-[#1c2f3f] text-[#7ea8c2] hover:text-white px-6 py-3 rounded-lg transition-colors"
+            className="bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white px-6 py-3 rounded-lg transition-colors"
           >
             Back to home
           </Link>

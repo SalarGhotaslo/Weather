@@ -151,7 +151,7 @@ export default function WorldMap() {
         {selectedCountry && (
           <button
             onClick={handleReset}
-            className="absolute top-3 left-3 z-10 bg-[#162535]/90 backdrop-blur-sm hover:bg-[#1c2f3f] text-[#7ea8c2] hover:text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
+            className="absolute top-3 left-3 z-10 bg-[#162535]/90 backdrop-blur-sm hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white text-xs px-3 py-1.5 rounded-lg transition-colors"
           >
             ← World
           </button>
@@ -331,7 +331,7 @@ export default function WorldMap() {
                 {panelCountry}
               </h2>
               {!panelLoading && (
-                <p className="text-[#78a8c4] text-xs mt-0.5">
+                <p className="text-[var(--text-muted)] text-xs mt-0.5">
                   {panelCities.length.toLocaleString()} cities · click to see
                   weather
                 </p>
@@ -362,25 +362,25 @@ export default function WorldMap() {
                     <a
                       key={city}
                       href={`/?q=${encodeURIComponent(`${city}, ${panelCountry}`)}`}
-                      className="block px-4 py-2 text-[#7ea8c2] hover:text-white hover:bg-[#162535] text-xs transition-colors border-b border-[#1e3347]/40 last:border-0"
+                      className="block px-4 py-2 text-[var(--text-muted)] hover:text-white hover:bg-[#162535] text-xs transition-colors border-b border-[#1e3347]/40 last:border-0"
                     >
                       {city}
                     </a>
                   ))}
                   {!cityFilter && panelCities.length > 60 && (
-                    <p className="text-[#78a8c4] text-xs text-center py-3 px-4">
+                    <p className="text-[var(--text-muted)] text-xs text-center py-3 px-4">
                       Showing 60 of {panelCities.length.toLocaleString()}.
                       Search to filter.
                     </p>
                   )}
                   {cityFilter && displayedCities.length === 0 && (
-                    <p className="p-4 text-[#78a8c4] text-xs">
+                    <p className="p-4 text-[var(--text-muted)] text-xs">
                       No cities match.
                     </p>
                   )}
                 </>
               ) : (
-                <p className="p-4 text-[#78a8c4] text-xs">
+                <p className="p-4 text-[var(--text-muted)] text-xs">
                   No city data available.
                 </p>
               )}
@@ -389,7 +389,7 @@ export default function WorldMap() {
             <div className="shrink-0 border-t border-[#1e3347] p-3">
               <a
                 href={`/countries?search=${encodeURIComponent(panelCountry ?? "")}`}
-                className="block text-center text-[#3b87d6] hover:text-white text-xs py-1.5 transition-colors"
+                className="block text-center text-[var(--text-accent)] hover:text-white text-xs py-1.5 transition-colors"
               >
                 Browse all cities in {panelCountry} →
               </a>
@@ -399,16 +399,16 @@ export default function WorldMap() {
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="text-center">
               <div className="text-3xl mb-3">🌍</div>
-              <p className="text-[#7ea8c2] text-sm font-medium">
+              <p className="text-[var(--text-muted)] text-sm font-medium">
                 Explore the world
               </p>
-              <p className="text-[#78a8c4] text-xs mt-1">
+              <p className="text-[var(--text-muted)] text-xs mt-1">
                 Hover a country to see its cities
               </p>
-              <p className="text-[#78a8c4] text-xs">Click to zoom in</p>
+              <p className="text-[var(--text-muted)] text-xs">Click to zoom in</p>
               <Link
                 href="/countries"
-                className="mt-4 inline-block text-[#3b87d6] hover:text-white text-xs transition-colors"
+                className="mt-4 inline-block text-[var(--text-accent)] hover:text-white text-xs transition-colors"
               >
                 Or browse all countries →
               </Link>

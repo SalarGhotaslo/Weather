@@ -17,7 +17,9 @@ export default function GeolocateButton() {
       ({ coords }) => {
         const lat = coords.latitude.toFixed(4);
         const lon = coords.longitude.toFixed(4);
-        router.push(`/day/0?lat=${lat}&lon=${lon}&name=My%20Location`);
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const tzParam = tz ? `&tz=${encodeURIComponent(tz)}` : "";
+        router.push(`/day/0?lat=${lat}&lon=${lon}&name=My%20Location${tzParam}`);
       },
       () => setState("error"),
       { timeout: 10_000 },
@@ -26,7 +28,7 @@ export default function GeolocateButton() {
 
   if (state === "error") {
     return (
-      <p className="text-[#78a8c4] text-xs mt-3 text-center">
+      <p className="text-[var(--text-muted)] text-xs mt-3 text-center">
         Location access denied or unavailable.
       </p>
     );
@@ -36,7 +38,7 @@ export default function GeolocateButton() {
     <button
       onClick={handleClick}
       disabled={state === "loading"}
-      className="mt-3 w-full text-center text-[#78a8c4] hover:text-[#7ea8c2] text-sm py-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+      className="mt-3 w-full text-center text-[var(--text-muted)] hover:text-white text-sm py-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
       aria-label="Get weather for my current location"
     >
       {state === "loading" ? (

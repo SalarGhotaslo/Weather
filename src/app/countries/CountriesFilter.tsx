@@ -57,7 +57,8 @@ export default function CountriesFilter({
         <select
           value={region}
           onChange={(e) => setRegion(e.target.value)}
-          className="bg-[#162535] border border-[#2a4055] rounded-lg px-3 py-2.5 text-[#7ea8c2] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors"
+          aria-label="Filter countries by region"
+          className="bg-[#162535] border border-[#2a4055] rounded-lg px-3 py-2.5 text-[var(--text-muted)] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors"
         >
           <option value="">All regions</option>
           {POPULAR_REGIONS.map((r) => (
@@ -73,7 +74,7 @@ export default function CountriesFilter({
             <button
               key={letter}
               onClick={() => document.getElementById(`country-letter-${letter}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              className="w-7 h-7 text-xs font-semibold rounded bg-[#162535] hover:bg-[#1c2f3f] text-[#7ea8c2] hover:text-white transition-colors"
+              className="w-7 h-7 text-xs font-semibold rounded bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white transition-colors"
             >
               {letter}
             </button>
@@ -82,7 +83,7 @@ export default function CountriesFilter({
       )}
 
       {isFiltered && (
-        <p className="text-[#78a8c4] text-xs mb-4">
+        <p className="text-[var(--text-muted)] text-xs mb-4">
           {filtered.length} {filtered.length === 1 ? "country" : "countries"} found
           {query ? ` matching "${search.trim()}"` : ""}
           {region ? ` in ${region}` : ""}
@@ -92,10 +93,10 @@ export default function CountriesFilter({
       {displayLetters.length === 0 && (
         <div className="bg-[#162535] rounded-xl p-8 text-center">
           <div className="text-3xl mb-3">🔍</div>
-          <p className="text-[#7ea8c2]">No countries found.</p>
+          <p className="text-[var(--text-muted)]">No countries found.</p>
           <button
             onClick={() => { setSearch(""); setRegion(""); }}
-            className="mt-3 text-[#3b87d6] text-sm hover:text-white transition-colors"
+            className="mt-3 text-[var(--text-accent)] text-sm hover:text-white transition-colors"
           >
             Clear filters
           </button>
@@ -105,7 +106,7 @@ export default function CountriesFilter({
       {displayLetters.map((letter) => (
         <section key={letter} id={`country-letter-${letter}`} className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <h2 className="text-[#3b87d6] font-bold text-lg w-6">{letter}</h2>
+            <h2 className="text-[var(--text-accent)] font-bold text-lg w-6">{letter}</h2>
             <div className="flex-1 h-px bg-[#1e3347]" />
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -117,11 +118,11 @@ export default function CountriesFilter({
               >
                 <span className="text-xl shrink-0">{country.flag}</span>
                 <div className="min-w-0">
-                  <div className="text-white text-sm font-medium truncate group-hover:text-[#3b87d6] transition-colors">
+                  <div className="text-white text-sm font-medium truncate group-hover:text-[var(--text-accent)] transition-colors">
                     {country.name.common}
                   </div>
                   {country.capital?.[0] && (
-                    <div className="text-[#78a8c4] text-xs truncate">
+                    <div className="text-[var(--text-muted)] text-xs truncate">
                       {country.capital[0]}
                     </div>
                   )}

@@ -22,15 +22,27 @@ export default function SearchAutocomplete({
   const [activeIndex, setActiveIndex] = useState(-1);
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Tracks whether the current value came from the user typing. We only fetch
+  // suggestions / open the dropdown after real interaction — otherwise every
+  // page that seeds the header search with a default value (a searched city,
+  // the day page) would pop its dropdown open on load and fire a geocode call.
+  const interacted = useRef(false);
 
-  // Sync prop → state via a zero-delay timeout so setState is inside an async
-  // callback, not synchronously in the effect body (which the linter flags).
+  // Sync external defaultValue (e.g. after client navigation) without opening
+  // the panel. Done in a zero-delay timeout so the state update runs inside an
+  // async callback rather than synchronously in the effect body.
   useEffect(() => {
-    const id = setTimeout(() => setValue(defaultValue), 0);
+    const id = setTimeout(() => {
+      interacted.current = false;
+      setValue(defaultValue);
+      setOpen(false);
+      setSuggestions([]);
+    }, 0);
     return () => clearTimeout(id);
   }, [defaultValue]);
 
   useEffect(() => {
+    if (!interacted.current) return; // wait for the user to type
     const query = value.trim();
     clearTimeout(timer.current);
     // Defer all state updates so they run inside the async callback, not
@@ -103,8 +115,8 @@ export default function SearchAutocomplete({
     : "flex-1 min-w-0 bg-[#1c2f3f] border border-[#2a4055] rounded px-3 py-1.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors";
 
   const buttonClass = large
-    ? "bg-[#3b87d6] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-7 py-4 rounded-lg font-semibold transition-colors text-lg whitespace-nowrap"
-    : "bg-[#3b87d6] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap";
+    ? "bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-7 py-4 rounded-lg font-semibold transition-colors text-lg whitespace-nowrap"
+    : "bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap";
 
   return (
     <div className={`relative ${large ? "" : "flex-1 flex gap-2"}`}>
@@ -119,7 +131,10 @@ export default function SearchAutocomplete({
             value={value}
             aria-label="Search for a city"
             suppressHydrationWarning
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              interacted.current = true;
+              setValue(e.target.value);
+            }}
             onKeyDown={handleKeyDown}
             onFocus={() => suggestions.length > 0 && setOpen(true)}
             onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -152,10 +167,10 @@ export default function SearchAutocomplete({
               <span className="text-sm truncate">
                 {s.name}
                 {s.admin1 ? (
-                  <span className="text-[#7ea8c2]">, {s.admin1}</span>
+                  <span className="text-[var(--text-muted)]">, {s.admin1}</span>
                 ) : null}
               </span>
-              <span className="text-[#78a8c4] text-xs shrink-0">
+              <span className="text-[var(--text-muted)] text-xs shrink-0">
                 {s.country}
               </span>
             </button>

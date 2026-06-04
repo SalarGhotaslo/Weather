@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getWeatherTheme } from "./weatherTheme";
+import { getWeatherTheme, getWeatherThemeType } from "./weatherTheme";
 
 describe("getWeatherTheme", () => {
   it("returns clear type for code 0", () => {
@@ -62,5 +62,43 @@ describe("getWeatherTheme", () => {
     expect(getWeatherTheme(47).type).toBe("overcast");
     expect(getWeatherTheme(83).type).toBe("overcast");
     expect(getWeatherTheme(87).type).toBe("overcast");
+  });
+
+  it("defaults to the day variant", () => {
+    const theme = getWeatherTheme(0);
+    expect(theme.isNight).toBe(false);
+  });
+
+  it("returns a distinct night gradient when isNight is true", () => {
+    const day = getWeatherTheme(0, false);
+    const night = getWeatherTheme(0, true);
+    expect(night.isNight).toBe(true);
+    expect(night.bgGradient).not.toBe(day.bgGradient);
+    // Night clear sky should lean blue, not the warm orange of day.
+    expect(night.bgGradient).toContain("#0c1126");
+  });
+
+  it("provides night variants for every theme type", () => {
+    for (const code of [0, 1, 3, 45, 61, 71, 95]) {
+      const day = getWeatherTheme(code, false);
+      const night = getWeatherTheme(code, true);
+      expect(night.bgGradient).not.toBe(day.bgGradient);
+      expect(night.bgGradient.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("getWeatherThemeType", () => {
+  it("maps codes to coarse theme types", () => {
+    expect(getWeatherThemeType(0)).toBe("clear");
+    expect(getWeatherThemeType(2)).toBe("partly-cloudy");
+    expect(getWeatherThemeType(3)).toBe("overcast");
+    expect(getWeatherThemeType(48)).toBe("foggy");
+    expect(getWeatherThemeType(65)).toBe("rainy");
+    expect(getWeatherThemeType(82)).toBe("rainy");
+    expect(getWeatherThemeType(75)).toBe("snowy");
+    expect(getWeatherThemeType(86)).toBe("snowy");
+    expect(getWeatherThemeType(95)).toBe("thunderstorm");
+    expect(getWeatherThemeType(99)).toBe("thunderstorm");
   });
 });

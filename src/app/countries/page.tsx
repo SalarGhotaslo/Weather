@@ -21,7 +21,7 @@ export default async function CountriesPage() {
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
         <Header />
         <main id="main-content" className="flex-1 flex items-center justify-center">
-          <p className="text-[#7ea8c2]">Failed to load countries. Please try again later.</p>
+          <p className="text-[var(--text-muted)]">Failed to load countries. Please try again later.</p>
         </main>
       </div>
     );
@@ -42,15 +42,15 @@ export default async function CountriesPage() {
 
       <main id="main-content" className="mx-auto w-full max-w-5xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#78a8c4] mb-4">
-          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-4">
+          <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[#7ea8c2]">Countries</span>
+          <span className="text-[var(--text-muted)]">Countries</span>
         </nav>
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">All Countries</h1>
-          <p className="text-[#78a8c4] text-sm mt-1">
+          <p className="text-[var(--text-muted)] text-sm mt-1">
             {countries.length} countries · search, filter by region, or click to browse cities
           </p>
         </div>

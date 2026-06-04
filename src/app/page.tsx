@@ -15,6 +15,10 @@ import {
   getWeatherScore,
   countryCodeToFlag,
   getFeelsLikeExplanation,
+  getCityHour,
+  formatCityTime,
+  isNightHour,
+  getTimeOfDayLabel,
   type WeatherResponse,
 } from "@/lib/weather";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
@@ -22,6 +26,7 @@ import Header from "@/app/components/Header";
 import RecentSearches from "@/app/components/RecentSearches";
 import SearchTracker from "@/app/components/SearchTracker";
 import TimeGradient from "@/app/components/TimeGradient";
+import LocalTime from "@/app/components/LocalTime";
 import AppFooter from "@/app/components/AppFooter";
 import GeolocateButton from "@/app/components/GeolocateButton";
 import { getWeatherTheme } from "@/lib/weatherTheme";
@@ -64,7 +69,7 @@ function TrendIndicator({ temps }: { temps: number[] }) {
   const diff = Math.round(temps[4] - temps[0]);
   if (diff > 2) return <span className="text-[10px] text-orange-400">↑ warming {diff}°</span>;
   if (diff < -2) return <span className="text-[10px] text-blue-400">↓ cooling {Math.abs(diff)}°</span>;
-  return <span className="text-[10px] text-[#78a8c4]">→ steady</span>;
+  return <span className="text-[10px] text-[var(--text-muted)]">→ steady</span>;
 }
 
 function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
@@ -78,14 +83,14 @@ function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
   const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p}`).join(" ");
   return (
     <div className="mt-3 bg-[var(--card-bg)] rounded-lg px-3 py-2 flex items-center gap-3">
-      <span className="text-[#78a8c4] text-[10px] shrink-0">Temp trend</span>
+      <span className="text-[var(--text-muted)] text-[10px] shrink-0">Temp trend</span>
       <svg viewBox={`0 0 ${W} ${H}`} className="flex-1 h-5" aria-hidden="true" preserveAspectRatio="none">
         <path d={d} fill="none" stroke="#3b87d6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         {maxTemps.map((t, i) => (
           <circle key={i} cx={px(i)} cy={py(t)} r="2" fill="#3b87d6" />
         ))}
       </svg>
-      <span className="text-[#78a8c4] text-[10px] shrink-0">
+      <span className="text-[var(--text-muted)] text-[10px] shrink-0">
         {Math.round(maxTemps[0])}° → {Math.round(maxTemps[4])}°
       </span>
     </div>
@@ -95,12 +100,12 @@ function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
     <div className="bg-[var(--card-bg)] rounded-lg px-4 py-3">
-      <div className="text-[#78a8c4] text-xs mb-1">{label}</div>
+      <div className="text-[var(--text-muted)] text-xs mb-1">{label}</div>
       <div className="flex items-center gap-1.5">
         <span className="text-base" aria-hidden="true">{icon}</span>
         <span className="text-white font-semibold text-sm">{value}</span>
       </div>
-      {sub && <div className="text-[#78a8c4] text-[10px] mt-0.5">{sub}</div>}
+      {sub && <div className="text-[var(--text-muted)] text-[10px] mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -135,7 +140,7 @@ export default async function Home({ searchParams }: Props) {
               <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
                 Salar Weather
               </h1>
-              <p className="text-[#7ea8c2]">Search for a city, town or postcode</p>
+              <p className="text-[var(--text-muted)]">Search for a city, town or postcode</p>
             </div>
 
             <SearchAutocomplete large />
@@ -146,7 +151,7 @@ export default async function Home({ searchParams }: Props) {
 
             {/* Popular cities */}
             <div className="mt-8">
-              <p className="text-[#78a8c4] text-xs font-semibold uppercase tracking-wider mb-3">
+              <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-3">
                 Popular cities
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -154,7 +159,7 @@ export default async function Home({ searchParams }: Props) {
                   <Link
                     key={city}
                     href={`/?q=${encodeURIComponent(city)}`}
-                    className="bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-lg px-3 py-2 text-center text-[#7ea8c2] hover:text-white text-xs transition-colors"
+                    className="bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-lg px-3 py-2 text-center text-[var(--text-muted)] hover:text-white text-xs transition-colors"
                   >
                     {city.split(",")[0]}
                   </Link>
@@ -162,11 +167,11 @@ export default async function Home({ searchParams }: Props) {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-center gap-6 text-sm text-[#78a8c4]">
-              <Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">
+            <div className="mt-8 flex justify-center gap-6 text-sm text-[var(--text-muted)]">
+              <Link href="/countries" className="hover:text-white transition-colors">
                 🌍 Browse countries
               </Link>
-              <Link href="/map" className="hover:text-[#7ea8c2] transition-colors">
+              <Link href="/map" className="hover:text-white transition-colors">
                 🗺️ World map
               </Link>
             </div>
@@ -186,7 +191,7 @@ export default async function Home({ searchParams }: Props) {
           <div className="w-full max-w-lg text-center">
             <div className="text-5xl mb-4">🔍</div>
             <h2 className="text-2xl font-bold text-white mb-2">Location not found</h2>
-            <p className="text-[#7ea8c2] mb-6">
+            <p className="text-[var(--text-muted)] mb-6">
               No results for &ldquo;{q}&rdquo;. Try a different city name.
             </p>
             <div className="flex justify-center gap-4 text-sm">
@@ -211,7 +216,7 @@ export default async function Home({ searchParams }: Props) {
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
         <Header defaultSearch={q} />
         <main id="main-content" className="flex-1 flex items-center justify-center">
-          <p className="text-[#7ea8c2] text-lg">
+          <p className="text-[var(--text-muted)] text-lg">
             Failed to load weather data. Please try again later.
           </p>
         </main>
@@ -222,6 +227,8 @@ export default async function Home({ searchParams }: Props) {
   const { current, daily } = weather;
   const todayInfo = getWeatherInfo(current.weather_code);
   const animClass = getWeatherAnimClass(current.weather_code);
+  // At night, a clear/partly-cloudy sky should read as a moon, not a sun.
+  const isClearish = current.weather_code <= 2;
   const locationLabel = location.admin1
     ? `${location.name}, ${location.admin1}, ${location.country}`
     : `${location.name}, ${location.country}`;
@@ -241,7 +248,15 @@ export default async function Home({ searchParams }: Props) {
     current.wind_speed_10m,
   );
 
-  const theme = getWeatherTheme(current.weather_code);
+  // Current local time in the searched city, used to pick day/night styling.
+  const cityHour = getCityHour(location.timezone);
+  const cityTimeInitial = formatCityTime(location.timezone);
+  const sunriseHour = parseInt(daily.sunrise[0]?.split("T")[1]?.split(":")[0] ?? "6", 10);
+  const sunsetHour = parseInt(daily.sunset[0]?.split("T")[1]?.split(":")[0] ?? "21", 10);
+  const isNight = isNightHour(cityHour, sunriseHour, sunsetHour);
+  const timeOfDay = getTimeOfDayLabel(cityHour);
+
+  const theme = getWeatherTheme(current.weather_code, isNight);
 
   const todayAlert = getWeatherAlert(
     daily.weather_code[0],
@@ -262,7 +277,7 @@ export default async function Home({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: theme.bgGradient }} data-weather={theme.type}>
-      <WeatherBackground weatherCode={current.weather_code} />
+      <WeatherBackground weatherCode={current.weather_code} isNight={isNight} />
       <Header defaultSearch={q} />
 
       {/* Track this search in localStorage */}
@@ -270,10 +285,10 @@ export default async function Home({ searchParams }: Props) {
 
       <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#78a8c4] mb-4">
-          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-4">
+          <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[#7ea8c2] truncate max-w-[200px]">{location.name}</span>
+          <span aria-current="page" className="text-[var(--text-muted)] truncate max-w-[200px]">{location.name}</span>
         </nav>
 
         {/* Location */}
@@ -282,12 +297,22 @@ export default async function Home({ searchParams }: Props) {
             {countryFlag && <span className="text-xl" aria-hidden="true">{countryFlag}</span>}
             <h1 className="text-xl font-bold text-white">{locationLabel}</h1>
           </div>
-          <p className="text-[#78a8c4] text-sm mt-0.5 pl-1">{todayFormatted}</p>
+          <div className="flex items-center gap-2 flex-wrap text-sm mt-0.5 pl-1">
+            <p className="text-[var(--text-muted)]">{todayFormatted}</p>
+            <span className="text-[var(--text-faint)]" aria-hidden="true">·</span>
+            <LocalTime
+              timezone={location.timezone}
+              initial={cityTimeInitial}
+              label={`Local time in ${location.name}`}
+              className="text-[var(--text-accent)] font-medium tabular-nums"
+            />
+            <span className="text-[var(--text-muted)]">local time · {timeOfDay}</span>
+          </div>
         </div>
 
         {/* Current weather hero */}
         <Link
-          href={buildDayHref(0, location.latitude, location.longitude, locationLabel, location.countryCode)}
+          href={buildDayHref(0, location.latitude, location.longitude, locationLabel, location.countryCode, location.timezone)}
           className="relative block bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-xl p-6 mb-3 transition-colors overflow-hidden"
           aria-label={`Today: ${todayInfo.label}, ${Math.round(current.temperature_2m)}°C. View details.`}
         >
@@ -298,17 +323,19 @@ export default async function Home({ searchParams }: Props) {
                 {Math.round(current.temperature_2m)}°C
               </div>
               <div className="text-lg text-white mt-2 font-medium">{todayInfo.label}</div>
-              <div className="text-[#7ea8c2] text-sm mt-1">
+              <div className="text-[var(--text-muted)] text-sm mt-1">
                 Feels like {Math.round(current.apparent_temperature)}°C
                 {feelsLikeExplanation && (
-                  <span className="text-[#78a8c4] text-xs ml-2">· {feelsLikeExplanation}</span>
+                  <span className="text-[var(--text-muted)] text-xs ml-2">· {feelsLikeExplanation}</span>
                 )}
               </div>
             </div>
-            <span className={`text-[72px] leading-none ${animClass}`} aria-hidden="true">{todayInfo.emoji}</span>
+            <span className={`text-[72px] leading-none ${isNight && isClearish ? "" : animClass}`} aria-hidden="true">
+              {isNight && isClearish ? "🌙" : todayInfo.emoji}
+            </span>
           </div>
           <div className="mt-4 pt-4 border-t border-[#1e3347] flex items-center justify-between">
-            <span className="text-[#7ea8c2] text-xs">
+            <span className="text-[var(--text-muted)] text-xs">
               High {Math.round(daily.temperature_2m_max[0])}°C · Low {Math.round(daily.temperature_2m_min[0])}°C
             </span>
             <span className="text-[var(--text-accent)] text-xs font-medium">View details →</span>
@@ -355,7 +382,7 @@ export default async function Home({ searchParams }: Props) {
         {/* 5-day forecast */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[#78a8c4] text-xs font-semibold uppercase tracking-widest">
+            <h2 className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-widest">
               5-Day Forecast
             </h2>
             <TrendIndicator temps={daily.temperature_2m_max.slice(0, 5)} />
@@ -377,14 +404,14 @@ export default async function Home({ searchParams }: Props) {
               return (
                 <Link
                   key={dateStr}
-                  href={buildDayHref(i, location.latitude, location.longitude, locationLabel, location.countryCode)}
+                  href={buildDayHref(i, location.latitude, location.longitude, locationLabel, location.countryCode, location.timezone)}
                   role="listitem"
                   aria-label={`${getDayName(dateStr)}: ${info.label}, high ${maxTemp}°C, low ${minTemp}°C`}
                   className={`rounded-lg p-3 text-center flex flex-col items-center transition-colors ${
                     isToday ? "bg-[var(--card-bg-secondary)] hover:bg-[#22405f]" : "bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)]"
                   }`}
                 >
-                  <div className={`text-xs font-semibold mb-1 ${isToday ? "text-[var(--text-accent)]" : "text-[#7ea8c2]"}`}>
+                  <div className={`text-xs font-semibold mb-1 ${isToday ? "text-[var(--text-accent)]" : "text-[var(--text-muted)]"}`}>
                     {getDayName(dateStr)}
                   </div>
                   {i === bestDayIndex && (
@@ -399,7 +426,7 @@ export default async function Home({ searchParams }: Props) {
                       style={{ left: `${barLeft}%`, width: `${barWidth}%`, backgroundColor: barColor }}
                     />
                   </div>
-                  <div className="text-[#7ea8c2] text-xs mb-1.5">{minTemp}°</div>
+                  <div className="text-[var(--text-muted)] text-xs mb-1.5">{minTemp}°</div>
                   {/* Precipitation probability */}
                   {(() => {
                     const prob = daily.precipitation_probability_max[i] ?? 0;
@@ -422,7 +449,7 @@ export default async function Home({ searchParams }: Props) {
         <div className="bg-[var(--card-bg)] rounded-xl p-4 mb-6 flex items-start gap-3" role="note">
           <span className="text-2xl shrink-0" aria-hidden="true">💡</span>
           <div>
-            <p className="text-[#78a8c4] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
+            <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
             <p className="text-[#c8dae7] text-sm leading-relaxed">{weatherFact}</p>
           </div>
         </div>

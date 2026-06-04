@@ -49,12 +49,12 @@ export default async function CountryPage({
 
       <main id="main-content" className="mx-auto w-full max-w-5xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#78a8c4] mb-5 flex-wrap">
-          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-5 flex-wrap">
+          <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
-          <Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">Countries</Link>
+          <Link href="/countries" className="hover:text-white transition-colors">Countries</Link>
           <span>/</span>
-          <span className="text-[#7ea8c2]">{country.name.common}</span>
+          <span className="text-[var(--text-muted)]">{country.name.common}</span>
         </nav>
 
         {/* Country hero */}
@@ -63,16 +63,16 @@ export default async function CountryPage({
             <span className="text-5xl shrink-0">{country.flag}</span>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-white">{country.name.common}</h1>
-              <p className="text-[#78a8c4] text-xs mt-0.5 italic truncate">{country.name.official}</p>
+              <p className="text-[var(--text-muted)] text-xs mt-0.5 italic truncate">{country.name.official}</p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                 {capital && (
-                  <span className="text-[#7ea8c2] text-sm">📍 Capital: {capital}</span>
+                  <span className="text-[var(--text-muted)] text-sm">📍 Capital: {capital}</span>
                 )}
-                <span className="text-[#78a8c4] text-xs">
+                <span className="text-[var(--text-muted)] text-xs">
                   {country.subregion ?? country.region}
                 </span>
                 {country.population != null && country.population > 0 && (
-                  <span className="text-[#78a8c4] text-xs">
+                  <span className="text-[var(--text-muted)] text-xs">
                     👥 {formatPopulation(country.population)} people
                   </span>
                 )}
@@ -85,14 +85,14 @@ export default async function CountryPage({
             {capital && (
               <Link
                 href={`/?q=${encodeURIComponent(`${capital}, ${country.name.common}`)}`}
-                className="inline-flex items-center gap-2 bg-[#3b87d6] hover:bg-[#2d6fb8] text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
+                className="inline-flex items-center gap-2 bg-[#2f6fb5] hover:bg-[#2d6fb8] text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 ⛅ Weather in {capital}
               </Link>
             )}
             <Link
               href={`/map`}
-              className="inline-flex items-center gap-2 bg-[#162535] hover:bg-[#1c2f3f] border border-[#2a4055] text-[#7ea8c2] hover:text-white text-sm px-4 py-2 rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 bg-[#162535] hover:bg-[#1c2f3f] border border-[#2a4055] text-[var(--text-muted)] hover:text-white text-sm px-4 py-2 rounded-lg transition-colors"
             >
               🗺️ View on map
             </Link>
@@ -102,7 +102,7 @@ export default async function CountryPage({
         {/* Cities section */}
         <div>
           <h2 className="text-white font-semibold mb-1">Cities</h2>
-          <p className="text-[#78a8c4] text-xs mb-4">
+          <p className="text-[var(--text-muted)] text-xs mb-4">
             Click any city to see its weather forecast
           </p>
 
@@ -110,10 +110,10 @@ export default async function CountryPage({
             <CitiesFilter cities={cities} countryName={country.name.common} />
           ) : (
             <div className="bg-[#162535] rounded-xl p-6 text-center">
-              <p className="text-[#7ea8c2] mb-2">
+              <p className="text-[var(--text-muted)] mb-2">
                 City data unavailable for {country.name.common}.
               </p>
-              <p className="text-[#78a8c4] text-sm">
+              <p className="text-[var(--text-muted)] text-sm">
                 Use the search bar above to find a specific city.
               </p>
             </div>
@@ -135,11 +135,11 @@ export default async function CountryPage({
                 >
                   <span className="text-lg shrink-0">{c.flag}</span>
                   <div className="min-w-0">
-                    <p className="text-white text-xs font-medium truncate group-hover:text-[#3b87d6] transition-colors">
+                    <p className="text-white text-xs font-medium truncate group-hover:text-[var(--text-accent)] transition-colors">
                       {c.name.common}
                     </p>
                     {c.capital?.[0] && (
-                      <p className="text-[#78a8c4] text-[10px] truncate">{c.capital[0]}</p>
+                      <p className="text-[var(--text-muted)] text-[10px] truncate">{c.capital[0]}</p>
                     )}
                   </div>
                 </Link>

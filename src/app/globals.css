@@ -10,6 +10,12 @@
 :root {
   --background: #0e1723;
   --foreground: #ffffff;
+  /* Text tokens — always available even on pages without a data-weather theme
+   * (countries, map). All meet WCAG AA on the dark backgrounds. Per-weather
+   * overrides below retint them so cards read warm on sun, cool on rain, etc. */
+  --text-muted: #7ea8c2; /* primary muted/label text */
+  --text-faint: #7693ac; /* faint axis labels, secondary figures */
+  --text-accent: #6aaae0; /* accent/link text — AA on all dark card backgrounds */
 }
 
 body {
@@ -161,16 +167,23 @@ body {
   --card-bg: #162535;
   --card-bg-alt: #1c2f3f;
   --card-bg-secondary: #1c3450;
-  --text-accent: #3b87d6;
+  --text-accent: #6aaae0;
   --border-accent: #3b87d6;
-  --accent-color: #3b87d6;
+  /* Darkened so white text on an accent-coloured fill (active day pill,
+   * buttons) meets WCAG AA contrast. */
+  --accent-color: #2f6fb5;
+  /* Muted/faint text tokens — meet WCAG AA (≥4.5:1) on the dark card/page
+   * backgrounds. Replace the old #2a4055 / #3a5a72 / #1e3347 text colours
+   * which failed contrast. */
+  --text-muted: #7ea8c2;
+  --text-faint: #7693ac;
 }
 
 [data-weather="thunderstorm"] {
   --card-bg: #141630;
   --card-bg-alt: #191c34;
   --card-bg-secondary: #1c1e38;
-  --text-accent: #8b6fcf;
+  --text-accent: #a98fe0;
   --border-accent: #6b4faf;
   --accent-color: #6b4faf;
 }
@@ -192,11 +205,30 @@ body {
   --text-accent: #8aaac5;
 }
 
+/* Sunny / clear — warm amber cards to match the orange sky. Card backgrounds
+ * stay dark enough that white text and the warm muted tokens keep AA contrast. */
 [data-weather="clear"] {
-  --card-bg: #1a3350;
-  --card-bg-alt: #203d5c;
-  --card-bg-secondary: #244466;
-  --text-accent: #4da6e8;
+  --card-bg: #2a2016;
+  --card-bg-alt: #34281a;
+  --card-bg-secondary: #3e2f1d;
+  --text-accent: #f0a838;
+  --border-accent: #6b4a1e;
+  /* Deep orange so white text on the active day pill still meets AA. */
+  --accent-color: #a05f12;
+  --text-muted: #c2a684;
+  --text-faint: #ab9277;
+}
+
+/* Snowy / rainy / fog already lean cool; nudge their muted text to harmonise. */
+[data-weather="rainy"] {
+  --text-muted: #82b0cf;
+  --text-faint: #6e93ad;
+}
+
+[data-weather="overcast"],
+[data-weather="foggy"] {
+  --text-muted: #9aabba;
+  --text-faint: #8497a6;
 }
 
 /* ── Weather ambient animations ──────────────────────────────────── */
@@ -324,3 +356,35 @@ body {
 .weather-thunder  { animation: lightning-flash 6s ease-in-out infinite; display: inline-block; }
 .weather-hail     { animation: shake 0.5s ease-in-out infinite; display: inline-block; }
 .weather-foggy    { animation: fog-drift 7s ease-in-out infinite; display: inline-block; opacity: 0.7; }
+
+/* ── Reduced motion ───────────────────────────────────────────────────
+ * Respect users who prefer reduced motion (WCAG 2.3.3): disable the ambient
+ * weather animations (rain, snow, clouds, sun spin, lightning) and emoji
+ * motion. Static styling is retained so the scene still reads correctly. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .weather-sunny,
+  .weather-cloudy,
+  .weather-overcast,
+  .weather-drizzle,
+  .weather-rainy,
+  .weather-heavy,
+  .weather-showers,
+  .weather-snowy,
+  .weather-thunder,
+  .weather-hail,
+  .weather-foggy {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -29,7 +29,7 @@ export default function NavTabs() {
             className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
               isActive
                 ? "text-white border-[#3b87d6]"
-                : "text-[#7ea8c2] border-transparent hover:text-white hover:border-[#2a4055]"
+                : "text-[var(--text-muted)] border-transparent hover:text-white hover:border-[#2a4055]"
             }`}
           >
             {tab.label}
