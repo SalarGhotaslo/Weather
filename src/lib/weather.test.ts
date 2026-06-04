@@ -14,6 +14,7 @@ import {
   findBestGeoMatch,
   getWeatherAnimClass,
   getWeatherFact,
+  getWeatherAlert,
   type HourlyForecastResponse,
   type GeocodingResult,
 } from "./weather";
@@ -413,6 +414,66 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("getWeatherAlert", () => {
+  it("returns a thunderstorm warning for codes 95+", () => {
+    const alert = getWeatherAlert(95, 20, 5, 5);
+    expect(alert).not.toBeNull();
+    expect(alert!.level).toBe("warning");
+    expect(alert!.title).toContain("Thunderstorm");
+  });
+
+  it("returns a heavy snow warning when code is snow + precip > 10", () => {
+    const alert = getWeatherAlert(73, 15, 0, 15);
+    expect(alert).not.toBeNull();
+    expect(alert!.level).toBe("warning");
+    expect(alert!.title).toContain("Snow");
+  });
+
+  it("does not return snow warning for low precipitation snow", () => {
+    const alert = getWeatherAlert(71, 15, 0, 3);
+    // No snow warning, but might get other alerts
+    if (alert) expect(alert.title).not.toContain("Snow");
+  });
+
+  it("returns high wind warning when windSpeed > 65", () => {
+    const alert = getWeatherAlert(0, 70, 5, 0);
+    expect(alert).not.toBeNull();
+    expect(alert!.level).toBe("warning");
+    expect(alert!.title).toContain("Wind");
+    expect(alert!.message).toContain("70");
+  });
+
+  it("does not return wind warning below threshold", () => {
+    const alert = getWeatherAlert(0, 50, 5, 0);
+    expect(alert).toBeNull();
+  });
+
+  it("returns heavy rain advisory for heavy rain + precip > 25", () => {
+    const alert = getWeatherAlert(63, 10, 3, 30);
+    expect(alert).not.toBeNull();
+    expect(alert!.level).toBe("advisory");
+    expect(alert!.title).toContain("Rain");
+  });
+
+  it("returns UV advisory for index >= 8", () => {
+    const alert = getWeatherAlert(0, 10, 9, 0);
+    expect(alert).not.toBeNull();
+    expect(alert!.level).toBe("advisory");
+    expect(alert!.title).toContain("UV");
+    expect(alert!.message).toContain("9");
+  });
+
+  it("returns null for benign conditions", () => {
+    expect(getWeatherAlert(1, 20, 3, 2)).toBeNull();
+    expect(getWeatherAlert(3, 10, 2, 0)).toBeNull();
+  });
+
+  it("prioritises thunderstorm warning over wind warning", () => {
+    const alert = getWeatherAlert(95, 80, 3, 5);
+    expect(alert!.title).toContain("Thunderstorm");
   });
 });
 

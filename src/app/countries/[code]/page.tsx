@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCountryByCode, getCitiesForCountry } from "@/lib/countries";
@@ -5,6 +6,20 @@ import Header from "@/app/components/Header";
 import CitiesFilter from "./CitiesFilter";
 
 export const revalidate = 86400;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}): Promise<Metadata> {
+  const { code } = await params;
+  const country = await getCountryByCode(code);
+  if (!country) return {};
+  return {
+    title: `${country.name.common} — Cities & Weather`,
+    description: `Browse cities in ${country.name.common} and get weather forecasts. Capital: ${country.capital?.[0] ?? "N/A"}.`,
+  };
+}
 
 export default async function CountryPage({
   params,
@@ -24,9 +39,9 @@ export default async function CountryPage({
     <div className="min-h-screen bg-[#0e1723] flex flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 flex-1">
+      <main id="main-content" className="mx-auto w-full max-w-5xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-5 flex-wrap">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-5 flex-wrap">
           <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
           <span>/</span>
           <Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">Countries</Link>

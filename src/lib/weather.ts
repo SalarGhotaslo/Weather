@@ -403,6 +403,55 @@ export function getHourlyAnalysis(
   return { hours, bestWindows, badWindows };
 }
 
+// ── Weather alert banner ─────────────────────────────────────────────
+
+export interface WeatherAlert {
+  level: "warning" | "advisory";
+  title: string;
+  message: string;
+}
+
+export function getWeatherAlert(
+  weatherCode: number,
+  windSpeedMax: number,
+  uvIndexMax: number,
+  precipSum: number,
+): WeatherAlert | null {
+  if (weatherCode >= 95)
+    return {
+      level: "warning",
+      title: "Thunderstorm Warning",
+      message:
+        "Severe thunderstorm conditions expected. Stay indoors and away from windows and tall trees.",
+    };
+  if (weatherCode >= 71 && weatherCode <= 77 && precipSum > 10)
+    return {
+      level: "warning",
+      title: "Heavy Snow Warning",
+      message:
+        "Significant snowfall forecast. Travel may be severely disrupted — check before setting out.",
+    };
+  if (windSpeedMax > 65)
+    return {
+      level: "warning",
+      title: "High Wind Warning",
+      message: `Wind gusts of up to ${Math.round(windSpeedMax)} km/h expected. Secure loose outdoor items and avoid exposed areas.`,
+    };
+  if (weatherCode >= 61 && weatherCode <= 67 && precipSum > 25)
+    return {
+      level: "advisory",
+      title: "Heavy Rain Advisory",
+      message: `${Math.round(precipSum)} mm of rain forecast. There is a risk of localised surface flooding — avoid low-lying areas.`,
+    };
+  if (uvIndexMax >= 8)
+    return {
+      level: "advisory",
+      title: "High UV Advisory",
+      message: `UV index of ${Math.round(uvIndexMax)} (${uvIndexMax >= 11 ? "Extreme" : "Very High"}). Apply SPF 30+ sunscreen, wear a hat, and seek shade between 11am–3pm.`,
+    };
+  return null;
+}
+
 // ── Weather emoji animation class ────────────────────────────────────
 
 export function getWeatherAnimClass(code: number): string {

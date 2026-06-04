@@ -13,8 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Salar Weather",
-  description: "5-day weather forecast for any city",
+  title: {
+    default: "Salar Weather",
+    template: "%s | Salar Weather",
+  },
+  description:
+    "Global city weather — 5-day forecasts, hourly detail, best outdoor times, and an interactive world map.",
+  keywords: ["weather", "forecast", "temperature", "cities", "world map"],
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
@@ -27,7 +33,16 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* Skip to main content — assistive tech shortcut */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-[#3b87d6] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-medium"
+        >
+          Skip to main content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

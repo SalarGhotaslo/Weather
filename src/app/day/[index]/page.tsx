@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -15,6 +16,7 @@ import {
   formatHour,
   getWeatherAnimClass,
   getWeatherFact,
+  getWeatherAlert,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
@@ -23,6 +25,23 @@ import Header from "@/app/components/Header";
 
 const LONDON_LAT = 51.5074;
 const LONDON_LON = -0.1278;
+
+type PageProps = {
+  params: Promise<{ index: string }>;
+  searchParams: Promise<{ lat?: string; lon?: string; name?: string }>;
+};
+
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
+  const [{ index }, { name }] = await Promise.all([params, searchParams]);
+  const dayIndex = parseInt(index, 10);
+  const locationName = name ?? "London";
+  if (isNaN(dayIndex) || dayIndex < 0 || dayIndex > 4) return {};
+  const dayLabel = dayIndex === 0 ? "Today" : dayIndex === 1 ? "Tomorrow" : `Day ${dayIndex + 1}`;
+  return {
+    title: `${dayLabel} — ${locationName}`,
+    description: `Detailed ${dayLabel.toLowerCase()} forecast for ${locationName}: hourly breakdown, best outdoor times, and historical comparison.`,
+  };
+}
 
 async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
   const res = await fetch(buildForecastUrl(lat, lon), {
@@ -107,13 +126,7 @@ function CompareRow({
   );
 }
 
-export default async function DayPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ index: string }>;
-  searchParams: Promise<{ lat?: string; lon?: string; name?: string }>;
-}) {
+export default async function DayPage({ params, searchParams }: PageProps) {
   const [{ index }, { lat: latStr, lon: lonStr, name }] = await Promise.all([
     params,
     searchParams,
@@ -188,6 +201,13 @@ export default async function DayPage({
     daily.temperature_2m_max[dayIndex],
   );
 
+  const weatherAlert = getWeatherAlert(
+    daily.weather_code[dayIndex],
+    daily.wind_speed_10m_max[dayIndex],
+    daily.uv_index_max[dayIndex],
+    daily.precipitation_sum[dayIndex],
+  );
+
   const dayName = getDayName(dateStr);
 
   // Build day-picker links for sibling days
@@ -197,9 +217,9 @@ export default async function DayPage({
     <div className="min-h-screen bg-[#0e1723] flex flex-col">
       <Header defaultSearch={locationName} />
 
-      <main className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
+      <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4 flex-wrap">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4 flex-wrap">
           <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
           <span>/</span>
           <Link href={`/?q=${searchQuery}`} className="hover:text-[#7ea8c2] transition-colors truncate max-w-[160px]">
@@ -263,6 +283,28 @@ export default async function DayPage({
             <span className="text-[#7ea8c2] text-sm">{rating.suggestion}</span>
           </div>
         </div>
+
+        {/* Weather alert banner */}
+        {weatherAlert && (
+          <div
+            role="alert"
+            className={`rounded-xl p-4 mb-3 flex items-start gap-3 ${
+              weatherAlert.level === "warning"
+                ? "bg-red-900/30 border border-red-500/40"
+                : "bg-amber-900/20 border border-amber-500/30"
+            }`}
+          >
+            <span className="text-2xl shrink-0" aria-hidden="true">
+              {weatherAlert.level === "warning" ? "🚨" : "⚠️"}
+            </span>
+            <div>
+              <p className={`text-sm font-semibold mb-0.5 ${weatherAlert.level === "warning" ? "text-red-300" : "text-amber-300"}`}>
+                {weatherAlert.title}
+              </p>
+              <p className="text-[#c8dae7] text-xs leading-relaxed">{weatherAlert.message}</p>
+            </div>
+          </div>
+        )}
 
         {/* Detail grid */}
         <div className="grid grid-cols-2 gap-2 mb-6 sm:grid-cols-3">

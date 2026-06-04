@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   geocodeLocation,
@@ -12,6 +13,19 @@ import {
 } from "@/lib/weather";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
 import Header from "@/app/components/Header";
+import RecentSearches from "@/app/components/RecentSearches";
+import SearchTracker from "@/app/components/SearchTracker";
+
+const POPULAR_CITIES = [
+  "London, UK",
+  "New York, US",
+  "Tokyo, Japan",
+  "Paris, France",
+  "Sydney, Australia",
+  "Dubai, UAE",
+  "Barcelona, Spain",
+  "Toronto, Canada",
+];
 
 async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
   const res = await fetch(buildForecastUrl(lat, lon), {
@@ -33,15 +47,7 @@ function getBarColor(avgTemp: number): string {
   return "#f97316";
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-}) {
+function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <div className="bg-[#162535] rounded-lg px-4 py-3">
       <div className="text-[#5a7d99] text-xs mb-1">{label}</div>
@@ -53,29 +59,62 @@ function StatCard({
   );
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
+type Props = { searchParams: Promise<{ q?: string }> };
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { q } = await searchParams;
+  if (!q) return {};
+  const location = await geocodeLocation(q);
+  if (!location) return { title: `Search: ${q}` };
+  const name = location.admin1
+    ? `${location.name}, ${location.admin1}, ${location.country}`
+    : `${location.name}, ${location.country}`;
+  return {
+    title: `Weather in ${location.name}, ${location.country}`,
+    description: `Current weather and 5-day forecast for ${name}.`,
+  };
+}
+
+export default async function Home({ searchParams }: Props) {
   const { q } = await searchParams;
 
   if (!q) {
     return (
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
         <Header />
-        <div className="flex-1 flex items-center justify-center px-4">
+        <main id="main-content" className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="w-full max-w-lg">
             <div className="text-center mb-8">
               <div className="text-6xl mb-4 weather-sunny-glow inline-block">⛅</div>
               <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
                 Salar Weather
               </h1>
-              <p className="text-[#7ea8c2]">
-                Search for a city, town or postcode
-              </p>
+              <p className="text-[#7ea8c2]">Search for a city, town or postcode</p>
             </div>
+
             <SearchAutocomplete large />
+
+            {/* Recent searches (client-side from localStorage) */}
+            <RecentSearches />
+
+            {/* Popular cities */}
+            <div className="mt-8">
+              <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-3">
+                Popular cities
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {POPULAR_CITIES.map((city) => (
+                  <Link
+                    key={city}
+                    href={`/?q=${encodeURIComponent(city)}`}
+                    className="bg-[#162535] hover:bg-[#1c2f3f] rounded-lg px-3 py-2 text-center text-[#7ea8c2] hover:text-white text-xs transition-colors"
+                  >
+                    {city.split(",")[0]}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
             <div className="mt-8 flex justify-center gap-6 text-sm text-[#5a7d99]">
               <Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">
                 🌍 Browse countries
@@ -85,7 +124,7 @@ export default async function Home({
               </Link>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -96,23 +135,23 @@ export default async function Home({
     return (
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
         <Header defaultSearch={q} />
-        <div className="flex-1 flex items-center justify-center px-4">
+        <main id="main-content" className="flex-1 flex items-center justify-center px-4">
           <div className="w-full max-w-lg text-center">
             <div className="text-5xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Location not found
-            </h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Location not found</h2>
             <p className="text-[#7ea8c2] mb-6">
               No results for &ldquo;{q}&rdquo;. Try a different city name.
             </p>
-            <Link
-              href="/countries"
-              className="inline-flex items-center gap-2 text-[#3b87d6] hover:text-white text-sm transition-colors"
-            >
-              Browse countries →
-            </Link>
+            <div className="flex justify-center gap-4 text-sm">
+              <Link href="/countries" className="text-[#3b87d6] hover:text-white transition-colors">
+                Browse countries →
+              </Link>
+              <Link href="/map" className="text-[#3b87d6] hover:text-white transition-colors">
+                Open map →
+              </Link>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -124,11 +163,11 @@ export default async function Home({
     return (
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
         <Header defaultSearch={q} />
-        <div className="flex-1 flex items-center justify-center">
+        <main id="main-content" className="flex-1 flex items-center justify-center">
           <p className="text-[#7ea8c2] text-lg">
             Failed to load weather data. Please try again later.
           </p>
-        </div>
+        </main>
       </div>
     );
   }
@@ -152,18 +191,21 @@ export default async function Home({
     <div className="min-h-screen bg-[#0e1723] flex flex-col">
       <Header defaultSearch={q} />
 
-      <main className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
+      {/* Track this search in localStorage */}
+      <SearchTracker cityLabel={locationLabel} />
+
+      <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4">
           <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
-          <span>/</span>
+          <span aria-hidden="true">/</span>
           <span className="text-[#7ea8c2] truncate max-w-[200px]">{location.name}</span>
         </nav>
 
         {/* Location */}
         <div className="mb-5">
           <div className="flex items-baseline gap-2">
-            <span className="text-[#7ea8c2] text-sm">📍</span>
+            <span aria-hidden="true" className="text-[#7ea8c2] text-sm">📍</span>
             <h1 className="text-xl font-bold text-white">{locationLabel}</h1>
           </div>
           <p className="text-[#5a7d99] text-sm mt-0.5 pl-5">{todayFormatted}</p>
@@ -173,28 +215,25 @@ export default async function Home({
         <Link
           href={buildDayHref(0, location.latitude, location.longitude, locationLabel)}
           className="block bg-[#162535] hover:bg-[#1c2f3f] rounded-xl p-6 mb-3 transition-colors"
+          aria-label={`Today: ${todayInfo.label}, ${Math.round(current.temperature_2m)}°C. View details.`}
         >
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-[68px] font-light text-white leading-none tracking-tight">
+              <div className="text-[68px] font-light text-white leading-none tracking-tight" aria-hidden="true">
                 {Math.round(current.temperature_2m)}°C
               </div>
-              <div className="text-lg text-white mt-2 font-medium">
-                {todayInfo.label}
-              </div>
+              <div className="text-lg text-white mt-2 font-medium">{todayInfo.label}</div>
               <div className="text-[#7ea8c2] text-sm mt-1">
                 Feels like {Math.round(current.apparent_temperature)}°C
               </div>
             </div>
-            <span className={`text-[72px] leading-none ${animClass}`}>{todayInfo.emoji}</span>
+            <span className={`text-[72px] leading-none ${animClass}`} aria-hidden="true">{todayInfo.emoji}</span>
           </div>
           <div className="mt-4 pt-4 border-t border-[#1e3347] flex items-center justify-between">
             <span className="text-[#7ea8c2] text-xs">
               High {Math.round(daily.temperature_2m_max[0])}°C · Low {Math.round(daily.temperature_2m_min[0])}°C
             </span>
-            <span className="text-[#3b87d6] text-xs font-medium">
-              View details →
-            </span>
+            <span className="text-[#3b87d6] text-xs font-medium">View details →</span>
           </div>
         </Link>
 
@@ -211,7 +250,7 @@ export default async function Home({
           <h2 className="text-[#5a7d99] text-xs font-semibold uppercase tracking-widest mb-3">
             5-Day Forecast
           </h2>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-2" role="list">
             {daily.time.slice(0, 5).map((dateStr, i) => {
               const info = getWeatherInfo(daily.weather_code[i]);
               const maxTemp = Math.round(daily.temperature_2m_max[i]);
@@ -229,27 +268,21 @@ export default async function Home({
                 <Link
                   key={dateStr}
                   href={buildDayHref(i, location.latitude, location.longitude, locationLabel)}
+                  role="listitem"
+                  aria-label={`${getDayName(dateStr)}: ${info.label}, high ${maxTemp}°C, low ${minTemp}°C`}
                   className={`rounded-lg p-3 text-center flex flex-col items-center transition-colors ${
-                    isToday
-                      ? "bg-[#1c3450] hover:bg-[#22405f]"
-                      : "bg-[#162535] hover:bg-[#1c2f3f]"
+                    isToday ? "bg-[#1c3450] hover:bg-[#22405f]" : "bg-[#162535] hover:bg-[#1c2f3f]"
                   }`}
                 >
-                  <div
-                    className={`text-xs font-semibold mb-2 ${isToday ? "text-[#3b87d6]" : "text-[#7ea8c2]"}`}
-                  >
+                  <div className={`text-xs font-semibold mb-2 ${isToday ? "text-[#3b87d6]" : "text-[#7ea8c2]"}`}>
                     {getDayName(dateStr)}
                   </div>
-                  <div className="text-2xl mb-2">{info.emoji}</div>
+                  <div className="text-2xl mb-2" aria-hidden="true">{info.emoji}</div>
                   <div className="text-white text-sm font-semibold">{maxTemp}°</div>
-                  <div className="relative h-1 bg-[#1e3347] rounded-full w-full my-2">
+                  <div className="relative h-1 bg-[#1e3347] rounded-full w-full my-2" role="presentation">
                     <div
                       className="absolute h-full rounded-full"
-                      style={{
-                        left: `${barLeft}%`,
-                        width: `${barWidth}%`,
-                        backgroundColor: barColor,
-                      }}
+                      style={{ left: `${barLeft}%`, width: `${barWidth}%`, backgroundColor: barColor }}
                     />
                   </div>
                   <div className="text-[#7ea8c2] text-xs">{minTemp}°</div>
@@ -260,8 +293,8 @@ export default async function Home({
         </div>
 
         {/* Fun weather fact */}
-        <div className="bg-[#162535] rounded-xl p-4 mb-6 flex items-start gap-3">
-          <span className="text-2xl shrink-0">💡</span>
+        <div className="bg-[#162535] rounded-xl p-4 mb-6 flex items-start gap-3" role="note">
+          <span className="text-2xl shrink-0" aria-hidden="true">💡</span>
           <div>
             <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
             <p className="text-[#c8dae7] text-sm leading-relaxed">{weatherFact}</p>
@@ -269,8 +302,7 @@ export default async function Home({
         </div>
 
         <footer className="mt-4 text-center text-xs text-[#2a4055]">
-          Weather data from{" "}
-          <span className="text-[#3a5a72]">Open-Meteo</span>
+          Weather data from <span className="text-[#3a5a72]">Open-Meteo</span>
           {" · "}
           <Link href="/countries" className="text-[#3a5a72] hover:text-[#5a7d99] transition-colors">Browse countries</Link>
           {" · "}
