@@ -21,6 +21,7 @@ import {
   getWindArrow,
   getOutdoorSummary,
   getDressCode,
+  validateCoord,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
@@ -260,9 +261,9 @@ export default async function DayPage({ params, searchParams }: PageProps) {
     searchParams,
   ]);
   const dayIndex = parseInt(index, 10);
-  const lat = latStr ? parseFloat(latStr) : LONDON_LAT;
-  const lon = lonStr ? parseFloat(lonStr) : LONDON_LON;
-  const locationName = name ?? "London";
+  const lat = validateCoord(latStr, -90, 90, LONDON_LAT);
+  const lon = validateCoord(lonStr, -180, 180, LONDON_LON);
+  const locationName = name ? name.slice(0, 200) : "London"; // cap length
 
   if (isNaN(dayIndex) || dayIndex < 0 || dayIndex > 4) notFound();
 

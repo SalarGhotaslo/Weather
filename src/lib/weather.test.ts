@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  validateCoord,
   getWeatherInfo,
   getDayName,
   getFormattedDate,
@@ -420,6 +421,33 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("validateCoord", () => {
+  it("returns the parsed value when in range", () => {
+    expect(validateCoord("51.5", -90, 90, 0)).toBeCloseTo(51.5);
+    expect(validateCoord("-0.12", -180, 180, 0)).toBeCloseTo(-0.12);
+  });
+  it("returns the fallback for undefined", () => {
+    expect(validateCoord(undefined, -90, 90, 51.5)).toBe(51.5);
+  });
+  it("returns the fallback for NaN input", () => {
+    expect(validateCoord("abc", -90, 90, 10)).toBe(10);
+  });
+  it("returns the fallback when value is below minimum", () => {
+    expect(validateCoord("-91", -90, 90, 0)).toBe(0);
+  });
+  it("returns the fallback when value is above maximum", () => {
+    expect(validateCoord("181", -180, 180, 0)).toBe(0);
+  });
+  it("accepts exact boundary values", () => {
+    expect(validateCoord("90", -90, 90, 0)).toBe(90);
+    expect(validateCoord("-90", -90, 90, 0)).toBe(-90);
+    expect(validateCoord("180", -180, 180, 0)).toBe(180);
+  });
+  it("rejects Infinity", () => {
+    expect(validateCoord("Infinity", -90, 90, 42)).toBe(42);
   });
 });
 

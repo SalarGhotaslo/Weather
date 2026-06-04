@@ -37,6 +37,18 @@ export interface GeocodingResult {
   population?: number;
 }
 
+export function validateCoord(
+  value: string | undefined,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (!value) return fallback;
+  const parsed = parseFloat(value);
+  if (!isFinite(parsed) || parsed < min || parsed > max) return fallback;
+  return parsed;
+}
+
 export function buildForecastUrl(lat: number, lon: number): string {
   return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset&timezone=auto`;
 }

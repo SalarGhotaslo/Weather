@@ -65,6 +65,21 @@ export default function CountriesFilter({
         </select>
       </div>
 
+      {/* Alphabet jump navigation — only shown when not filtering */}
+      {!isFiltered && (
+        <div className="flex flex-wrap gap-1 mb-5" aria-label="Jump to letter">
+          {letters.map((letter) => (
+            <button
+              key={letter}
+              onClick={() => document.getElementById(`country-letter-${letter}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="w-7 h-7 text-xs font-semibold rounded bg-[#162535] hover:bg-[#1c2f3f] text-[#7ea8c2] hover:text-white transition-colors"
+            >
+              {letter}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isFiltered && (
         <p className="text-[#5a7d99] text-xs mb-4">
           {filtered.length} {filtered.length === 1 ? "country" : "countries"} found
@@ -87,7 +102,7 @@ export default function CountriesFilter({
       )}
 
       {displayLetters.map((letter) => (
-        <section key={letter} className="mb-8">
+        <section key={letter} id={`country-letter-${letter}`} className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-[#3b87d6] font-bold text-lg w-6">{letter}</span>
             <div className="flex-1 h-px bg-[#1e3347]" />

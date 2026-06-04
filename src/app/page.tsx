@@ -17,6 +17,7 @@ import SearchAutocomplete from "@/app/components/SearchAutocomplete";
 import Header from "@/app/components/Header";
 import RecentSearches from "@/app/components/RecentSearches";
 import SearchTracker from "@/app/components/SearchTracker";
+import TimeGradient from "@/app/components/TimeGradient";
 
 const POPULAR_CITIES = [
   "London, UK",
@@ -217,9 +218,10 @@ export default async function Home({ searchParams }: Props) {
         {/* Current weather hero */}
         <Link
           href={buildDayHref(0, location.latitude, location.longitude, locationLabel)}
-          className="block bg-[#162535] hover:bg-[#1c2f3f] rounded-xl p-6 mb-3 transition-colors"
+          className="relative block bg-[#162535] hover:bg-[#1c2f3f] rounded-xl p-6 mb-3 transition-colors overflow-hidden"
           aria-label={`Today: ${todayInfo.label}, ${Math.round(current.temperature_2m)}°C. View details.`}
         >
+          <TimeGradient />
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[68px] font-light text-white leading-none tracking-tight" aria-hidden="true">

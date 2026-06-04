@@ -37,11 +37,25 @@ export default function RecentSearches() {
 
   if (searches.length === 0) return null;
 
+  const handleClear = () => {
+    try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+    setSearches([]);
+  };
+
   return (
     <div className="mt-6">
-      <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-2">
-        Recent searches
-      </p>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider">
+          Recent searches
+        </p>
+        <button
+          onClick={handleClear}
+          className="text-[#3a5a72] hover:text-[#7ea8c2] text-[10px] transition-colors"
+          aria-label="Clear recent searches"
+        >
+          Clear
+        </button>
+      </div>
       <div className="flex flex-wrap gap-2">
         {searches.map((city) => (
           <Link
