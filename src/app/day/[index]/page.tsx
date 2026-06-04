@@ -67,6 +67,7 @@ function TempCurve({
 }) {
   if (entries.length < 2) return null;
 
+  const gradientId = `tempFill-${crypto.randomUUID()}`;
   const W = 480;
   const H = 64;
   const PY = 10; // vertical padding
@@ -95,7 +96,7 @@ function TempCurve({
         preserveAspectRatio="none"
       >
         <defs>
-          <linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#3b87d6" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#3b87d6" stopOpacity="0.03" />
           </linearGradient>
@@ -107,7 +108,7 @@ function TempCurve({
         <line x1={sxRise} y1="0" x2={sxRise} y2={H} stroke="#fbbf24" strokeWidth="1" strokeDasharray="3,3" strokeOpacity="0.6" />
         <line x1={sxSet} y1="0" x2={sxSet} y2={H} stroke="#f97316" strokeWidth="1" strokeDasharray="3,3" strokeOpacity="0.6" />
         {/* Fill under curve */}
-        <path d={fillPath} fill="url(#tempFill)" />
+        <path d={fillPath} fill={`url(#${gradientId})`} />
         {/* Curve */}
         <path d={linePath} fill="none" stroke="#3b87d6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {/* Min/max labels */}
@@ -228,7 +229,7 @@ function DaylightBar({ risePercent, lightPercent, hours, minutes }: {
         />
       </div>
       <div className="flex justify-between text-[9px] text-[#2a4055] mt-0.5">
-        {["12am", "6am", "12pm", "6pm", "12am"].map((l) => <span key={l}>{l}</span>)}
+        {["12am", "6am", "12pm", "6pm", "12am"].map((l, i) => <span key={`${l}-${i}`}>{l}</span>)}
       </div>
     </div>
   );
@@ -263,7 +264,7 @@ function YoyStat({
   const diffStr = isUp ? `+${diff}` : isDown ? `${diff}` : "±0";
 
   return (
-    <div className="bg-[#1c2f3f] rounded-xl p-4 flex flex-col gap-1.5">
+    <div className="bg-[var(--card-bg-alt)] rounded-xl p-4 flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5 text-[#5a7d99] text-[10px] uppercase tracking-wider">
         <span>{icon}</span>
         <span>{label}</span>
@@ -335,7 +336,7 @@ function DetailCard({
   sub?: string;
 }) {
   return (
-    <div className="bg-[#1c2f3f] rounded-lg px-4 py-3">
+    <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
       <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
         <span>{icon}</span>
         <span>{label}</span>
@@ -507,8 +508,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                 href={`/day/${i}?${baseParams}`}
                 className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   i === dayIndex
-                    ? "bg-[#3b87d6] text-white"
-                    : "bg-[#162535] text-[#7ea8c2] hover:bg-[#1c2f3f] hover:text-white"
+                    ? "bg-[var(--accent-color)] text-white"
+                    : "bg-[var(--card-bg)] text-[#7ea8c2] hover:bg-[var(--card-bg-alt)] hover:text-white"
                 }`}
               >
                 {getDayName(d)}
@@ -529,7 +530,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         </div>
 
         {/* Main weather card */}
-        <div className="bg-[#162535] rounded-xl p-6 mb-3">
+        <div className="bg-[var(--card-bg)] rounded-xl p-6 mb-3">
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[68px] font-light text-white leading-none tracking-tight">
@@ -545,7 +546,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                   : ""}
               </div>
             </div>
-            <span className={`text-[72px] leading-none ${animClass}`}>{info.emoji}</span>
+            <span className={`text-[72px] leading-none ${animClass}`} aria-hidden="true">{info.emoji}</span>
           </div>
 
           {/* Rating bar */}
@@ -605,7 +606,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             label="Precipitation"
             value={`${daily.precipitation_sum[dayIndex]} mm`}
           />
-          <div className="bg-[#1c2f3f] rounded-lg px-4 py-3">
+          <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
             <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
               <span aria-hidden="true">☀️</span>
               <span>UV Index</span>
@@ -614,7 +615,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             <div className="text-[#5a7d99] text-xs mt-0.5">{uv.tip}</div>
             <UvMeter uv={daily.uv_index_max[dayIndex]} />
           </div>
-          <div className="bg-[#1c2f3f] rounded-lg px-4 py-3">
+          <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
             <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
               <span aria-hidden="true">🌅</span>
               <span>Sunrise / Sunset</span>
@@ -635,7 +636,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
         {/* Hourly forecast */}
         {hourlyEntries.length > 0 && (
-          <div className="bg-[#162535] rounded-xl p-5 mb-3">
+          <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
             <h2 className="text-white font-semibold mb-3">Hourly Forecast</h2>
             {/* SVG temperature curve */}
             <TempCurve entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
@@ -650,7 +651,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                     <div
                       key={entry.hour}
                       className={`flex flex-col items-center gap-1.5 py-2.5 px-1.5 rounded-lg min-w-[42px] ${
-                        isNight ? "bg-[#0e1723]/70" : "bg-[#1c2f3f]"
+                        isNight ? "bg-[#0e1723]/70" : "bg-[var(--card-bg-alt)]"
                       }`}
                     >
                       <span
@@ -658,7 +659,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       >
                         {entry.label}
                       </span>
-                      <span className="text-lg leading-none">
+                      <span className="text-lg leading-none" aria-hidden="true">
                         {isNight ? "🌙" : getWeatherInfo(entry.weatherCode).emoji}
                       </span>
                       <span
@@ -699,7 +700,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
         {/* Best Times Outside — enhanced */}
         {outdoorAnalysis && (
-          <div className="bg-[#162535] rounded-xl p-5 mb-3">
+          <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
             <h2 className="text-white font-semibold mb-1">Best Times Outside</h2>
             {/* Summary sentence */}
             <p className="text-[#c8dae7] text-sm mb-3 leading-relaxed">
@@ -764,7 +765,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             {/* Best windows */}
             {outdoorAnalysis.bestWindows.length > 0 && (
               <div className="mb-4">
-                <p className="text-[#3b87d6] text-xs font-semibold uppercase tracking-wider mb-2">
+                <p className="text-[var(--text-accent)] text-xs font-semibold uppercase tracking-wider mb-2">
                   Best times to go out
                 </p>
                 {outdoorAnalysis.bestWindows.map((w, i) => (
@@ -788,12 +789,12 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                     <p className="text-[#c8dae7] text-sm mb-3 leading-snug">{w.reason}</p>
                     <div className="flex flex-wrap gap-2 mb-3">
                       {w.tempRange && (
-                        <span className="text-[10px] bg-[#162535] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
+                        <span className="text-[10px] bg-[var(--card-bg)] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
                           🌡️ {w.tempRange}
                         </span>
                       )}
                       {w.conditions.split(", ").slice(1).map((c, ci) => (
-                        <span key={ci} className="text-[10px] bg-[#162535] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
+                        <span key={ci} className="text-[10px] bg-[var(--card-bg)] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
                           {c.includes("rain") ? "🌧️ " : c.includes("wind") || c.includes("breeze") ? "💨 " : ""}{c}
                         </span>
                       ))}
@@ -801,7 +802,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                     {w.activities && w.activities.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {w.activities.map((act) => (
-                          <span key={act} className="text-[10px] text-[#3b87d6] bg-[#0d1d2e] border border-[#1a3347] px-2.5 py-1 rounded-full font-medium">
+                          <span key={act} className="text-[10px] text-[var(--text-accent)] bg-[#0d1d2e] border border-[#1a3347] px-2.5 py-1 rounded-full font-medium">
                             {act}
                           </span>
                         ))}
@@ -868,7 +869,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         )}
 
         {/* Historical comparison */}
-        <div className="bg-[#162535] rounded-xl p-5 mb-3">
+        <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
           <h2 className="text-white font-semibold mb-1">Compared to Last Year</h2>
           <p className="text-[#5a7d99] text-xs mb-4">Same date, one year ago</p>
 
@@ -918,14 +919,14 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         </div>
 
         {/* What to wear */}
-        <div className="bg-[#162535] rounded-xl p-5 mb-3">
+        <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
           <h2 className="text-white font-semibold mb-1">What to Wear</h2>
           <p className="text-[#7ea8c2] text-sm mb-3">{dressCode.summary}</p>
           <div className="flex flex-wrap gap-2">
             {dressCode.items.map((item) => (
               <span
                 key={item}
-                className="bg-[#1c2f3f] border border-[#2a4055] text-[#c8dae7] text-xs px-3 py-1.5 rounded-full"
+                className="bg-[var(--card-bg-alt)] border border-[#2a4055] text-[#c8dae7] text-xs px-3 py-1.5 rounded-full"
               >
                 {item}
               </span>
@@ -934,7 +935,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         </div>
 
         {/* Fun weather fact */}
-        <div className="bg-[#162535] rounded-xl p-4 mb-3 flex items-start gap-3">
+        <div className="bg-[var(--card-bg)] rounded-xl p-4 mb-3 flex items-start gap-3">
           <span className="text-2xl shrink-0">💡</span>
           <div>
             <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>

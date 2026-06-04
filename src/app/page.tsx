@@ -59,9 +59,41 @@ function getBarColor(avgTemp: number): string {
   return "#f97316";
 }
 
+function TrendIndicator({ temps }: { temps: number[] }) {
+  const diff = Math.round(temps[4] - temps[0]);
+  if (diff > 2) return <span className="text-[10px] text-orange-400">↑ warming {diff}°</span>;
+  if (diff < -2) return <span className="text-[10px] text-blue-400">↓ cooling {Math.abs(diff)}°</span>;
+  return <span className="text-[10px] text-[#5a7d99]">→ steady</span>;
+}
+
+function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
+  const minT = Math.min(...maxTemps);
+  const maxT = Math.max(...maxTemps);
+  const range = maxT - minT || 1;
+  const W = 100; const H = 20; const PAD = 3;
+  const px = (i: number) => (i / 4) * W;
+  const py = (t: number) => PAD + (1 - (t - minT) / range) * (H - PAD * 2);
+  const pts = maxTemps.map((t, i) => `${px(i).toFixed(1)},${py(t).toFixed(1)}`);
+  const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p}`).join(" ");
+  return (
+    <div className="mt-3 bg-[var(--card-bg)] rounded-lg px-3 py-2 flex items-center gap-3">
+      <span className="text-[#5a7d99] text-[10px] shrink-0">Temp trend</span>
+      <svg viewBox={`0 0 ${W} ${H}`} className="flex-1 h-5" aria-hidden="true" preserveAspectRatio="none">
+        <path d={d} fill="none" stroke="#3b87d6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        {maxTemps.map((t, i) => (
+          <circle key={i} cx={px(i)} cy={py(t)} r="2" fill="#3b87d6" />
+        ))}
+      </svg>
+      <span className="text-[#5a7d99] text-[10px] shrink-0">
+        {Math.round(maxTemps[0])}° → {Math.round(maxTemps[4])}°
+      </span>
+    </div>
+  );
+}
+
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-[#162535] rounded-lg px-4 py-3">
+    <div className="bg-[var(--card-bg)] rounded-lg px-4 py-3">
       <div className="text-[#5a7d99] text-xs mb-1">{label}</div>
       <div className="flex items-center gap-1.5">
         <span className="text-base" aria-hidden="true">{icon}</span>
@@ -121,7 +153,7 @@ export default async function Home({ searchParams }: Props) {
                   <Link
                     key={city}
                     href={`/?q=${encodeURIComponent(city)}`}
-                    className="bg-[#162535] hover:bg-[#1c2f3f] rounded-lg px-3 py-2 text-center text-[#7ea8c2] hover:text-white text-xs transition-colors"
+                    className="bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-lg px-3 py-2 text-center text-[#7ea8c2] hover:text-white text-xs transition-colors"
                   >
                     {city.split(",")[0]}
                   </Link>
@@ -157,10 +189,10 @@ export default async function Home({ searchParams }: Props) {
               No results for &ldquo;{q}&rdquo;. Try a different city name.
             </p>
             <div className="flex justify-center gap-4 text-sm">
-              <Link href="/countries" className="text-[#3b87d6] hover:text-white transition-colors">
+              <Link href="/countries" className="text-[var(--text-accent)] hover:text-white transition-colors">
                 Browse countries →
               </Link>
-              <Link href="/map" className="text-[#3b87d6] hover:text-white transition-colors">
+              <Link href="/map" className="text-[var(--text-accent)] hover:text-white transition-colors">
                 Open map →
               </Link>
             </div>
@@ -255,7 +287,7 @@ export default async function Home({ searchParams }: Props) {
         {/* Current weather hero */}
         <Link
           href={buildDayHref(0, location.latitude, location.longitude, locationLabel, location.countryCode)}
-          className="relative block bg-[#162535] hover:bg-[#1c2f3f] rounded-xl p-6 mb-3 transition-colors overflow-hidden"
+          className="relative block bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-xl p-6 mb-3 transition-colors overflow-hidden"
           aria-label={`Today: ${todayInfo.label}, ${Math.round(current.temperature_2m)}°C. View details.`}
         >
           <TimeGradient />
@@ -278,7 +310,7 @@ export default async function Home({ searchParams }: Props) {
             <span className="text-[#7ea8c2] text-xs">
               High {Math.round(daily.temperature_2m_max[0])}°C · Low {Math.round(daily.temperature_2m_min[0])}°C
             </span>
-            <span className="text-[#3b87d6] text-xs font-medium">View details →</span>
+            <span className="text-[var(--text-accent)] text-xs font-medium">View details →</span>
           </div>
         </Link>
 
@@ -325,14 +357,7 @@ export default async function Home({ searchParams }: Props) {
             <h2 className="text-[#5a7d99] text-xs font-semibold uppercase tracking-widest">
               5-Day Forecast
             </h2>
-            {/* Trend indicator */}
-            {(() => {
-              const temps = daily.temperature_2m_max.slice(0, 5);
-              const diff = Math.round(temps[4] - temps[0]);
-              if (diff > 2) return <span className="text-[10px] text-orange-400">↑ warming {diff}°</span>;
-              if (diff < -2) return <span className="text-[10px] text-blue-400">↓ cooling {Math.abs(diff)}°</span>;
-              return <span className="text-[10px] text-[#5a7d99]">→ steady</span>;
-            })()}
+            <TrendIndicator temps={daily.temperature_2m_max.slice(0, 5)} />
           </div>
           <div className="grid grid-cols-5 gap-2" role="list">
             {daily.time.slice(0, 5).map((dateStr, i) => {
@@ -355,16 +380,17 @@ export default async function Home({ searchParams }: Props) {
                   role="listitem"
                   aria-label={`${getDayName(dateStr)}: ${info.label}, high ${maxTemp}°C, low ${minTemp}°C`}
                   className={`rounded-lg p-3 text-center flex flex-col items-center transition-colors ${
-                    isToday ? "bg-[#1c3450] hover:bg-[#22405f]" : "bg-[#162535] hover:bg-[#1c2f3f]"
+                    isToday ? "bg-[var(--card-bg-secondary)] hover:bg-[#22405f]" : "bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)]"
                   }`}
                 >
-                  <div className={`text-xs font-semibold mb-1 ${isToday ? "text-[#3b87d6]" : "text-[#7ea8c2]"}`}>
+                  <div className={`text-xs font-semibold mb-1 ${isToday ? "text-[var(--text-accent)]" : "text-[#7ea8c2]"}`}>
                     {getDayName(dateStr)}
                   </div>
                   {i === bestDayIndex && (
                     <div className="text-[9px] text-amber-400 mb-1">⭐ Best</div>
                   )}
                   <div className="text-2xl mb-2" aria-hidden="true">{info.emoji}</div>
+
                   <div className="text-white text-sm font-semibold">{maxTemp}°</div>
                   <div className="relative h-1 bg-[#1e3347] rounded-full w-full my-2" role="presentation">
                     <div
@@ -388,36 +414,11 @@ export default async function Home({ searchParams }: Props) {
             })}
           </div>
 
-          {/* 5-day temperature sparkline */}
-          {(() => {
-            const maxTemps = daily.temperature_2m_max.slice(0, 5);
-            const minT = Math.min(...maxTemps);
-            const maxT = Math.max(...maxTemps);
-            const range = maxT - minT || 1;
-            const W = 100; const H = 20; const PAD = 3;
-            const px = (i: number) => (i / 4) * W;
-            const py = (t: number) => PAD + (1 - (t - minT) / range) * (H - PAD * 2);
-            const pts = maxTemps.map((t, i) => `${px(i).toFixed(1)},${py(t).toFixed(1)}`);
-            const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p}`).join(" ");
-            return (
-              <div className="mt-3 bg-[#162535] rounded-lg px-3 py-2 flex items-center gap-3">
-                <span className="text-[#5a7d99] text-[10px] shrink-0">Temp trend</span>
-                <svg viewBox={`0 0 ${W} ${H}`} className="flex-1 h-5" aria-hidden="true" preserveAspectRatio="none">
-                  <path d={d} fill="none" stroke="#3b87d6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  {maxTemps.map((t, i) => (
-                    <circle key={i} cx={px(i)} cy={py(t)} r="2" fill="#3b87d6" />
-                  ))}
-                </svg>
-                <span className="text-[#5a7d99] text-[10px] shrink-0">
-                  {Math.round(maxTemps[0])}° → {Math.round(maxTemps[4])}°
-                </span>
-              </div>
-            );
-          })()}
+          <TempSparkline maxTemps={daily.temperature_2m_max.slice(0, 5)} />
         </div>
 
         {/* Fun weather fact */}
-        <div className="bg-[#162535] rounded-xl p-4 mb-6 flex items-start gap-3" role="note">
+        <div className="bg-[var(--card-bg)] rounded-xl p-4 mb-6 flex items-start gap-3" role="note">
           <span className="text-2xl shrink-0" aria-hidden="true">💡</span>
           <div>
             <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>

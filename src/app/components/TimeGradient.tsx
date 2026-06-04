@@ -1,7 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
 const TIME_GRADIENTS: Record<string, string> = {
   dawn:      "linear-gradient(135deg, rgba(138,43,226,0.08) 0%, rgba(255,140,0,0.06) 50%, transparent 70%)",
   morning:   "linear-gradient(135deg, rgba(135,206,250,0.07) 0%, rgba(255,220,100,0.05) 50%, transparent 70%)",
@@ -21,22 +17,13 @@ function getTimePeriod(hour: number): string {
 }
 
 export default function TimeGradient({ className = "" }: { className?: string }) {
-  const [gradient, setGradient] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Defer to avoid synchronous setState in effect body (linter rule)
-    const id = setTimeout(() => {
-      const period = getTimePeriod(new Date().getHours());
-      setGradient(TIME_GRADIENTS[period] ?? null);
-    }, 0);
-    return () => clearTimeout(id);
-  }, []);
-
+  const period = getTimePeriod(new Date().getHours());
+  const gradient = TIME_GRADIENTS[period];
   if (!gradient) return null;
 
   return (
     <div
-      className={`pointer-events-none absolute inset-0 rounded-xl transition-opacity duration-1000 ${className}`}
+      className={`pointer-events-none absolute inset-0 rounded-xl ${className}`}
       style={{ background: gradient }}
       aria-hidden="true"
     />

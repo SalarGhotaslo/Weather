@@ -11,6 +11,7 @@ import {
   Marker,
 } from "react-simple-maps";
 import { geoCentroid } from "d3-geo";
+import type { Feature } from "geojson";
 import { normalizeCountryName } from "@/lib/countries";
 import type { CityMarker } from "@/app/api/city-markers/route";
 
@@ -112,8 +113,7 @@ export default function WorldMap() {
     (geo: { properties: { name: string }; [key: string]: unknown }) => {
       const rawName = geo.properties.name;
       const name = normalizeCountryName(rawName);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const centroid = geoCentroid(geo as any) as [number, number];
+      const centroid = geoCentroid(geo as unknown as Feature) as [number, number];
 
       setSelectedCountry(rawName); // raw name for Geography colour comparison
       setPosition({ coordinates: centroid, zoom: 4 });

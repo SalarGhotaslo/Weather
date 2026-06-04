@@ -29,7 +29,6 @@ import {
   type GeocodingResult,
 } from "./weather";
 import { formatPopulation, normalizeCountryName, selectCandidates } from "./countries";
-import { normalizeCountryName, selectCandidates } from "./countries";
 
 describe("getWeatherInfo", () => {
   it("returns Clear Sky for code 0", () => {
@@ -51,19 +50,19 @@ describe("getWeatherInfo", () => {
   });
 
   it("returns Drizzle for codes 51-57", () => {
-    expect(getWeatherInfo(51)).toEqual({ emoji: "🌦️", label: "Drizzle" });
-    expect(getWeatherInfo(55)).toEqual({ emoji: "🌦️", label: "Drizzle" });
-    expect(getWeatherInfo(57)).toEqual({ emoji: "🌦️", label: "Drizzle" });
+    expect(getWeatherInfo(51)).toEqual({ emoji: "🌦️", label: "Light Drizzle" });
+    expect(getWeatherInfo(55)).toEqual({ emoji: "🌧️", label: "Dense Drizzle" });
+    expect(getWeatherInfo(57)).toEqual({ emoji: "🌧️", label: "Dense Drizzle" });
   });
 
   it("returns Rain for codes 61-67", () => {
-    expect(getWeatherInfo(61)).toEqual({ emoji: "🌧️", label: "Rain" });
+    expect(getWeatherInfo(61)).toEqual({ emoji: "🌦️", label: "Light Rain" });
     expect(getWeatherInfo(65)).toEqual({ emoji: "🌧️", label: "Rain" });
-    expect(getWeatherInfo(67)).toEqual({ emoji: "🌧️", label: "Rain" });
+    expect(getWeatherInfo(67)).toEqual({ emoji: "🌧️", label: "Heavy Rain" });
   });
 
   it("returns Snow for codes 71-77", () => {
-    expect(getWeatherInfo(71)).toEqual({ emoji: "❄️", label: "Snow" });
+    expect(getWeatherInfo(71)).toEqual({ emoji: "🌨️", label: "Light Snow" });
     expect(getWeatherInfo(75)).toEqual({ emoji: "❄️", label: "Snow" });
     expect(getWeatherInfo(77)).toEqual({ emoji: "❄️", label: "Snow" });
   });
@@ -73,9 +72,15 @@ describe("getWeatherInfo", () => {
     expect(getWeatherInfo(82)).toEqual({ emoji: "🌦️", label: "Rain Showers" });
   });
 
+  it("returns Snow Showers for codes 85-86", () => {
+    expect(getWeatherInfo(85)).toEqual({ emoji: "🌨️", label: "Snow Showers" });
+    expect(getWeatherInfo(86)).toEqual({ emoji: "🌨️", label: "Snow Showers" });
+  });
+
   it("returns Thunderstorm for codes 95+", () => {
     expect(getWeatherInfo(95)).toEqual({ emoji: "⛈️", label: "Thunderstorm" });
-    expect(getWeatherInfo(99)).toEqual({ emoji: "⛈️", label: "Thunderstorm" });
+    expect(getWeatherInfo(96)).toEqual({ emoji: "🌩️", label: "Thunderstorm with Hail" });
+    expect(getWeatherInfo(99)).toEqual({ emoji: "🌩️", label: "Thunderstorm with Hail" });
   });
 
   it("returns Fair for unknown codes", () => {
@@ -834,28 +839,54 @@ describe("getWeatherAnimClass", () => {
     expect(getWeatherAnimClass(1)).toBe("weather-cloudy");
     expect(getWeatherAnimClass(2)).toBe("weather-cloudy");
   });
+  it("returns overcast class for overcast (code 3)", () => {
+    expect(getWeatherAnimClass(3)).toBe("weather-overcast");
+  });
   it("returns thunder class for thunderstorm (code 95+)", () => {
     expect(getWeatherAnimClass(95)).toBe("weather-thunder");
-    expect(getWeatherAnimClass(99)).toBe("weather-thunder");
+    expect(getWeatherAnimClass(96)).toContain("weather-thunder");
+    expect(getWeatherAnimClass(96)).toContain("weather-hail");
+    expect(getWeatherAnimClass(99)).toContain("weather-thunder");
+    expect(getWeatherAnimClass(99)).toContain("weather-hail");
   });
   it("returns snowy class for snow (codes 71-77)", () => {
     expect(getWeatherAnimClass(71)).toBe("weather-snowy");
     expect(getWeatherAnimClass(77)).toBe("weather-snowy");
   });
-  it("returns rainy class for rain (codes 61-67)", () => {
-    expect(getWeatherAnimClass(61)).toBe("weather-rainy");
-    expect(getWeatherAnimClass(67)).toBe("weather-rainy");
+  it("returns snowy class for snow showers (codes 85-86)", () => {
+    expect(getWeatherAnimClass(85)).toContain("weather-snowy");
+    expect(getWeatherAnimClass(85)).toContain("weather-showers");
   });
-  it("returns rainy class for showers (codes 80-82)", () => {
-    expect(getWeatherAnimClass(80)).toBe("weather-rainy");
-    expect(getWeatherAnimClass(82)).toBe("weather-rainy");
+  it("returns rainy class for rain (codes 64-67)", () => {
+    expect(getWeatherAnimClass(64)).toContain("weather-rainy");
+    expect(getWeatherAnimClass(64)).toContain("weather-heavy");
+    expect(getWeatherAnimClass(67)).toContain("weather-rainy");
+    expect(getWeatherAnimClass(67)).toContain("weather-heavy");
+  });
+  it("returns drizzle class for light rain (codes 61-63)", () => {
+    expect(getWeatherAnimClass(61)).toBe("weather-drizzle");
+    expect(getWeatherAnimClass(63)).toBe("weather-drizzle");
+  });
+  it("returns drizzle class for light drizzle (codes 51-53)", () => {
+    expect(getWeatherAnimClass(51)).toBe("weather-drizzle");
+    expect(getWeatherAnimClass(53)).toBe("weather-drizzle");
+  });
+  it("returns heavy class for dense drizzle (codes 55-57)", () => {
+    expect(getWeatherAnimClass(55)).toContain("weather-rainy");
+    expect(getWeatherAnimClass(55)).toContain("weather-heavy");
+  });
+  it("returns showers class for rain showers (codes 80-82)", () => {
+    expect(getWeatherAnimClass(80)).toContain("weather-rainy");
+    expect(getWeatherAnimClass(80)).toContain("weather-showers");
+    expect(getWeatherAnimClass(82)).toContain("weather-rainy");
+    expect(getWeatherAnimClass(82)).toContain("weather-showers");
   });
   it("returns foggy class for fog (codes 45, 48)", () => {
     expect(getWeatherAnimClass(45)).toBe("weather-foggy");
     expect(getWeatherAnimClass(48)).toBe("weather-foggy");
   });
-  it("returns cloudy as default for overcast (code 3)", () => {
-    expect(getWeatherAnimClass(3)).toBe("weather-cloudy");
+  it("returns cloudy as default", () => {
+    expect(getWeatherAnimClass(-1)).toBe("weather-cloudy");
   });
 });
 

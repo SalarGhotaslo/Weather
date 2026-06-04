@@ -171,11 +171,17 @@ export function getWeatherInfo(code: number): { emoji: string; label: string } {
   if (code === 1 || code === 2) return { emoji: "⛅", label: "Partly Cloudy" };
   if (code === 3) return { emoji: "☁️", label: "Overcast" };
   if (code === 45 || code === 48) return { emoji: "🌫️", label: "Foggy" };
-  if (code >= 51 && code <= 57) return { emoji: "🌦️", label: "Drizzle" };
-  if (code >= 61 && code <= 67) return { emoji: "🌧️", label: "Rain" };
-  if (code >= 71 && code <= 77) return { emoji: "❄️", label: "Snow" };
+  if (code >= 51 && code <= 53) return { emoji: "🌦️", label: "Light Drizzle" };
+  if (code >= 55 && code <= 57) return { emoji: "🌧️", label: "Dense Drizzle" };
+  if (code === 61 || code === 63) return { emoji: "🌦️", label: "Light Rain" };
+  if (code === 65 || code === 66) return { emoji: "🌧️", label: "Rain" };
+  if (code === 67) return { emoji: "🌧️", label: "Heavy Rain" };
+  if (code >= 71 && code <= 73) return { emoji: "🌨️", label: "Light Snow" };
+  if (code === 75 || code === 77) return { emoji: "❄️", label: "Snow" };
   if (code >= 80 && code <= 82) return { emoji: "🌦️", label: "Rain Showers" };
-  if (code >= 95) return { emoji: "⛈️", label: "Thunderstorm" };
+  if (code >= 85 && code <= 86) return { emoji: "🌨️", label: "Snow Showers" };
+  if (code === 95) return { emoji: "⛈️", label: "Thunderstorm" };
+  if (code >= 96) return { emoji: "🌩️", label: "Thunderstorm with Hail" };
   return { emoji: "🌤️", label: "Fair" };
 }
 
@@ -614,6 +620,13 @@ export function getWeatherAlert(
       message:
         "Severe thunderstorm conditions expected. Stay indoors and away from windows and tall trees.",
     };
+  if (weatherCode >= 85 && weatherCode <= 86 && precipSum > 5)
+    return {
+      level: "advisory",
+      title: "Snow Showers Advisory",
+      message:
+        "Snow showers expected. Brief bursts of snow may create slippery surfaces — take care if travelling.",
+    };
   if (weatherCode >= 71 && weatherCode <= 77 && precipSum > 10)
     return {
       level: "warning",
@@ -672,6 +685,7 @@ export function getDressCode(
 
   if (weatherCode >= 51 && weatherCode <= 82) items.push("Waterproof jacket or umbrella");
   if (weatherCode >= 71 && weatherCode <= 77) items.push("Waterproof & grip footwear");
+  if (weatherCode >= 85 && weatherCode <= 86) items.push("Waterproof & grip footwear");
   if (weatherCode >= 95) items.push("Shelter nearby if going out");
   if (windSpeedMax > 45) items.push("Wind-resistant outer layer");
   if (weatherCode === 0 && tempMax > 18) items.push("Sunglasses & sunscreen SPF 30+");
@@ -691,13 +705,19 @@ export function getDressCode(
 // ── Weather emoji animation class ────────────────────────────────────
 
 export function getWeatherAnimClass(code: number): string {
-  if (code === 0) return "weather-sunny weather-sunny-glow";
+  if (code === 0) return "weather-sunny";
   if (code === 1 || code === 2) return "weather-cloudy";
-  if (code === 3) return "weather-cloudy";
+  if (code === 3) return "weather-overcast";
   if (code === 45 || code === 48) return "weather-foggy";
-  if (code >= 95) return "weather-thunder";
+  if (code >= 96) return "weather-thunder weather-hail";
+  if (code === 95) return "weather-thunder";
   if (code >= 71 && code <= 77) return "weather-snowy";
-  if (code >= 51 && code <= 82) return "weather-rainy";
+  if (code >= 85 && code <= 86) return "weather-snowy weather-showers";
+  if (code >= 64 && code <= 67) return "weather-rainy weather-heavy";
+  if (code >= 55 && code <= 57) return "weather-rainy weather-heavy";
+  if (code >= 80 && code <= 82) return "weather-rainy weather-showers";
+  if (code >= 51 && code <= 53) return "weather-drizzle";
+  if (code === 61 || code === 63) return "weather-drizzle";
   return "weather-cloudy";
 }
 
@@ -706,6 +726,8 @@ export function getWeatherAnimClass(code: number): string {
 export function getWeatherFact(code: number, temp: number): string {
   if (code >= 95)
     return "Lightning strikes Earth ~100 times every second — about 8 million bolts a day.";
+  if (code >= 85 && code <= 86)
+    return "Snow showers are bursts of snow that come and go quickly — often with brief sunny breaks between them.";
   if (code >= 71 && code <= 77)
     return "No two snowflakes are identical. Each crystal forms a unique pattern as it falls through different temperature layers.";
   if (code >= 61 && code <= 67)

@@ -10,6 +10,8 @@ const cloudDefs = [
   { left: "55%", top: "4%", scale: 1.1, delay: "-14s", dur: "20s" },
   { left: "75%", top: "18%", scale: 0.6, delay: "-4s", dur: "28s" },
   { left: "10%", top: "32%", scale: 0.5, delay: "-11s", dur: "30s" },
+  { left: "45%", top: "25%", scale: 0.4, delay: "-5s", dur: "24s" },
+  { left: "-5%", top: "10%", scale: 0.85, delay: "-18s", dur: "25s" },
 ];
 
 function CloudShape({ left, top, scale = 1, delay = "0s", dur = "20s" }: {
@@ -68,11 +70,11 @@ function CloudShape({ left, top, scale = 1, delay = "0s", dur = "20s" }: {
 
 // ── Rain ───────────────────────────────────────────────────────────
 
-const rainDrops = Array.from({ length: 60 }, (_, i) => ({
-  left: (i * 17 + 7) % 100,
-  delay: (i * 0.08) % 1.2,
-  dur: 0.35 + (i % 5) * 0.05,
-  len: 35 + (i % 4) * 10,
+const rainDrops = Array.from({ length: 80 }, (_, i) => ({
+  left: (i * 13 + 5) % 100,
+  delay: (i * 0.06) % 1.5,
+  dur: 0.3 + (i % 6) * 0.04,
+  len: 25 + (i % 5) * 10,
 }));
 
 function RainEffect() {
@@ -87,22 +89,21 @@ function RainEffect() {
             top: `${-d.len}px`,
             width: "2px",
             height: `${d.len}px`,
-            background: "linear-gradient(to bottom, transparent 0%, rgba(130,180,240,0.45) 45%, rgba(130,180,240,0.55) 55%, transparent 100%)",
+            background: "linear-gradient(to bottom, transparent 0%, rgba(130,180,240,0.5) 40%, rgba(140,190,245,0.6) 60%, transparent 100%)",
             animation: `rain-fall ${d.dur}s linear ${d.delay}s infinite`,
             borderRadius: "1px",
           }}
         />
       ))}
-      {/* Splash layer */}
-      {rainDrops.slice(0, 15).map((d, i) => (
+      {rainDrops.slice(0, 20).map((d, i) => (
         <div
           key={`s${i}`}
           className="absolute w-[3px] h-[3px] rounded-full"
           style={{
             left: `${(d.left + 3) % 100}%`,
-            bottom: `${5 + (i % 8) * 2}%`,
-            background: "rgba(130,180,240,0.2)",
-            animation: `rain-splash ${0.3 + (i % 3) * 0.05}s ease-out ${d.delay}s infinite`,
+            bottom: `${5 + (i % 10) * 2}%`,
+            background: "rgba(130,180,240,0.25)",
+            animation: `rain-splash ${0.3 + (i % 4) * 0.04}s ease-out ${d.delay}s infinite`,
           }}
         />
       ))}
@@ -112,11 +113,11 @@ function RainEffect() {
 
 // ── Snow ───────────────────────────────────────────────────────────
 
-const snowFlakes = Array.from({ length: 60 }, (_, i) => ({
-  left: (i * 13 + 11) % 100,
-  delay: (i * 0.25) % 4,
-  dur: 5 + (i % 8) * 0.4,
-  size: 5 + (i % 5) * 3,
+const snowFlakes = Array.from({ length: 80 }, (_, i) => ({
+  left: (i * 12 + 7) % 100,
+  delay: (i * 0.2) % 5,
+  dur: 4 + (i % 10) * 0.5,
+  size: 4 + (i % 6) * 3,
 }));
 
 function SnowEffect() {
@@ -131,14 +132,16 @@ function SnowEffect() {
             top: `${-s.size}px`,
             width: `${s.size}px`,
             height: `${s.size}px`,
-            background: i % 3 === 0
-              ? "rgba(220,240,255,0.7)"
-              : i % 3 === 1
-                ? "rgba(240,248,255,0.6)"
-                : "rgba(200,225,250,0.5)",
+            background: i % 4 === 0
+              ? "rgba(220,240,255,0.75)"
+              : i % 4 === 1
+                ? "rgba(240,248,255,0.65)"
+                : i % 4 === 2
+                  ? "rgba(200,225,250,0.55)"
+                  : "rgba(255,255,255,0.45)",
             animation: `snow-fall ${s.dur}s linear ${s.delay}s infinite`,
             borderRadius: "50%",
-            boxShadow: i % 4 === 0 ? "0 0 4px rgba(200,225,255,0.3)" : "none",
+            boxShadow: i % 3 === 0 ? "0 0 6px rgba(200,225,255,0.4)" : "none",
           }}
         />
       ))}
@@ -151,7 +154,7 @@ function SnowEffect() {
 function ThunderEffect() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      {rainDrops.slice(0, 40).map((d, i) => (
+      {rainDrops.slice(0, 50).map((d, i) => (
         <div
           key={i}
           className="absolute"
@@ -160,17 +163,16 @@ function ThunderEffect() {
             top: `${-d.len}px`,
             width: "2.5px",
             height: `${d.len + 10}px`,
-            background: "linear-gradient(to bottom, transparent 0%, rgba(150,180,255,0.55) 45%, rgba(150,180,255,0.65) 55%, transparent 100%)",
+            background: "linear-gradient(to bottom, transparent 0%, rgba(150,180,255,0.6) 40%, rgba(170,200,255,0.7) 60%, transparent 100%)",
             animation: `rain-fall ${d.dur * 0.7}s linear ${d.delay}s infinite`,
             borderRadius: "1px",
           }}
         />
       ))}
-      {/* Lightning flash overlay */}
       <div
         className="absolute inset-0"
         style={{
-          background: "rgba(200,210,255,0.6)",
+          background: "radial-gradient(ellipse at 50% 0%, rgba(200,210,255,0.5) 0%, transparent 70%)",
           animation: "lightning-flash 8s ease-in-out infinite",
           opacity: 0,
         }}
@@ -184,35 +186,49 @@ function ThunderEffect() {
 function SunEffect() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      {/* Sun glow */}
+      {/* Large outer glow */}
       <div
         className="absolute"
         style={{
-          top: "-80px",
-          right: "-80px",
-          width: "400px",
-          height: "400px",
-          background: "radial-gradient(circle, rgba(255,220,100,0.15) 0%, rgba(255,200,50,0.08) 30%, transparent 70%)",
+          top: "-100px",
+          right: "-100px",
+          width: "500px",
+          height: "500px",
+          background: "radial-gradient(circle, rgba(255,220,100,0.18) 0%, rgba(255,200,50,0.1) 25%, rgba(255,180,30,0.04) 50%, transparent 70%)",
           borderRadius: "50%",
+          animation: "pulse-glow 4s ease-in-out infinite",
         }}
       />
-      {/* Sun rays */}
+      {/* Sun rays — larger */}
       <div
         className="absolute"
         style={{
           top: "20px",
           right: "20px",
-          width: "120px",
-          height: "120px",
-          background: "conic-gradient(from 0deg, transparent, rgba(255,220,100,0.06) 10%, transparent 20%, rgba(255,220,100,0.04) 30%, transparent 40%, rgba(255,220,100,0.06) 50%, transparent 60%, rgba(255,220,100,0.04) 70%, transparent 80%, rgba(255,220,100,0.06) 90%, transparent)",
+          width: "140px",
+          height: "140px",
+          background: "conic-gradient(from 0deg, transparent, rgba(255,220,100,0.08) 8%, transparent 16%, rgba(255,220,100,0.05) 24%, transparent 32%, rgba(255,220,100,0.08) 40%, transparent 48%, rgba(255,200,50,0.05) 56%, transparent 64%, rgba(255,220,100,0.08) 72%, transparent 80%, rgba(255,220,100,0.05) 88%, transparent 96%)",
           borderRadius: "50%",
-          animation: "spin-slow 20s linear infinite",
+          animation: "spin-slow 18s linear infinite",
         }}
       />
-      {/* Sparkle particles */}
-      {[18, 37, 55, 72, 88].map((seed, i) => {
-        const top = 10 + (seed * 3) % 35;
-        const left = 65 + (seed * 7) % 30;
+      {/* Secondary counter-rotating rays */}
+      <div
+        className="absolute"
+        style={{
+          top: "40px",
+          right: "40px",
+          width: "100px",
+          height: "100px",
+          background: "conic-gradient(from 90deg, transparent, rgba(255,200,50,0.04) 12%, transparent 24%, rgba(255,200,50,0.06) 36%, transparent 48%, rgba(255,200,50,0.04) 60%, transparent 72%, rgba(255,200,50,0.06) 84%, transparent)",
+          borderRadius: "50%",
+          animation: "spin-slow 25s linear infinite reverse",
+        }}
+      />
+      {/* Sparkle particles — more of them */}
+      {[7, 18, 29, 37, 44, 55, 63, 72, 81, 88].map((seed, i) => {
+        const top = 5 + (seed * 3) % 40;
+        const left = 60 + (seed * 7) % 35;
         return (
           <div
             key={i}
@@ -220,10 +236,12 @@ function SunEffect() {
             style={{
               top: `${top}%`,
               left: `${left}%`,
-              width: "3px",
-              height: "3px",
-              background: "rgba(255,230,150,0.5)",
-              animation: `sparkle ${2 + i * 0.5}s ease-in-out ${i * 0.8}s infinite`,
+              width: i % 2 === 0 ? "4px" : "2px",
+              height: i % 2 === 0 ? "4px" : "2px",
+              background: i % 3 === 0
+                ? "rgba(255,230,150,0.6)"
+                : "rgba(255,250,220,0.4)",
+              animation: `sparkle ${1.5 + i * 0.4}s ease-in-out ${i * 0.6}s infinite`,
               borderRadius: "50%",
             }}
           />
@@ -236,10 +254,12 @@ function SunEffect() {
 // ── Fog ────────────────────────────────────────────────────────────
 
 const fogLayers = [
-  { left: "0%", top: "5%", w: "120%", h: "35%", delay: "0s", dur: "12s", op: 0.12 },
-  { left: "-10%", top: "30%", w: "130%", h: "30%", delay: "-4s", dur: "15s", op: 0.10 },
-  { left: "5%", top: "55%", w: "110%", h: "25%", delay: "-8s", dur: "10s", op: 0.08 },
-  { left: "-5%", top: "75%", w: "120%", h: "30%", delay: "-2s", dur: "13s", op: 0.09 },
+  { left: "0%", top: "5%", w: "120%", h: "35%", delay: "0s", dur: "12s", op: 0.14 },
+  { left: "-10%", top: "28%", w: "130%", h: "28%", delay: "-4s", dur: "15s", op: 0.11 },
+  { left: "5%", top: "50%", w: "110%", h: "22%", delay: "-8s", dur: "10s", op: 0.09 },
+  { left: "-5%", top: "70%", w: "120%", h: "28%", delay: "-2s", dur: "13s", op: 0.10 },
+  { left: "3%", top: "15%", w: "115%", h: "20%", delay: "-6s", dur: "11s", op: 0.07 },
+  { left: "-8%", top: "42%", w: "125%", h: "18%", delay: "-10s", dur: "14s", op: 0.06 },
 ];
 
 function FogEffect() {
@@ -254,8 +274,8 @@ function FogEffect() {
             top: f.top,
             width: f.w,
             height: f.h,
-            background: "linear-gradient(90deg, transparent, rgba(180,200,220,0.06), rgba(200,215,230,0.10), rgba(180,200,220,0.06), transparent)",
-            filter: "blur(40px)",
+            background: "linear-gradient(90deg, transparent, rgba(180,200,220,0.07), rgba(200,215,230,0.11), rgba(180,200,220,0.07), transparent)",
+            filter: "blur(50px)",
             animation: `fog-drift ${f.dur}s ease-in-out ${f.delay}s infinite`,
             opacity: f.op,
           }}
@@ -279,7 +299,7 @@ const overlayMap: Record<string, React.FC> = {
   overcast: () => (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
       {cloudDefs.map((c, i) => (
-        <CloudShape key={i} {...c} scale={c.scale * 1.3} dur={`${parseInt(c.dur) + 5}s`} />
+        <CloudShape key={i} {...c} scale={c.scale * 1.4} dur={`${parseInt(c.dur) + 6}s`} />
       ))}
     </div>
   ),

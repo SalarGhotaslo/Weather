@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
     // proceed with empty list
   }
 
-  // Sample up to 150 cities spread evenly across the alphabetically sorted list.
-  const candidates = selectCandidates(cities, 150);
+  // Sample up to 80 cities spread evenly across the alphabetically sorted list.
+  const candidates = selectCandidates(cities, 80);
 
   if (candidates.length === 0) return Response.json([]);
 

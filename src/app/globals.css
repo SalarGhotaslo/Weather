@@ -37,10 +37,15 @@ body {
   [aria-label="Skip to main content"],
   .weather-sunny,
   .weather-cloudy,
+  .weather-overcast,
+  .weather-drizzle,
   .weather-rainy,
   .weather-snowy,
   .weather-thunder,
-  .weather-foggy {
+  .weather-foggy,
+  .weather-hail,
+  .weather-heavy,
+  .weather-showers {
     display: none !important;
     animation: none !important;
   }
@@ -124,82 +129,74 @@ body {
 }
 
 [data-weather="clear"]::before {
-  background: linear-gradient(90deg, #4da6e8, #fbbf24);
+  background: linear-gradient(90deg, #4da6e8, #fbbf24, #f59e0b);
 }
 [data-weather="partly-cloudy"]::before {
   background: linear-gradient(90deg, #3b87d6, #7ea8c2);
 }
 [data-weather="overcast"]::before {
-  background: #5a7d99;
+  background: #6a8aa8;
 }
 [data-weather="foggy"]::before {
-  background: #7a9ab5;
+  background: #8aaac5;
 }
 [data-weather="rainy"]::before {
-  background: linear-gradient(90deg, #1e5f8e, #4a90d9);
+  background: linear-gradient(90deg, #1e5f8e, #3a7fc8);
 }
 [data-weather="snowy"]::before {
-  background: linear-gradient(90deg, #8fc1e8, #c8dae7);
+  background: linear-gradient(90deg, #8fc1e8, #d0e4f0);
 }
 [data-weather="thunderstorm"]::before {
-  background: linear-gradient(90deg, #4a2f80, #8b6fcf);
+  background: linear-gradient(90deg, #4a2f80, #8b6fcf, #6a3fa0);
 }
 
-/* ── Weather card tints ───────────────────────────────────────────── */
+/* ── Weather card tints via CSS custom properties ────────────────────
+ *
+ * Instead of `[class*="bg-[#162535]"]` selectors (which break if Tailwind
+ * changes class generation), the root element sets data-weather and
+ * CSS variables. Components use `bg-[var(--card-bg)]` etc.
+ */
 
-[data-weather="thunderstorm"] [class*="bg-[#162535]"] {
-  background-color: #151830 !important;
-}
-[data-weather="thunderstorm"] [class*="bg-[#1c2f3f]"] {
-  background-color: #1a1d35 !important;
-}
-[data-weather="thunderstorm"] [class*="bg-[#1c3450]"] {
-  background-color: #1d1f3a !important;
-}
-
-[data-weather="rainy"] [class*="bg-[#162535]"] {
-  background-color: #0f1f30 !important;
-}
-[data-weather="rainy"] [class*="bg-[#1c2f3f]"] {
-  background-color: #122438 !important;
+[data-weather] {
+  --card-bg: #162535;
+  --card-bg-alt: #1c2f3f;
+  --card-bg-secondary: #1c3450;
+  --text-accent: #3b87d6;
+  --border-accent: #3b87d6;
+  --accent-color: #3b87d6;
 }
 
-[data-weather="snowy"] [class*="bg-[#162535]"] {
-  background-color: #1e3245 !important;
-}
-[data-weather="snowy"] [class*="bg-[#1c2f3f]"] {
-  background-color: #253b50 !important;
-}
-
-[data-weather="foggy"] [class*="bg-[#162535]"] {
-  background-color: #202e3a !important;
-}
-[data-weather="foggy"] [class*="bg-[#1c2f3f]"] {
-  background-color: #263542 !important;
+[data-weather="thunderstorm"] {
+  --card-bg: #141630;
+  --card-bg-alt: #191c34;
+  --card-bg-secondary: #1c1e38;
+  --text-accent: #8b6fcf;
+  --border-accent: #6b4faf;
+  --accent-color: #6b4faf;
 }
 
-[data-weather="clear"] [class*="bg-[#162535]"] {
-  background-color: #1a3350 !important;
-}
-[data-weather="clear"] [class*="bg-[#1c2f3f]"] {
-  background-color: #203d5c !important;
-}
-[data-weather="clear"] [class*="bg-[#1c3450]"] {
-  background-color: #244466 !important;
+[data-weather="rainy"] {
+  --card-bg: #0e1e2e;
+  --card-bg-alt: #112234;
 }
 
-/* Weather accent colour for links / buttons */
-[data-weather="thunderstorm"] [class*="text-[#3b87d6]"] {
-  color: #8b6fcf !important;
-}
-[data-weather="clear"] [class*="text-[#3b87d6]"] {
-  color: #4da6e8 !important;
+[data-weather="snowy"] {
+  --card-bg: #1e3245;
+  --card-bg-alt: #253b50;
+  --text-accent: #8fc1e8;
 }
 
-[data-weather="thunderstorm"] [class*="border-[#3b87d6]"],
-[data-weather="thunderstorm"] [class*="bg-[#3b87d6]"] {
-  background-color: #6b4faf !important;
-  border-color: #6b4faf !important;
+[data-weather="foggy"] {
+  --card-bg: #222f3c;
+  --card-bg-alt: #283644;
+  --text-accent: #8aaac5;
+}
+
+[data-weather="clear"] {
+  --card-bg: #1a3350;
+  --card-bg-alt: #203d5c;
+  --card-bg-secondary: #244466;
+  --text-accent: #4da6e8;
 }
 
 /* ── Weather ambient animations ──────────────────────────────────── */
@@ -238,13 +235,13 @@ body {
 }
 
 @keyframes lightning-flash {
-  0%, 80%, 100% { opacity: 0; }
-  82%  { opacity: 0.35; }
-  84%  { opacity: 0; }
-  86%  { opacity: 0.5; }
-  88%  { opacity: 0; }
-  92%  { opacity: 0.15; }
-  94%  { opacity: 0; }
+  0%, 82%, 100% { opacity: 0; }
+  84%  { opacity: 0.4; }
+  86%  { opacity: 0; }
+  88%  { opacity: 0.6; }
+  90%  { opacity: 0; }
+  93%  { opacity: 0.2; }
+  95%  { opacity: 0; }
 }
 
 @keyframes sparkle {
@@ -262,27 +259,68 @@ body {
   to   { transform: rotate(360deg); }
 }
 
+@keyframes pulse-glow {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 4px rgba(255,200,50,0.3)); }
+  50%      { filter: brightness(1.2) drop-shadow(0 0 12px rgba(255,200,50,0.6)); }
+}
+
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
+  50%      { transform: translateY(-8px); }
 }
 
-@keyframes rain-sway {
-  0%, 100% { transform: rotate(-8deg) translateY(0); }
-  50%       { transform: rotate(8deg) translateY(5px); }
+@keyframes sway {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50%      { transform: rotate(4deg) translateY(4px); }
 }
 
-@keyframes snow-drift {
-  0%   { transform: translateX(0) translateY(0) rotate(0deg); }
-  33%  { transform: translateX(5px) translateY(-3px) rotate(12deg); }
-  66%  { transform: translateX(-4px) translateY(4px) rotate(-10deg); }
-  100% { transform: translateX(0) translateY(0) rotate(0deg); }
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  15%      { transform: translateX(-3px) rotate(-5deg); }
+  30%      { transform: translateX(3px) rotate(5deg); }
+  45%      { transform: translateX(-2px) rotate(-3deg); }
+  60%      { transform: translateX(2px) rotate(3deg); }
+  75%      { transform: translateX(-1px) rotate(-1deg); }
+  90%      { transform: translateX(1px) rotate(1deg); }
+}
+
+@keyframes drizzle-fall {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  15%  { opacity: 0.6; }
+  50%  { opacity: 0.4; }
+  85%  { opacity: 0.6; }
+  100% { transform: translateY(60vh) translateX(-5px); opacity: 0; }
+}
+
+@keyframes heavy-rain {
+  0%   { transform: translateY(0) translateX(0) skewX(-10deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(110vh) translateX(-15px) skewX(-10deg); opacity: 0; }
+}
+
+@keyframes snow-swirl {
+  0%   { transform: translateX(0) translateY(0) rotate(0deg) scale(1); opacity: 0; }
+  10%  { opacity: 0.9; }
+  50%  { transform: translateX(15px) translateY(55vh) rotate(180deg) scale(1.1); opacity: 0.8; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateX(-5px) translateY(105vh) rotate(360deg) scale(0.8); opacity: 0; }
+}
+
+/* Static glow for hero emojis that don't animate */
+.weather-sunny-glow {
+  filter: drop-shadow(0 0 10px rgba(255,200,50,0.35));
 }
 
 /* Apply via className on emoji wrapper spans */
-.weather-sunny   { animation: spin-slow 14s linear infinite; display: inline-block; }
-.weather-cloudy  { animation: cloud-drift 4s ease-in-out infinite; display: inline-block; }
-.weather-rainy   { animation: rain-fall 0.8s linear infinite; display: inline-block; }
-.weather-snowy   { animation: snow-fall 5s linear infinite; display: inline-block; }
-.weather-thunder { animation: lightning-flash 6s ease-in-out infinite; display: inline-block; }
-.weather-foggy   { animation: fog-drift 7s ease-in-out infinite; display: inline-block; }
+.weather-sunny    { animation: spin-slow 10s linear infinite, pulse-glow 3s ease-in-out infinite; display: inline-block; filter: drop-shadow(0 0 6px rgba(255,200,50,0.4)); }
+.weather-cloudy   { animation: bob 3s ease-in-out infinite; display: inline-block; }
+.weather-overcast { animation: sway 4s ease-in-out infinite; display: inline-block; filter: grayscale(0.3); }
+.weather-drizzle  { animation: drizzle-fall 1.2s linear infinite; display: inline-block; opacity: 0.85; }
+.weather-rainy    { animation: rain-fall 0.8s linear infinite; display: inline-block; }
+.weather-heavy    { animation: heavy-rain 0.5s linear infinite; display: inline-block; }
+.weather-showers  { animation: rain-fall 0.6s linear infinite; display: inline-block; }
+.weather-snowy    { animation: snow-swirl 4s linear infinite; display: inline-block; }
+.weather-thunder  { animation: lightning-flash 6s ease-in-out infinite; display: inline-block; }
+.weather-hail     { animation: shake 0.5s ease-in-out infinite; display: inline-block; }
+.weather-foggy    { animation: fog-drift 7s ease-in-out infinite; display: inline-block; opacity: 0.7; }
