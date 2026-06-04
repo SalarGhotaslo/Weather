@@ -9,6 +9,8 @@ import {
   describeUV,
   getWeatherAnimClass,
   getWeatherFact,
+  getWindDirection,
+  getWindArrow,
   type WeatherResponse,
 } from "@/lib/weather";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
@@ -47,14 +49,15 @@ function getBarColor(avgTemp: number): string {
   return "#f97316";
 }
 
-function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
+function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
     <div className="bg-[#162535] rounded-lg px-4 py-3">
       <div className="text-[#5a7d99] text-xs mb-1">{label}</div>
       <div className="flex items-center gap-1.5">
-        <span className="text-base">{icon}</span>
+        <span className="text-base" aria-hidden="true">{icon}</span>
         <span className="text-white font-semibold text-sm">{value}</span>
       </div>
+      {sub && <div className="text-[#5a7d99] text-[10px] mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -238,11 +241,18 @@ export default async function Home({ searchParams }: Props) {
         </Link>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-2 gap-2 mb-6 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 mb-6 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard icon="💧" label="Humidity" value={`${current.relative_humidity_2m}%`} />
-          <StatCard icon="💨" label="Wind" value={`${Math.round(current.wind_speed_10m)} km/h`} />
+          <StatCard
+            icon="💨"
+            label="Wind"
+            value={`${Math.round(current.wind_speed_10m)} km/h`}
+            sub={`${getWindArrow(current.wind_direction_10m)} ${getWindDirection(current.wind_direction_10m)}`}
+          />
           <StatCard icon="🌧️" label="Precipitation" value={`${daily.precipitation_sum[0]} mm`} />
           <StatCard icon="☀️" label="UV Index" value={`${daily.uv_index_max[0]} · ${uvToday.label}`} />
+          <StatCard icon="🌡️" label="Pressure" value={`${Math.round(current.surface_pressure)} hPa`} />
+          <StatCard icon="🌅" label="Sunrise" value={daily.sunrise[0].split("T")[1]} sub={`Sunset ${daily.sunset[0].split("T")[1]}`} />
         </div>
 
         {/* 5-day forecast */}

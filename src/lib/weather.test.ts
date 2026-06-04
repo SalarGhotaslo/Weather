@@ -15,6 +15,8 @@ import {
   getWeatherAnimClass,
   getWeatherFact,
   getWeatherAlert,
+  getWindDirection,
+  getWindArrow,
   type HourlyForecastResponse,
   type GeocodingResult,
 } from "./weather";
@@ -415,6 +417,31 @@ describe("selectCandidates", () => {
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
   });
+});
+
+describe("getWindDirection", () => {
+  it("returns N for 0°", () => expect(getWindDirection(0)).toBe("N"));
+  it("returns N for 360°", () => expect(getWindDirection(360)).toBe("N"));
+  it("returns E for 90°", () => expect(getWindDirection(90)).toBe("E"));
+  it("returns S for 180°", () => expect(getWindDirection(180)).toBe("S"));
+  it("returns W for 270°", () => expect(getWindDirection(270)).toBe("W"));
+  it("returns NE for 45°", () => expect(getWindDirection(45)).toBe("NE"));
+  it("returns SW for 225°", () => expect(getWindDirection(225)).toBe("SW"));
+  it("handles negative degrees (wraps correctly)", () => {
+    expect(getWindDirection(-90)).toBe("W"); // -90 + 360 = 270
+  });
+  it("handles degrees > 360", () => {
+    expect(getWindDirection(450)).toBe("E"); // 450 % 360 = 90
+  });
+});
+
+describe("getWindArrow", () => {
+  it("returns ↑ for North", () => expect(getWindArrow(0)).toBe("↑"));
+  it("returns ↓ for South", () => expect(getWindArrow(180)).toBe("↓"));
+  it("returns → for East", () => expect(getWindArrow(90)).toBe("→"));
+  it("returns ← for West", () => expect(getWindArrow(270)).toBe("←"));
+  it("returns ↗ for NE", () => expect(getWindArrow(45)).toBe("↗"));
+  it("returns ↙ for SW", () => expect(getWindArrow(225)).toBe("↙"));
 });
 
 describe("getWeatherAlert", () => {

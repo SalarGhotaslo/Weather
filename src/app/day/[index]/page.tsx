@@ -17,11 +17,96 @@ import {
   getWeatherAnimClass,
   getWeatherFact,
   getWeatherAlert,
+  getWindDirection,
+  getWindArrow,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
+  type HourlyEntry,
 } from "@/lib/weather";
 import Header from "@/app/components/Header";
+
+// ── Server-rendered SVG temperature curve ─────────────────────────────
+
+function smoothPath(pts: { x: number; y: number }[]): string {
+  if (pts.length < 2) return "";
+  const parts = [`M ${pts[0].x},${pts[0].y}`];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const t = 0.25;
+    const cp1x = p1.x + (p2.x - p0.x) * t;
+    const cp1y = p1.y + (p2.y - p0.y) * t;
+    const cp2x = p2.x - (p3.x - p1.x) * t;
+    const cp2y = p2.y - (p3.y - p1.y) * t;
+    parts.push(`C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x},${p2.y}`);
+  }
+  return parts.join(" ");
+}
+
+function TempCurve({
+  entries,
+  sunriseHour,
+  sunsetHour,
+}: {
+  entries: HourlyEntry[];
+  sunriseHour: number;
+  sunsetHour: number;
+}) {
+  if (entries.length < 2) return null;
+
+  const W = 480;
+  const H = 64;
+  const PY = 10; // vertical padding
+  const temps = entries.map((e) => e.temp);
+  const minT = Math.min(...temps);
+  const maxT = Math.max(...temps);
+  const range = maxT - minT || 1;
+
+  const px = (i: number) => (i / (entries.length - 1)) * W;
+  const py = (t: number) => PY + (1 - (t - minT) / range) * (H - PY * 2);
+
+  const pts = entries.map((e, i) => ({ x: px(i), y: py(e.temp) }));
+  const linePath = smoothPath(pts);
+  const fillPath = `${linePath} L ${W},${H} L 0,${H} Z`;
+
+  // Sunrise / sunset x positions
+  const sxRise = px(Math.min(sunriseHour, entries.length - 1));
+  const sxSet = px(Math.min(sunsetHour, entries.length - 1));
+
+  return (
+    <div className="mb-4 -mx-1 px-1">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full h-16"
+        aria-hidden="true"
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b87d6" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#3b87d6" stopOpacity="0.03" />
+          </linearGradient>
+        </defs>
+        {/* Night shading */}
+        <rect x="0" y="0" width={sxRise} height={H} fill="#0e1723" fillOpacity="0.5" />
+        <rect x={sxSet} y="0" width={W - sxSet} height={H} fill="#0e1723" fillOpacity="0.5" />
+        {/* Sunrise/sunset lines */}
+        <line x1={sxRise} y1="0" x2={sxRise} y2={H} stroke="#fbbf24" strokeWidth="1" strokeDasharray="3,3" strokeOpacity="0.6" />
+        <line x1={sxSet} y1="0" x2={sxSet} y2={H} stroke="#f97316" strokeWidth="1" strokeDasharray="3,3" strokeOpacity="0.6" />
+        {/* Fill under curve */}
+        <path d={fillPath} fill="url(#tempFill)" />
+        {/* Curve */}
+        <path d={linePath} fill="none" stroke="#3b87d6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Min/max labels */}
+        <text x="4" y={py(maxT) - 3} fontSize="9" fill="#7ea8c2">{maxT}°</text>
+        <text x="4" y={py(minT) + 9} fontSize="9" fill="#7ea8c2">{minT}°</text>
+      </svg>
+    </div>
+  );
+}
 
 const LONDON_LAT = 51.5074;
 const LONDON_LON = -0.1278;
@@ -324,7 +409,9 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             icon="💨"
             label="Wind"
             value={`${Math.round(daily.wind_speed_10m_max[dayIndex])} km/h`}
-            sub="max"
+            sub={isToday
+              ? `${getWindArrow(current.wind_direction_10m)} ${getWindDirection(current.wind_direction_10m)}`
+              : "max speed"}
           />
           <DetailCard
             icon="🌧️"
@@ -343,12 +430,22 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             value={`${daily.sunrise[dayIndex].split("T")[1]}`}
             sub={`Sunset ${daily.sunset[dayIndex].split("T")[1]}`}
           />
+          {isToday && (
+            <DetailCard
+              icon="🔵"
+              label="Pressure"
+              value={`${Math.round(current.surface_pressure)} hPa`}
+              sub={current.surface_pressure > 1013 ? "High pressure" : current.surface_pressure < 1000 ? "Low pressure" : "Normal"}
+            />
+          )}
         </div>
 
         {/* Hourly forecast */}
         {hourlyEntries.length > 0 && (
           <div className="bg-[#162535] rounded-xl p-5 mb-3">
-            <h2 className="text-white font-semibold mb-4">Hourly Forecast</h2>
+            <h2 className="text-white font-semibold mb-3">Hourly Forecast</h2>
+            {/* SVG temperature curve */}
+            <TempCurve entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
             <div className="overflow-x-auto -mx-1 px-1">
               <div className="flex gap-1 min-w-max">
                 {hourlyEntries.map((entry) => {

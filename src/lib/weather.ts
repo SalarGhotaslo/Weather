@@ -5,6 +5,8 @@ export interface WeatherResponse {
     apparent_temperature: number;
     weather_code: number;
     wind_speed_10m: number;
+    wind_direction_10m: number;
+    surface_pressure: number;
   };
   daily: {
     time: string[];
@@ -35,7 +37,19 @@ export interface GeocodingResult {
 }
 
 export function buildForecastUrl(lat: number, lon: number): string {
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max,uv_index_max,sunrise,sunset&timezone=auto`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max,uv_index_max,sunrise,sunset&timezone=auto`;
+}
+
+export function getWindDirection(degrees: number): string {
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
+  return dirs[Math.round(((degrees % 360) + 360) % 360 / 45) % 8];
+}
+
+export function getWindArrow(degrees: number): string {
+  const arrows: Record<string, string> = {
+    N: "↑", NE: "↗", E: "→", SE: "↘", S: "↓", SW: "↙", W: "←", NW: "↖",
+  };
+  return arrows[getWindDirection(degrees)] ?? "→";
 }
 
 // Pure function — picks the best result from a geocoding response given an
