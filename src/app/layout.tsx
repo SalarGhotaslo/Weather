@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Weather Forecast",
+  title: "Salar Weather",
   description: "5-day weather forecast for any city",
 };
 
