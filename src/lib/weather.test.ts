@@ -18,10 +18,12 @@ import {
   getWindDirection,
   getWindArrow,
   getOutdoorSummary,
+  getDressCode,
   type OutdoorWindow,
   type HourlyForecastResponse,
   type GeocodingResult,
 } from "./weather";
+import { formatPopulation } from "./countries";
 import { normalizeCountryName, selectCandidates } from "./countries";
 
 describe("getWeatherInfo", () => {
@@ -418,6 +420,65 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("getDressCode", () => {
+  it("suggests heavy winter gear for freezing temperatures", () => {
+    const { items, summary } = getDressCode(0, -5, 10);
+    expect(items.some((i) => i.toLowerCase().includes("coat"))).toBe(true);
+    expect(summary.toLowerCase()).toContain("bundle");
+  });
+
+  it("suggests light summer clothing for hot weather", () => {
+    const { items, summary } = getDressCode(0, 30, 5);
+    expect(items.some((i) => i.toLowerCase().includes("summer") || i.toLowerCase().includes("shorts"))).toBe(true);
+    expect(summary.toLowerCase()).toContain("summer");
+  });
+
+  it("includes umbrella suggestion for rainy weather", () => {
+    const { items } = getDressCode(65, 15, 10);
+    expect(items.some((i) => i.toLowerCase().includes("umbrella") || i.toLowerCase().includes("waterproof"))).toBe(true);
+  });
+
+  it("includes sunscreen for clear sunny hot day", () => {
+    const { items } = getDressCode(0, 25, 5);
+    expect(items.some((i) => i.toLowerCase().includes("sunscreen"))).toBe(true);
+  });
+
+  it("includes wind-resistant layer for high wind", () => {
+    const { items } = getDressCode(1, 15, 50);
+    expect(items.some((i) => i.toLowerCase().includes("wind"))).toBe(true);
+  });
+
+  it("returns at most 5 items", () => {
+    const { items } = getDressCode(95, -5, 70);
+    expect(items.length).toBeLessThanOrEqual(5);
+  });
+
+  it("always returns a non-empty summary", () => {
+    const codes = [0, 3, 45, 65, 77, 95];
+    for (const code of codes) {
+      const { summary } = getDressCode(code, 10, 20);
+      expect(typeof summary).toBe("string");
+      expect(summary.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("formatPopulation", () => {
+  it("formats billions with B suffix", () => {
+    expect(formatPopulation(1_400_000_000)).toContain("B");
+  });
+  it("formats millions with M suffix", () => {
+    expect(formatPopulation(67_000_000)).toContain("M");
+    expect(formatPopulation(67_000_000)).toContain("67");
+  });
+  it("formats thousands with K suffix", () => {
+    expect(formatPopulation(50_000)).toContain("K");
+  });
+  it("formats small numbers without suffix", () => {
+    expect(formatPopulation(500)).toBe("500");
   });
 });
 

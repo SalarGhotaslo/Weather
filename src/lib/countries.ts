@@ -28,11 +28,13 @@ export interface Country {
   flag: string;
   capital?: string[];
   region: string;
+  subregion?: string;
+  population?: number;
 }
 
 export async function getAllCountries(): Promise<Country[]> {
   const res = await fetch(
-    "https://restcountries.com/v3.1/all?fields=name,cca2,flag,capital,region",
+    "https://restcountries.com/v3.1/all?fields=name,cca2,flag,capital,region,subregion,population",
     { next: { revalidate: 86400 } },
   );
   if (!res.ok) throw new Error("Failed to fetch countries");
@@ -43,7 +45,7 @@ export async function getAllCountries(): Promise<Country[]> {
 export async function getCountryByCode(code: string): Promise<Country | null> {
   try {
     const res = await fetch(
-      `https://restcountries.com/v3.1/alpha/${code.toUpperCase()}?fields=name,cca2,flag,capital,region`,
+      `https://restcountries.com/v3.1/alpha/${code.toUpperCase()}?fields=name,cca2,flag,capital,region,subregion,population`,
       { next: { revalidate: 86400 } },
     );
     if (!res.ok) return null;
@@ -77,4 +79,11 @@ export async function getCitiesForCountry(countryName: string): Promise<string[]
   } catch {
     return [];
   }
+}
+
+export function formatPopulation(pop: number): string {
+  if (pop >= 1_000_000_000) return `${(pop / 1_000_000_000).toFixed(1)}B`;
+  if (pop >= 1_000_000) return `${(pop / 1_000_000).toFixed(1)}M`;
+  if (pop >= 1_000) return `${(pop / 1_000).toFixed(0)}K`;
+  return pop.toLocaleString();
 }

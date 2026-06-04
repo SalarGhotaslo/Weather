@@ -20,6 +20,7 @@ import {
   getWindDirection,
   getWindArrow,
   getOutdoorSummary,
+  getDressCode,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
@@ -169,6 +170,47 @@ async function getHistorical(
   }
 }
 
+// ── Server-rendered SVG precipitation probability bars ────────────────
+
+function PrecipBars({
+  entries,
+  sunriseHour,
+  sunsetHour,
+}: {
+  entries: HourlyEntry[];
+  sunriseHour: number;
+  sunsetHour: number;
+}) {
+  if (entries.length === 0) return null;
+  const W = 480;
+  const H = 20;
+  const bw = W / entries.length;
+  return (
+    <div className="mb-3 -mx-1 px-1">
+      <p className="text-[#5a7d99] text-[9px] uppercase tracking-wider mb-1">Rain probability</p>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-5" aria-hidden="true" preserveAspectRatio="none">
+        {entries.map((e, i) => {
+          const bh = (e.precipProb / 100) * H;
+          const isNight = e.hour < sunriseHour || e.hour >= sunsetHour;
+          const fill = e.precipProb >= 60 ? "#60a5fa" : e.precipProb >= 30 ? "#38bdf8" : "#1e3347";
+          return (
+            <rect
+              key={i}
+              x={i * bw + 0.5}
+              y={H - bh}
+              width={bw - 1}
+              height={Math.max(bh, 1)}
+              fill={fill}
+              fillOpacity={isNight ? 0.45 : 0.85}
+              rx="1"
+            />
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function DetailCard({
   icon,
   label,
@@ -285,6 +327,12 @@ export default async function DayPage({ params, searchParams }: PageProps) {
   const weatherFact = getWeatherFact(
     daily.weather_code[dayIndex],
     daily.temperature_2m_max[dayIndex],
+  );
+
+  const dressCode = getDressCode(
+    daily.weather_code[dayIndex],
+    daily.temperature_2m_max[dayIndex],
+    daily.wind_speed_10m_max[dayIndex],
   );
 
   const weatherAlert = getWeatherAlert(
@@ -447,6 +495,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             <h2 className="text-white font-semibold mb-3">Hourly Forecast</h2>
             {/* SVG temperature curve */}
             <TempCurve entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
+            {/* Precipitation probability bars */}
+            <PrecipBars entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
             <div className="overflow-x-auto -mx-1 px-1">
               <div className="flex gap-1 min-w-max">
                 {hourlyEntries.map((entry) => {
@@ -692,6 +742,22 @@ export default async function DayPage({ params, searchParams }: PageProps) {
               Historical data unavailable for this date.
             </p>
           )}
+        </div>
+
+        {/* What to wear */}
+        <div className="bg-[#162535] rounded-xl p-5 mb-3">
+          <h2 className="text-white font-semibold mb-1">What to Wear</h2>
+          <p className="text-[#7ea8c2] text-sm mb-3">{dressCode.summary}</p>
+          <div className="flex flex-wrap gap-2">
+            {dressCode.items.map((item) => (
+              <span
+                key={item}
+                className="bg-[#1c2f3f] border border-[#2a4055] text-[#c8dae7] text-xs px-3 py-1.5 rounded-full"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Fun weather fact */}

@@ -14,6 +14,7 @@ export interface WeatherResponse {
     temperature_2m_min: number[];
     weather_code: number[];
     precipitation_sum: number[];
+    precipitation_probability_max: number[];
     wind_speed_10m_max: number[];
     uv_index_max: number[];
     sunrise: string[];
@@ -37,7 +38,7 @@ export interface GeocodingResult {
 }
 
 export function buildForecastUrl(lat: number, lon: number): string {
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max,uv_index_max,sunrise,sunset&timezone=auto`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset&timezone=auto`;
 }
 
 export function getWindDirection(degrees: number): string {
@@ -488,6 +489,52 @@ export function getWeatherAlert(
       message: `UV index of ${Math.round(uvIndexMax)} (${uvIndexMax >= 11 ? "Extreme" : "Very High"}). Apply SPF 30+ sunscreen, wear a hat, and seek shade between 11am–3pm.`,
     };
   return null;
+}
+
+// ── Dress-for-the-weather suggestion ─────────────────────────────────
+
+export interface DressCode {
+  summary: string;
+  items: string[];
+}
+
+export function getDressCode(
+  weatherCode: number,
+  tempMax: number,
+  windSpeedMax: number,
+): DressCode {
+  const items: string[] = [];
+
+  if (tempMax <= 0) {
+    items.push("Heavy winter coat", "Thermal underlayer", "Hat & gloves", "Warm boots");
+  } else if (tempMax <= 8) {
+    items.push("Warm coat", "Jumper or sweater", "Scarf", "Warm socks");
+  } else if (tempMax <= 14) {
+    items.push("Light jacket", "Layered clothing");
+  } else if (tempMax <= 20) {
+    items.push("Light jacket or cardigan");
+  } else if (tempMax <= 26) {
+    items.push("T-shirt or light shirt", "Light trousers");
+  } else {
+    items.push("Summer clothing", "Shorts or light dress");
+  }
+
+  if (weatherCode >= 51 && weatherCode <= 82) items.push("Waterproof jacket or umbrella");
+  if (weatherCode >= 71 && weatherCode <= 77) items.push("Waterproof & grip footwear");
+  if (weatherCode >= 95) items.push("Shelter nearby if going out");
+  if (windSpeedMax > 45) items.push("Wind-resistant outer layer");
+  if (weatherCode === 0 && tempMax > 18) items.push("Sunglasses & sunscreen SPF 30+");
+
+  const summary =
+    tempMax > 22
+      ? "Light summer day"
+      : tempMax > 15
+        ? "Comfortable with a light layer"
+        : tempMax > 8
+          ? "Layered-up weather"
+          : "Bundle up — cold day";
+
+  return { summary, items: items.slice(0, 5) };
 }
 
 // ── Weather emoji animation class ────────────────────────────────────

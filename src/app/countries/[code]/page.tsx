@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCountryByCode, getCitiesForCountry } from "@/lib/countries";
+import { getCountryByCode, getCitiesForCountry, formatPopulation } from "@/lib/countries";
 import Header from "@/app/components/Header";
 import CitiesFilter from "./CitiesFilter";
 
@@ -51,34 +51,44 @@ export default async function CountryPage({
 
         {/* Country hero */}
         <div className="bg-[#162535] rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-4">
-            <span className="text-5xl">{country.flag}</span>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                {country.name.common}
-              </h1>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+          <div className="flex items-start gap-4">
+            <span className="text-5xl shrink-0">{country.flag}</span>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold text-white">{country.name.common}</h1>
+              <p className="text-[#5a7d99] text-xs mt-0.5 italic truncate">{country.name.official}</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                 {capital && (
-                  <span className="text-[#7ea8c2] text-sm">
-                    Capital: {capital}
+                  <span className="text-[#7ea8c2] text-sm">📍 Capital: {capital}</span>
+                )}
+                <span className="text-[#5a7d99] text-xs">
+                  {country.subregion ?? country.region}
+                </span>
+                {country.population != null && country.population > 0 && (
+                  <span className="text-[#5a7d99] text-xs">
+                    👥 {formatPopulation(country.population)} people
                   </span>
                 )}
-                <span className="text-[#5a7d99] text-xs">{country.region}</span>
               </div>
             </div>
           </div>
 
-          {/* Quick link to capital weather */}
-          {capital && (
-            <div className="mt-4 pt-4 border-t border-[#1e3347]">
+          {/* Quick links */}
+          <div className="mt-4 pt-4 border-t border-[#1e3347] flex flex-wrap gap-2">
+            {capital && (
               <Link
                 href={`/?q=${encodeURIComponent(`${capital}, ${country.name.common}`)}`}
                 className="inline-flex items-center gap-2 bg-[#3b87d6] hover:bg-[#2d6fb8] text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 ⛅ Weather in {capital}
               </Link>
-            </div>
-          )}
+            )}
+            <Link
+              href={`/map`}
+              className="inline-flex items-center gap-2 bg-[#162535] hover:bg-[#1c2f3f] border border-[#2a4055] text-[#7ea8c2] hover:text-white text-sm px-4 py-2 rounded-lg transition-colors"
+            >
+              🗺️ View on map
+            </Link>
+          </div>
         </div>
 
         {/* Cities section */}

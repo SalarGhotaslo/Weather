@@ -305,7 +305,17 @@ export default async function Home({ searchParams }: Props) {
                       style={{ left: `${barLeft}%`, width: `${barWidth}%`, backgroundColor: barColor }}
                     />
                   </div>
-                  <div className="text-[#7ea8c2] text-xs">{minTemp}°</div>
+                  <div className="text-[#7ea8c2] text-xs mb-1.5">{minTemp}°</div>
+                  {/* Precipitation probability */}
+                  {(() => {
+                    const prob = daily.precipitation_probability_max[i] ?? 0;
+                    if (prob < 15) return null;
+                    return (
+                      <div className={`text-[10px] font-medium ${prob >= 60 ? "text-blue-400" : "text-sky-500"}`}>
+                        💧{prob}%
+                      </div>
+                    );
+                  })()}
                 </Link>
               );
             })}
