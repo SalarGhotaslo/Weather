@@ -430,6 +430,17 @@ export function getHourlyAnalysis(
   return { hours, bestWindows, badWindows };
 }
 
+// ── Numeric weather score (used for best-day ranking) ────────────────
+
+export function getWeatherScore(weatherCode: number, tempMax: number): number {
+  const rating = getWeatherRating(weatherCode, tempMax).rating;
+  if (rating.includes("Excellent")) return 4;
+  if (rating.includes("Good")) return 3;
+  if (rating.includes("Fair") || rating.includes("Gloomy")) return 2;
+  if (rating.includes("Drizzly") || rating.includes("Chilly")) return 1;
+  return 0;
+}
+
 // ── Daylight info ─────────────────────────────────────────────────────
 
 export interface DaylightInfo {

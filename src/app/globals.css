@@ -18,6 +18,60 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* ── Print styles ────────────────────────────────────────────────── */
+
+@media print {
+  @page { margin: 1.5cm; }
+
+  body {
+    background: white !important;
+    color: #111 !important;
+    font-size: 10pt;
+  }
+
+  /* Hide navigation and interactive chrome */
+  header,
+  footer,
+  nav,
+  button,
+  [aria-label="Skip to main content"],
+  .weather-sunny,
+  .weather-cloudy,
+  .weather-rainy,
+  .weather-snowy,
+  .weather-thunder,
+  .weather-foggy {
+    display: none !important;
+    animation: none !important;
+  }
+
+  /* Flatten card backgrounds */
+  main * {
+    background-color: transparent !important;
+    border-color: #ccc !important;
+    color: #111 !important;
+    box-shadow: none !important;
+  }
+
+  a {
+    color: #111 !important;
+    text-decoration: none !important;
+  }
+
+  /* Keep cards visible with a border */
+  [class*="rounded"] {
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+  }
+}
+
+/* ── Hourly scroll fade hint ─────────────────────────────────────── */
+
+.scroll-fade-right {
+  -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  mask-image: linear-gradient(to right, black 80%, transparent 100%);
+}
+
 /* ── Focus styles ────────────────────────────────────────────────── */
 
 :focus-visible {

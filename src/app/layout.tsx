@@ -21,6 +21,8 @@ export const metadata: Metadata = {
     "Global city weather — 5-day forecasts, hourly detail, best outdoor times, and an interactive world map.",
   keywords: ["weather", "forecast", "temperature", "cities", "world map"],
   robots: { index: true, follow: true },
+  manifest: "/manifest.webmanifest",
+  themeColor: "#121f2f",
 };
 
 export default function RootLayout({

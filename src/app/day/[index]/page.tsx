@@ -458,21 +458,45 @@ export default async function DayPage({ params, searchParams }: PageProps) {
           </p>
         </div>
 
-        {/* Day picker strip */}
-        <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
-          {daily.time.slice(0, 7).map((d, i) => (
+        {/* Day picker strip with prev/next arrows */}
+        <div className="flex items-center gap-2 mb-4">
+          {dayIndex > 0 ? (
             <Link
-              key={d}
-              href={`/day/${i}?${baseParams}`}
-              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                i === dayIndex
-                  ? "bg-[#3b87d6] text-white"
-                  : "bg-[#162535] text-[#7ea8c2] hover:bg-[#1c2f3f] hover:text-white"
-              }`}
+              href={`/day/${dayIndex - 1}?${baseParams}`}
+              className="shrink-0 p-1.5 text-[#7ea8c2] hover:text-white transition-colors"
+              aria-label="Previous day"
             >
-              {getDayName(d)}
+              ←
             </Link>
-          ))}
+          ) : (
+            <span className="shrink-0 p-1.5 text-[#1e3347]" aria-hidden="true">←</span>
+          )}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 flex-1">
+            {daily.time.slice(0, 7).map((d, i) => (
+              <Link
+                key={d}
+                href={`/day/${i}?${baseParams}`}
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  i === dayIndex
+                    ? "bg-[#3b87d6] text-white"
+                    : "bg-[#162535] text-[#7ea8c2] hover:bg-[#1c2f3f] hover:text-white"
+                }`}
+              >
+                {getDayName(d)}
+              </Link>
+            ))}
+          </div>
+          {dayIndex < 6 ? (
+            <Link
+              href={`/day/${dayIndex + 1}?${baseParams}`}
+              className="shrink-0 p-1.5 text-[#7ea8c2] hover:text-white transition-colors"
+              aria-label="Next day"
+            >
+              →
+            </Link>
+          ) : (
+            <span className="shrink-0 p-1.5 text-[#1e3347]" aria-hidden="true">→</span>
+          )}
         </div>
 
         {/* Main weather card */}
@@ -587,7 +611,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             <TempCurve entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
             {/* Precipitation probability bars */}
             <PrecipBars entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
-            <div className="overflow-x-auto -mx-1 px-1">
+            <div className="overflow-x-auto -mx-1 px-1 scroll-fade-right">
               <div className="flex gap-1 min-w-max">
                 {hourlyEntries.map((entry) => {
                   const isNight =

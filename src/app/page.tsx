@@ -11,6 +11,8 @@ import {
   getWeatherFact,
   getWindDirection,
   getWindArrow,
+  getWeatherAlert,
+  getWeatherScore,
   type WeatherResponse,
 } from "@/lib/weather";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
@@ -194,6 +196,23 @@ export default async function Home({ searchParams }: Props) {
   const uvToday = describeUV(daily.uv_index_max[0]);
   const weatherFact = getWeatherFact(current.weather_code, current.temperature_2m);
 
+  const todayAlert = getWeatherAlert(
+    daily.weather_code[0],
+    daily.wind_speed_10m_max[0],
+    daily.uv_index_max[0],
+    daily.precipitation_sum[0],
+  );
+
+  // Find the best-rated day in the 7-day window (skip today — already prominent)
+  const bestDayIndex = daily.time.slice(1, 7).reduce(
+    (best, _, rawI) => {
+      const i = rawI + 1;
+      const s = getWeatherScore(daily.weather_code[i], daily.temperature_2m_max[i]);
+      return s > best.score ? { i, score: s } : best;
+    },
+    { i: -1, score: 0 },
+  ).i;
+
   return (
     <div className="min-h-screen bg-[#0e1723] flex flex-col">
       <Header defaultSearch={q} />
@@ -244,6 +263,28 @@ export default async function Home({ searchParams }: Props) {
             <span className="text-[#3b87d6] text-xs font-medium">View details →</span>
           </div>
         </Link>
+
+        {/* Weather alert for today */}
+        {todayAlert && (
+          <div
+            role="alert"
+            className={`rounded-xl p-3 mb-3 flex items-start gap-3 ${
+              todayAlert.level === "warning"
+                ? "bg-red-900/30 border border-red-500/40"
+                : "bg-amber-900/20 border border-amber-500/30"
+            }`}
+          >
+            <span className="text-xl shrink-0" aria-hidden="true">
+              {todayAlert.level === "warning" ? "🚨" : "⚠️"}
+            </span>
+            <div>
+              <p className={`text-xs font-semibold ${todayAlert.level === "warning" ? "text-red-300" : "text-amber-300"}`}>
+                {todayAlert.title}
+              </p>
+              <p className="text-[#c8dae7] text-xs mt-0.5 leading-relaxed">{todayAlert.message}</p>
+            </div>
+          </div>
+        )}
 
         {/* Stats strip */}
         <div className="grid grid-cols-2 gap-2 mb-6 sm:grid-cols-3 lg:grid-cols-6">
@@ -299,9 +340,12 @@ export default async function Home({ searchParams }: Props) {
                     isToday ? "bg-[#1c3450] hover:bg-[#22405f]" : "bg-[#162535] hover:bg-[#1c2f3f]"
                   }`}
                 >
-                  <div className={`text-xs font-semibold mb-2 ${isToday ? "text-[#3b87d6]" : "text-[#7ea8c2]"}`}>
+                  <div className={`text-xs font-semibold mb-1 ${isToday ? "text-[#3b87d6]" : "text-[#7ea8c2]"}`}>
                     {getDayName(dateStr)}
                   </div>
+                  {i === bestDayIndex && (
+                    <div className="text-[9px] text-amber-400 mb-1">⭐ Best</div>
+                  )}
                   <div className="text-2xl mb-2" aria-hidden="true">{info.emoji}</div>
                   <div className="text-white text-sm font-semibold">{maxTemp}°</div>
                   <div className="relative h-1 bg-[#1e3347] rounded-full w-full my-2" role="presentation">

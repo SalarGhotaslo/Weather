@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateCoord,
   getDaylightInfo,
+  getWeatherScore,
   getWeatherInfo,
   getDayName,
   getFormattedDate,
@@ -422,6 +423,32 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("getWeatherScore", () => {
+  it("returns 4 for excellent sunny warm day", () => {
+    expect(getWeatherScore(0, 22)).toBe(4);
+  });
+  it("returns 3 for good partly-cloudy warm day", () => {
+    expect(getWeatherScore(1, 18)).toBe(3);
+  });
+  it("returns 2 for overcast (Gloomy)", () => {
+    expect(getWeatherScore(3, 15)).toBe(2);
+  });
+  it("returns 1 for drizzle", () => {
+    expect(getWeatherScore(55, 15)).toBe(1);
+  });
+  it("returns 0 for thunderstorm", () => {
+    expect(getWeatherScore(95, 20)).toBe(0);
+  });
+  it("returns 0 for heavy rain", () => {
+    expect(getWeatherScore(65, 15)).toBe(0);
+  });
+  it("scores are ordered: excellent > good > fair > poor", () => {
+    expect(getWeatherScore(0, 22)).toBeGreaterThan(getWeatherScore(1, 18));
+    expect(getWeatherScore(1, 18)).toBeGreaterThan(getWeatherScore(55, 15));
+    expect(getWeatherScore(55, 15)).toBeGreaterThan(getWeatherScore(95, 20));
   });
 });
 

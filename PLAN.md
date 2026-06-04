@@ -122,6 +122,12 @@ interface OutdoorWindow {
 }
 ```
 
+## PWA Support
+`src/app/manifest.ts` exports the Web App Manifest via the Next.js manifest convention. Appears at `/manifest.webmanifest`. Layout sets `<meta name="theme-color">` and links the manifest. App is installable in supported browsers.
+
+## Print Support
+`@media print` rules in `globals.css` flatten backgrounds, hide navigation/chrome, and produce clean printed forecasts.
+
 ## Loading States
 Each dynamic route has a `loading.tsx` skeleton that mirrors the page layout and animates with `animate-pulse` while data is fetching.
 
