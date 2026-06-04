@@ -761,14 +761,14 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             {outdoorAnalysis.bestWindows.length > 0 && (
               <div className="mb-4">
                 <p className="text-[#3b87d6] text-xs font-semibold uppercase tracking-wider mb-2">
-                  Good times to go out
+                  Best times to go out
                 </p>
                 {outdoorAnalysis.bestWindows.map((w, i) => (
                   <div
                     key={i}
                     className="rounded-xl bg-[#0e1f2f] p-4 mb-2 border border-[#1a3347]"
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                           w.rating === "Excellent" ? "bg-green-500/20 text-green-400"
@@ -781,6 +781,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                         <span className="text-[#5a7d99] text-xs">peak {w.peakHour}</span>
                       )}
                     </div>
+                    <p className="text-[#c8dae7] text-sm mb-3 leading-snug">{w.reason}</p>
                     <div className="flex flex-wrap gap-2 mb-3">
                       {w.tempRange && (
                         <span className="text-[10px] bg-[#162535] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
@@ -811,21 +812,32 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             {outdoorAnalysis.badWindows.length > 0 && (
               <div>
                 <p className="text-red-400/70 text-xs font-semibold uppercase tracking-wider mb-2">
-                  Best avoided
+                  Times to avoid
                 </p>
                 {outdoorAnalysis.badWindows.map((w, i) => (
                   <div
                     key={i}
-                    className="rounded-xl bg-[#1f0e0e] p-4 mb-2 border border-[#3a1a1a]"
+                    className={`rounded-xl p-4 mb-2 border ${
+                      w.severity === "worst"
+                        ? "bg-[#2a0a0a] border-[#5a1a1a]"
+                        : "bg-[#1f0e0e] border-[#3a1a1a]"
+                    }`}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-500/20 text-red-400">
-                          Avoid
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          w.severity === "worst"
+                            ? "bg-red-600/30 text-red-300"
+                            : "bg-red-500/20 text-red-400"
+                        }`}>
+                          {w.severity === "worst" ? "Worst period" : "Also avoid"}
                         </span>
                         <span className="text-white font-semibold">{w.timeLabel}</span>
                       </div>
                     </div>
+                    <p className={`text-sm mb-3 leading-snug ${
+                      w.severity === "worst" ? "text-red-200/90" : "text-red-300/70"
+                    }`}>{w.reason}</p>
                     <div className="flex flex-wrap gap-2">
                       {w.tempRange && (
                         <span className="text-[10px] bg-red-950/40 border border-red-900/40 text-red-300/80 px-2.5 py-1 rounded-full">

@@ -320,7 +320,9 @@ export interface OutdoorWindow {
   timeLabel: string;
   rating: "Excellent" | "Good" | "Fair" | "Poor";
   conditions: string;
+  reason: string;
   isBad: boolean;
+  severity?: "worst" | "bad";
   peakHour?: string;
   tempRange?: string;
   activities?: string[];
@@ -402,7 +404,59 @@ export function getHourlyAnalysis(
     return acts.slice(0, 3);
   }
 
-  function runToWindow(run: { start: number; end: number }, isBad: boolean): OutdoorWindow {
+  function buildReason(
+    avgTemp: number,
+    avgPrecip: number,
+    maxPrecip: number,
+    avgWind: number,
+    maxWind: number,
+    minTemp: number,
+    maxTemp: number,
+    isBad: boolean,
+    rating: OutdoorWindow["rating"],
+  ): string {
+    if (isBad) {
+      const parts: string[] = [];
+      if (maxPrecip >= 70) parts.push(`heavy rain expected (up to ${maxPrecip}%)`);
+      else if (avgPrecip >= 50) parts.push(`rain likely throughout (avg ${avgPrecip}%)`);
+      else if (maxPrecip >= 45) parts.push(`high rain risk (peaks at ${maxPrecip}%)`);
+      if (maxWind > 55) parts.push(`dangerously strong gusts (${maxWind} km/h)`);
+      else if (avgWind > 40) parts.push(`very strong winds (avg ${avgWind} km/h)`);
+      else if (maxWind > 40) parts.push(`gusty winds (up to ${maxWind} km/h)`);
+      if (minTemp < 0) parts.push(`below freezing (${minTemp}°C)`);
+      else if (maxTemp > 38) parts.push(`extreme heat (${maxTemp}°C)`);
+      if (parts.length === 0) parts.push("poor across temperature, rain, and wind");
+      const s = parts.slice(0, 2).join("; ");
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    const bits: string[] = [];
+    if (avgTemp >= 22 && avgTemp <= 28) bits.push("warm");
+    else if (avgTemp >= 17 && avgTemp <= 21) bits.push("pleasantly mild");
+    else if (avgTemp >= 13 && avgTemp <= 16) bits.push("mild");
+    else if (avgTemp > 28) bits.push("hot");
+    else if (avgTemp >= 10) bits.push("cool");
+
+    if (maxPrecip < 10) bits.push("dry");
+    else if (avgPrecip < 20) bits.push("mostly dry");
+    else if (avgPrecip < 30) bits.push("low rain risk");
+
+    if (avgWind < 12) bits.push("calm");
+    else if (avgWind < 20) bits.push("light breeze");
+
+    if (bits.length === 0) return "Conditions are acceptable for outdoor time";
+    const joined = bits.join(", ");
+    const cap = joined.charAt(0).toUpperCase() + joined.slice(1);
+    if (rating === "Excellent") return `${cap} — ideal conditions for getting outside`;
+    if (rating === "Good") return `${cap} — a solid outdoor window`;
+    return `${cap} conditions`;
+  }
+
+  function runToWindow(
+    run: { start: number; end: number },
+    isBad: boolean,
+    severity?: "worst" | "bad",
+  ): OutdoorWindow {
     const slice = hours.slice(run.start, run.end + 1);
     const avgTemp = Math.round(slice.reduce((s, h) => s + h.temp, 0) / slice.length);
     const avgScore = slice.reduce((s, h) => s + h.score, 0) / slice.length;
@@ -410,6 +464,7 @@ export function getHourlyAnalysis(
     const maxPrecip = Math.max(...slice.map((h) => h.precipProb));
     const avgPrecip = Math.round(slice.reduce((s, h) => s + h.precipProb, 0) / slice.length);
     const avgWind = Math.round(slice.reduce((s, h) => s + h.windSpeed, 0) / slice.length);
+    const maxWind = Math.max(...slice.map((h) => h.windSpeed));
     const minTemp = Math.min(...slice.map((h) => h.temp));
     const maxTemp = Math.max(...slice.map((h) => h.temp));
 
@@ -442,11 +497,15 @@ export function getHourlyAnalysis(
 
     const conditions = [`avg ${avgTemp}°C`, precipDesc, windDesc].join(", ");
 
+    const reason = buildReason(avgTemp, avgPrecip, maxPrecip, avgWind, maxWind, minTemp, maxTemp, isBad, rating);
+
     return {
       timeLabel: `${hours[run.start]?.label ?? ""} – ${hours[run.end]?.label ?? ""}`,
       rating,
       conditions,
+      reason,
       isBad,
+      severity,
       peakHour,
       tempRange: `${minTemp}–${maxTemp}°C`,
       activities: isBad ? [] : suggestActivities(avgTemp, maxPrecip, avgWind),
@@ -459,7 +518,7 @@ export function getHourlyAnalysis(
         hours.slice(b.start, b.end + 1).reduce((s, h) => s + h.score, 0) -
         hours.slice(a.start, a.end + 1).reduce((s, h) => s + h.score, 0),
     )
-    .slice(0, 2)
+    .slice(0, 3)
     .sort((a, b) => a.start - b.start)
     .map((r) => runToWindow(r, false));
 
@@ -467,8 +526,8 @@ export function getHourlyAnalysis(
   // to filter out brief/isolated poor spells that aren't worth calling out.
   const badWindows = findRuns((s) => s === 0, 3)
     .sort((a, b) => b.end - b.start - (a.end - a.start))
-    .slice(0, 1)
-    .map((r) => runToWindow(r, true));
+    .slice(0, 2)
+    .map((r, i) => runToWindow(r, true, i === 0 ? "worst" : "bad"));
 
   return { hours, bestWindows, badWindows };
 }
@@ -516,7 +575,8 @@ export function getOutdoorSummary(
   badWindows: OutdoorWindow[],
 ): string {
   if (bestWindows.length === 0 && badWindows.length > 0) {
-    return `Stay in during ${badWindows[0].timeLabel} — conditions are poor. Limited outdoor opportunities today.`;
+    const why = badWindows[0].reason ?? "conditions are poor";
+    return `Tricky day for outdoor plans — ${why.charAt(0).toLowerCase() + why.slice(1)}. Avoid ${badWindows[0].timeLabel} especially.`;
   }
   if (bestWindows.length === 0) {
     return "No standout outdoor windows today, but conditions are broadly reasonable.";
@@ -527,10 +587,10 @@ export function getOutdoorSummary(
       ? best.activities.slice(0, 2).join(" or ").toLowerCase()
       : "outdoor activity";
   if (best.rating === "Excellent")
-    return `Excellent conditions — ideal for ${acts} between ${best.timeLabel}${best.tempRange ? ` (${best.tempRange})` : ""}.`;
+    return `Excellent: ${best.timeLabel}. ${best.reason ?? "Great conditions"}. Perfect for ${acts}.`;
   if (best.rating === "Good")
-    return `Good window for ${acts}: ${best.timeLabel}${best.tempRange ? ` at ${best.tempRange}` : ""}.`;
-  return `Decent conditions around ${best.timeLabel} for ${acts}.`;
+    return `Good window for ${acts}: ${best.timeLabel}. ${best.reason ?? "Decent conditions"}.`;
+  return `Decent conditions around ${best.timeLabel}. ${best.reason ?? "Reasonable for a stroll"}.`;
 }
 
 // ── Weather alert banner ─────────────────────────────────────────────

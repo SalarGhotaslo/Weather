@@ -695,6 +695,7 @@ describe("getOutdoorSummary", () => {
     timeLabel,
     rating,
     conditions: "20°C, dry, calm",
+    reason: "Warm, dry, calm — ideal conditions for getting outside",
     isBad,
     activities,
     tempRange,

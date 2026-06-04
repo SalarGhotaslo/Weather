@@ -111,11 +111,13 @@ export default function SearchAutocomplete({
       <form
         onSubmit={handleSubmit}
         className={large ? "flex gap-3" : "contents"}
+        suppressHydrationWarning
       >
         <div className={large ? "flex gap-3 flex-1" : "contents"}>
           <input
             type="search"
             value={value}
+            suppressHydrationWarning
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => suggestions.length > 0 && setOpen(true)}
