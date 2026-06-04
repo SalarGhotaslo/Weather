@@ -45,7 +45,7 @@ export default function RecentSearches() {
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider">
+        <p className="text-[#78a8c4] text-xs font-semibold uppercase tracking-wider">
           Recent searches
         </p>
         <button

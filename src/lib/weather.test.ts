@@ -203,16 +203,16 @@ describe("scoreHour", () => {
     expect(scoreHour(15, 0, 10, true)).toBe(-1);
   });
   it("returns 0 for heavy rain", () => {
-    expect(scoreHour(18, 80, 10, false)).toBe(0);
+    expect(scoreHour(18, 85, 10, false)).toBe(0);
   });
   it("returns 0 for extreme wind", () => {
-    expect(scoreHour(18, 10, 60, false)).toBe(0);
+    expect(scoreHour(18, 10, 65, false)).toBe(0);
   });
-  it("returns 1 for moderate rain chance", () => {
-    expect(scoreHour(18, 50, 10, false)).toBe(1);
+  it("returns 2 for moderate rain chance", () => {
+    expect(scoreHour(18, 50, 10, false)).toBe(2);
   });
-  it("returns 3 for ideal conditions", () => {
-    expect(scoreHour(20, 5, 10, false)).toBe(3);
+  it("returns 4 for ideal conditions", () => {
+    expect(scoreHour(20, 5, 10, false)).toBe(4);
   });
   it("returns 2 for good but not ideal conditions", () => {
     expect(scoreHour(10, 10, 10, false)).toBe(2);
@@ -266,8 +266,8 @@ describe("getHourlyAnalysis", () => {
 
   it("identifies best windows from good daytime hours", () => {
     const data = Array.from({ length: 24 }, (_, i) => {
-      if (i >= 9 && i <= 12) return { temp: 20, precip: 5, wind: 10 }; // ideal window
-      if (i >= 14 && i <= 16) return { temp: 18, precip: 80, wind: 10 }; // rain window
+      if (i >= 9 && i <= 12) return { temp: 22, precip: 3, wind: 8 }; // excellent window
+      if (i >= 14 && i <= 16) return { temp: 18, precip: 85, wind: 10 }; // heavy rain window
       return { temp: 5, precip: 10, wind: 10 };
     });
     const hourly = makeHourly(data);

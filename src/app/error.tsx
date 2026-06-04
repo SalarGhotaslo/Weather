@@ -18,7 +18,7 @@ export default function Error({
     <div className="min-h-screen bg-[#0e1723] flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="text-7xl mb-6 weather-thunder inline-block" aria-hidden="true">⛈️</div>
-        <h2 className="text-2xl font-bold text-white mb-2">Something went wrong</h2>
+        <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
         <p className="text-[#7ea8c2] mb-6 leading-relaxed">
           Weather data couldn&apos;t be loaded right now. This is usually temporary.
         </p>

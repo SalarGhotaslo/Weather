@@ -38,17 +38,18 @@ const POPULAR_CITIES = [
   "Toronto, Canada",
 ];
 
-async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
-  const res = await fetch(buildForecastUrl(lat, lon), {
+async function getWeather(lat: number, lon: number, tz?: string): Promise<WeatherResponse> {
+  const res = await fetch(buildForecastUrl(lat, lon, tz), {
     next: { revalidate: 1800 },
   });
   if (!res.ok) throw new Error("Failed to fetch weather data");
   return res.json();
 }
 
-function buildDayHref(index: number, lat: number, lon: number, name: string, code?: string) {
+function buildDayHref(index: number, lat: number, lon: number, name: string, code?: string, tz?: string) {
   const c = code ? `&code=${encodeURIComponent(code)}` : "";
-  return `/day/${index}?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name)}${c}`;
+  const t = tz ? `&tz=${encodeURIComponent(tz)}` : "";
+  return `/day/${index}?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name)}${c}${t}`;
 }
 
 function getBarColor(avgTemp: number): string {
@@ -63,7 +64,7 @@ function TrendIndicator({ temps }: { temps: number[] }) {
   const diff = Math.round(temps[4] - temps[0]);
   if (diff > 2) return <span className="text-[10px] text-orange-400">↑ warming {diff}°</span>;
   if (diff < -2) return <span className="text-[10px] text-blue-400">↓ cooling {Math.abs(diff)}°</span>;
-  return <span className="text-[10px] text-[#5a7d99]">→ steady</span>;
+  return <span className="text-[10px] text-[#78a8c4]">→ steady</span>;
 }
 
 function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
@@ -77,14 +78,14 @@ function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
   const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p}`).join(" ");
   return (
     <div className="mt-3 bg-[var(--card-bg)] rounded-lg px-3 py-2 flex items-center gap-3">
-      <span className="text-[#5a7d99] text-[10px] shrink-0">Temp trend</span>
+      <span className="text-[#78a8c4] text-[10px] shrink-0">Temp trend</span>
       <svg viewBox={`0 0 ${W} ${H}`} className="flex-1 h-5" aria-hidden="true" preserveAspectRatio="none">
         <path d={d} fill="none" stroke="#3b87d6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         {maxTemps.map((t, i) => (
           <circle key={i} cx={px(i)} cy={py(t)} r="2" fill="#3b87d6" />
         ))}
       </svg>
-      <span className="text-[#5a7d99] text-[10px] shrink-0">
+      <span className="text-[#78a8c4] text-[10px] shrink-0">
         {Math.round(maxTemps[0])}° → {Math.round(maxTemps[4])}°
       </span>
     </div>
@@ -94,12 +95,12 @@ function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
     <div className="bg-[var(--card-bg)] rounded-lg px-4 py-3">
-      <div className="text-[#5a7d99] text-xs mb-1">{label}</div>
+      <div className="text-[#78a8c4] text-xs mb-1">{label}</div>
       <div className="flex items-center gap-1.5">
         <span className="text-base" aria-hidden="true">{icon}</span>
         <span className="text-white font-semibold text-sm">{value}</span>
       </div>
-      {sub && <div className="text-[#5a7d99] text-[10px] mt-0.5">{sub}</div>}
+      {sub && <div className="text-[#78a8c4] text-[10px] mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -145,7 +146,7 @@ export default async function Home({ searchParams }: Props) {
 
             {/* Popular cities */}
             <div className="mt-8">
-              <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-3">
+              <p className="text-[#78a8c4] text-xs font-semibold uppercase tracking-wider mb-3">
                 Popular cities
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -161,7 +162,7 @@ export default async function Home({ searchParams }: Props) {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-center gap-6 text-sm text-[#5a7d99]">
+            <div className="mt-8 flex justify-center gap-6 text-sm text-[#78a8c4]">
               <Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">
                 🌍 Browse countries
               </Link>
@@ -204,7 +205,7 @@ export default async function Home({ searchParams }: Props) {
 
   let weather: WeatherResponse;
   try {
-    weather = await getWeather(location.latitude, location.longitude);
+    weather = await getWeather(location.latitude, location.longitude, location.timezone);
   } catch {
     return (
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
@@ -269,7 +270,7 @@ export default async function Home({ searchParams }: Props) {
 
       <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#78a8c4] mb-4">
           <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
           <span aria-hidden="true">/</span>
           <span className="text-[#7ea8c2] truncate max-w-[200px]">{location.name}</span>
@@ -281,7 +282,7 @@ export default async function Home({ searchParams }: Props) {
             {countryFlag && <span className="text-xl" aria-hidden="true">{countryFlag}</span>}
             <h1 className="text-xl font-bold text-white">{locationLabel}</h1>
           </div>
-          <p className="text-[#5a7d99] text-sm mt-0.5 pl-1">{todayFormatted}</p>
+          <p className="text-[#78a8c4] text-sm mt-0.5 pl-1">{todayFormatted}</p>
         </div>
 
         {/* Current weather hero */}
@@ -290,7 +291,7 @@ export default async function Home({ searchParams }: Props) {
           className="relative block bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-xl p-6 mb-3 transition-colors overflow-hidden"
           aria-label={`Today: ${todayInfo.label}, ${Math.round(current.temperature_2m)}°C. View details.`}
         >
-          <TimeGradient />
+          <TimeGradient timezone={location.timezone} />
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[68px] font-light text-white leading-none tracking-tight" aria-hidden="true">
@@ -300,7 +301,7 @@ export default async function Home({ searchParams }: Props) {
               <div className="text-[#7ea8c2] text-sm mt-1">
                 Feels like {Math.round(current.apparent_temperature)}°C
                 {feelsLikeExplanation && (
-                  <span className="text-[#5a7d99] text-xs ml-2">· {feelsLikeExplanation}</span>
+                  <span className="text-[#78a8c4] text-xs ml-2">· {feelsLikeExplanation}</span>
                 )}
               </div>
             </div>
@@ -354,7 +355,7 @@ export default async function Home({ searchParams }: Props) {
         {/* 5-day forecast */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[#5a7d99] text-xs font-semibold uppercase tracking-widest">
+            <h2 className="text-[#78a8c4] text-xs font-semibold uppercase tracking-widest">
               5-Day Forecast
             </h2>
             <TrendIndicator temps={daily.temperature_2m_max.slice(0, 5)} />
@@ -421,7 +422,7 @@ export default async function Home({ searchParams }: Props) {
         <div className="bg-[var(--card-bg)] rounded-xl p-4 mb-6 flex items-start gap-3" role="note">
           <span className="text-2xl shrink-0" aria-hidden="true">💡</span>
           <div>
-            <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
+            <p className="text-[#78a8c4] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
             <p className="text-[#c8dae7] text-sm leading-relaxed">{weatherFact}</p>
           </div>
         </div>

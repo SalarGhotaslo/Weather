@@ -117,6 +117,7 @@ export default function SearchAutocomplete({
           <input
             type="search"
             value={value}
+            aria-label="Search for a city"
             suppressHydrationWarning
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -154,7 +155,7 @@ export default function SearchAutocomplete({
                   <span className="text-[#7ea8c2]">, {s.admin1}</span>
                 ) : null}
               </span>
-              <span className="text-[#5a7d99] text-xs shrink-0">
+              <span className="text-[#78a8c4] text-xs shrink-0">
                 {s.country}
               </span>
             </button>

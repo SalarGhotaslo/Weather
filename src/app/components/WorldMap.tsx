@@ -190,9 +190,18 @@ export default function WorldMap() {
                     <Geography
                       key={geo.rsmKey}
                       geography={geo}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={name}
                       onMouseEnter={() => handleMouseEnter(geo)}
                       onMouseLeave={handleMouseLeave}
                       onClick={() => handleCountryClick(geo)}
+                      onKeyDown={(e: React.KeyboardEvent) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleCountryClick(geo);
+                        }
+                      }}
                       style={{
                         default: {
                           fill: isSelected
@@ -276,12 +285,23 @@ export default function WorldMap() {
                         fill={isHovered ? "#60a5fa" : "#3b87d6"}
                         stroke="#0e1723"
                         strokeWidth={1.2 / position.zoom}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View weather in ${marker.name}`}
                         style={{ cursor: "pointer", transition: "r 0.1s, fill 0.1s" }}
                         onClick={() =>
                           router.push(
                             `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
                           )
                         }
+                        onKeyDown={(e: React.KeyboardEvent) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            router.push(
+                              `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
+                            );
+                          }
+                        }}
                       />
                       <circle
                         r={dotR * 1.8}
@@ -311,7 +331,7 @@ export default function WorldMap() {
                 {panelCountry}
               </h2>
               {!panelLoading && (
-                <p className="text-[#5a7d99] text-xs mt-0.5">
+                <p className="text-[#78a8c4] text-xs mt-0.5">
                   {panelCities.length.toLocaleString()} cities · click to see
                   weather
                 </p>
@@ -319,13 +339,14 @@ export default function WorldMap() {
             </div>
 
             <div className="p-3 border-b border-[#1e3347] shrink-0">
-              <input
-                type="search"
-                value={cityFilter}
-                onChange={(e) => setCityFilter(e.target.value)}
-                placeholder="Filter cities…"
-                className="w-full bg-[#1c2f3f] border border-[#2a4055] rounded px-3 py-1.5 text-white placeholder-[#5a7d99] text-xs focus:outline-none focus:border-[#3b87d6] transition-colors"
-              />
+                <input
+                  type="search"
+                  value={cityFilter}
+                  aria-label="Filter cities"
+                  onChange={(e) => setCityFilter(e.target.value)}
+                  placeholder="Filter cities…"
+                  className="w-full bg-[#1c2f3f] border border-[#2a4055] rounded px-3 py-1.5 text-white placeholder-[#5a7d99] text-xs focus:outline-none focus:border-[#3b87d6] transition-colors"
+                />
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -347,19 +368,19 @@ export default function WorldMap() {
                     </a>
                   ))}
                   {!cityFilter && panelCities.length > 60 && (
-                    <p className="text-[#5a7d99] text-xs text-center py-3 px-4">
+                    <p className="text-[#78a8c4] text-xs text-center py-3 px-4">
                       Showing 60 of {panelCities.length.toLocaleString()}.
                       Search to filter.
                     </p>
                   )}
                   {cityFilter && displayedCities.length === 0 && (
-                    <p className="p-4 text-[#5a7d99] text-xs">
+                    <p className="p-4 text-[#78a8c4] text-xs">
                       No cities match.
                     </p>
                   )}
                 </>
               ) : (
-                <p className="p-4 text-[#5a7d99] text-xs">
+                <p className="p-4 text-[#78a8c4] text-xs">
                   No city data available.
                 </p>
               )}
@@ -381,10 +402,10 @@ export default function WorldMap() {
               <p className="text-[#7ea8c2] text-sm font-medium">
                 Explore the world
               </p>
-              <p className="text-[#5a7d99] text-xs mt-1">
+              <p className="text-[#78a8c4] text-xs mt-1">
                 Hover a country to see its cities
               </p>
-              <p className="text-[#5a7d99] text-xs">Click to zoom in</p>
+              <p className="text-[#78a8c4] text-xs">Click to zoom in</p>
               <Link
                 href="/countries"
                 className="mt-4 inline-block text-[#3b87d6] hover:text-white text-xs transition-colors"

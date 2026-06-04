@@ -124,7 +124,7 @@ const LONDON_LON = -0.1278;
 
 type PageProps = {
   params: Promise<{ index: string }>;
-  searchParams: Promise<{ lat?: string; lon?: string; name?: string; code?: string }>;
+  searchParams: Promise<{ lat?: string; lon?: string; name?: string; code?: string; tz?: string }>;
 };
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
@@ -139,17 +139,17 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   };
 }
 
-async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
-  const res = await fetch(buildForecastUrl(lat, lon), {
+async function getWeather(lat: number, lon: number, tz?: string): Promise<WeatherResponse> {
+  const res = await fetch(buildForecastUrl(lat, lon, tz), {
     next: { revalidate: 1800 },
   });
   if (!res.ok) throw new Error("Failed to fetch weather data");
   return res.json();
 }
 
-async function getHourlyWeather(lat: number, lon: number): Promise<HourlyForecastResponse | null> {
+async function getHourlyWeather(lat: number, lon: number, tz?: string): Promise<HourlyForecastResponse | null> {
   try {
-    const res = await fetch(buildHourlyForecastUrl(lat, lon), {
+    const res = await fetch(buildHourlyForecastUrl(lat, lon, tz), {
       next: { revalidate: 1800 },
     });
     if (!res.ok) return null;
@@ -256,7 +256,7 @@ function YoyStat({
   const isUp = diff > 0.05;
   const isDown = diff < -0.05;
   const deltaColor = !isUp && !isDown
-    ? "text-[#5a7d99]"
+    ? "text-[#78a8c4]"
     : higherWarmer
       ? isUp ? "text-orange-400" : "text-sky-400"
       : isUp ? "text-blue-400" : "text-emerald-400";
@@ -265,7 +265,7 @@ function YoyStat({
 
   return (
     <div className="bg-[var(--card-bg-alt)] rounded-xl p-4 flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-[#5a7d99] text-[10px] uppercase tracking-wider">
+      <div className="flex items-center gap-1.5 text-[#78a8c4] text-[10px] uppercase tracking-wider">
         <span>{icon}</span>
         <span>{label}</span>
       </div>
@@ -300,7 +300,7 @@ function PrecipBars({
   const bw = W / entries.length;
   return (
     <div className="mb-3 -mx-1 px-1">
-      <p className="text-[#5a7d99] text-[9px] uppercase tracking-wider mb-1">Rain probability</p>
+      <p className="text-[#78a8c4] text-[9px] uppercase tracking-wider mb-1">Rain probability</p>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-5" aria-hidden="true" preserveAspectRatio="none">
         {entries.map((e, i) => {
           const bh = (e.precipProb / 100) * H;
@@ -337,18 +337,18 @@ function DetailCard({
 }) {
   return (
     <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
-      <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
+      <div className="text-[#78a8c4] text-xs mb-2 flex items-center gap-1">
         <span>{icon}</span>
         <span>{label}</span>
       </div>
       <div className="text-white font-semibold text-sm">{value}</div>
-      {sub && <div className="text-[#5a7d99] text-xs mt-0.5">{sub}</div>}
+      {sub && <div className="text-[#78a8c4] text-xs mt-0.5">{sub}</div>}
     </div>
   );
 }
 
 export default async function DayPage({ params, searchParams }: PageProps) {
-  const [{ index }, { lat: latStr, lon: lonStr, name, code }] = await Promise.all([
+  const [{ index }, { lat: latStr, lon: lonStr, name, code, tz }] = await Promise.all([
     params,
     searchParams,
   ]);
@@ -362,7 +362,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
   let weather: WeatherResponse;
   try {
-    weather = await getWeather(lat, lon);
+    weather = await getWeather(lat, lon, tz);
   } catch {
     return (
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
@@ -382,7 +382,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
   const [historical, hourlyWeather] = await Promise.all([
     getHistorical(dateStr, lat, lon),
-    getHourlyWeather(lat, lon),
+    getHourlyWeather(lat, lon, tz),
   ]);
 
   const outdoorAnalysis =
@@ -452,7 +452,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
   // Build day-picker links for sibling days
   const codeParam = code ? `&code=${encodeURIComponent(code)}` : "";
-  const baseParams = `lat=${lat}&lon=${lon}&name=${encodeURIComponent(locationName)}${codeParam}`;
+  const tzParam = tz ? `&tz=${encodeURIComponent(tz)}` : "";
+  const baseParams = `lat=${lat}&lon=${lon}&name=${encodeURIComponent(locationName)}${codeParam}${tzParam}`;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: theme.bgGradient }} data-weather={theme.type}>
@@ -461,7 +462,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
       <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4 flex-wrap">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#78a8c4] mb-4 flex-wrap">
           <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
           <span>/</span>
           <Link href={`/?q=${searchQuery}`} className="hover:text-[#7ea8c2] transition-colors truncate max-w-[160px]">
@@ -483,7 +484,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
               />
             </div>
           </div>
-          <p className="text-[#5a7d99] text-sm mt-0.5">
+          <p className="text-[#78a8c4] text-sm mt-0.5">
             {getFormattedDate(dateStr)}
           </p>
         </div>
@@ -607,21 +608,21 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             value={`${daily.precipitation_sum[dayIndex]} mm`}
           />
           <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
-            <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
+            <div className="text-[#78a8c4] text-xs mb-2 flex items-center gap-1">
               <span aria-hidden="true">☀️</span>
               <span>UV Index</span>
             </div>
             <div className="text-white font-semibold text-sm">{daily.uv_index_max[dayIndex]} · {uv.label}</div>
-            <div className="text-[#5a7d99] text-xs mt-0.5">{uv.tip}</div>
+            <div className="text-[#78a8c4] text-xs mt-0.5">{uv.tip}</div>
             <UvMeter uv={daily.uv_index_max[dayIndex]} />
           </div>
           <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
-            <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
+            <div className="text-[#78a8c4] text-xs mb-2 flex items-center gap-1">
               <span aria-hidden="true">🌅</span>
               <span>Sunrise / Sunset</span>
             </div>
             <div className="text-white font-semibold text-sm">{daily.sunrise[dayIndex].split("T")[1]}</div>
-            <div className="text-[#5a7d99] text-xs mt-0.5">Sunset {daily.sunset[dayIndex].split("T")[1]}</div>
+            <div className="text-[#78a8c4] text-xs mt-0.5">Sunset {daily.sunset[dayIndex].split("T")[1]}</div>
             <DaylightBar {...daylightInfo} />
           </div>
           {isToday && (
@@ -675,13 +676,13 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                               ? "text-sky-500"
                               : isNight
                                 ? "text-[#2a4055]"
-                                : "text-[#5a7d99]"
+                                : "text-[#78a8c4]"
                         }`}
                       >
                         {entry.precipProb}%
                       </span>
                       <span
-                        className={`text-[9px] ${isNight ? "text-[#1e3347]" : "text-[#5a7d99]"}`}
+                        className={`text-[9px] ${isNight ? "text-[#1e3347]" : "text-[#78a8c4]"}`}
                       >
                         {entry.windSpeed}
                       </span>
@@ -690,7 +691,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                 })}
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[#5a7d99] text-[10px]">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[#78a8c4] text-[10px]">
               <span>🌙 Night hours dimmed</span>
               <span>💧 Rain probability</span>
               <span>💨 Wind (km/h, bottom row)</span>
@@ -706,7 +707,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             <p className="text-[#c8dae7] text-sm mb-3 leading-relaxed">
               {getOutdoorSummary(outdoorAnalysis.bestWindows, outdoorAnalysis.badWindows)}
             </p>
-            <p className="text-[#5a7d99] text-xs mb-4">
+            <p className="text-[#78a8c4] text-xs mb-4">
               Scored by temperature, rain chance and wind
             </p>
 
@@ -740,7 +741,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
               style={{ gridTemplateColumns: "repeat(24, 1fr)" }}
             >
               {outdoorAnalysis.hours.map((h) => (
-                <div key={h.hour} className="text-[9px] text-[#5a7d99] overflow-hidden whitespace-nowrap">
+                <div key={h.hour} className="text-[9px] text-[#78a8c4] overflow-hidden whitespace-nowrap">
                   {h.hour % 6 === 0 ? formatHour(h.hour) : ""}
                 </div>
               ))}
@@ -783,7 +784,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                         <span className="text-white font-semibold">{w.timeLabel}</span>
                       </div>
                       {w.peakHour && (
-                        <span className="text-[#5a7d99] text-xs">peak {w.peakHour}</span>
+                        <span className="text-[#78a8c4] text-xs">peak {w.peakHour}</span>
                       )}
                     </div>
                     <p className="text-[#c8dae7] text-sm mb-3 leading-snug">{w.reason}</p>
@@ -861,7 +862,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             )}
 
             {outdoorAnalysis.bestWindows.length === 0 && outdoorAnalysis.badWindows.length === 0 && (
-              <p className="text-[#5a7d99] text-sm border-t border-[#1e3347] pt-3">
+              <p className="text-[#78a8c4] text-sm border-t border-[#1e3347] pt-3">
                 No significant outdoor windows identified today.
               </p>
             )}
@@ -871,7 +872,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         {/* Historical comparison */}
         <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
           <h2 className="text-white font-semibold mb-1">Compared to Last Year</h2>
-          <p className="text-[#5a7d99] text-xs mb-4">Same date, one year ago</p>
+          <p className="text-[#78a8c4] text-xs mb-4">Same date, one year ago</p>
 
           {historical ? (
             <>
@@ -912,7 +913,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
               </div>
             </>
           ) : (
-            <p className="text-[#5a7d99] text-sm">
+            <p className="text-[#78a8c4] text-sm">
               Historical data unavailable for this date.
             </p>
           )}
@@ -938,7 +939,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         <div className="bg-[var(--card-bg)] rounded-xl p-4 mb-3 flex items-start gap-3">
           <span className="text-2xl shrink-0">💡</span>
           <div>
-            <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
+            <p className="text-[#78a8c4] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
             <p className="text-[#c8dae7] text-sm leading-relaxed">{weatherFact}</p>
           </div>
         </div>

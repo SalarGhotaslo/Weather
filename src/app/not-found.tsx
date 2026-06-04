@@ -15,7 +15,7 @@ export default function NotFound() {
           <div className="text-8xl mb-6 weather-foggy inline-block" aria-hidden="true">🌫️</div>
           <h1 className="text-5xl font-bold text-white mb-2">404</h1>
           <h2 className="text-xl text-[#7ea8c2] mb-4">Lost in the fog</h2>
-          <p className="text-[#5a7d99] mb-8 leading-relaxed">
+          <p className="text-[#78a8c4] mb-8 leading-relaxed">
             This page seems to have drifted off. The weather is still great though —
             let us help you find your way back.
           </p>

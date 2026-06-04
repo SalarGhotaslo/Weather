@@ -14,7 +14,7 @@ export default function MapPage() {
       <Header />
 
       {/* Instruction bar */}
-      <div className="bg-[#121f2f] border-b border-[#1e3347] px-4 py-2 flex items-center gap-5 text-[10px] text-[#5a7d99] shrink-0 overflow-x-auto">
+      <div className="bg-[#121f2f] border-b border-[#1e3347] px-4 py-2 flex items-center gap-5 text-[10px] text-[#78a8c4] shrink-0 overflow-x-auto">
         <span className="flex items-center gap-1.5 shrink-0">
           <span className="text-sm">👆</span>
           Hover a country to see its cities

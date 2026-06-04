@@ -16,8 +16,30 @@ function getTimePeriod(hour: number): string {
   return "night";
 }
 
-export default function TimeGradient({ className = "" }: { className?: string }) {
-  const period = getTimePeriod(new Date().getHours());
+function getCurrentHourInTimezone(timezone?: string): number {
+  if (!timezone) return new Date().getHours();
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en", {
+      timeZone: timezone,
+      hour: "numeric",
+      hourCycle: "h23",
+    });
+    return parseInt(formatter.format(now), 10);
+  } catch {
+    return new Date().getHours();
+  }
+}
+
+export default function TimeGradient({
+  className = "",
+  timezone,
+}: {
+  className?: string;
+  timezone?: string;
+}) {
+  const hour = getCurrentHourInTimezone(timezone);
+  const period = getTimePeriod(hour);
   const gradient = TIME_GRADIENTS[period];
   if (!gradient) return null;
 

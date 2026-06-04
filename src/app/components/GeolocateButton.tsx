@@ -26,7 +26,7 @@ export default function GeolocateButton() {
 
   if (state === "error") {
     return (
-      <p className="text-[#5a7d99] text-xs mt-3 text-center">
+      <p className="text-[#78a8c4] text-xs mt-3 text-center">
         Location access denied or unavailable.
       </p>
     );
@@ -36,7 +36,7 @@ export default function GeolocateButton() {
     <button
       onClick={handleClick}
       disabled={state === "loading"}
-      className="mt-3 w-full text-center text-[#5a7d99] hover:text-[#7ea8c2] text-sm py-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+      className="mt-3 w-full text-center text-[#78a8c4] hover:text-[#7ea8c2] text-sm py-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
       aria-label="Get weather for my current location"
     >
       {state === "loading" ? (

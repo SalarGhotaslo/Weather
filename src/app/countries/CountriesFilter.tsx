@@ -49,6 +49,7 @@ export default function CountriesFilter({
         <input
           type="search"
           value={search}
+          aria-label="Search countries or capitals"
           onChange={(e) => setSearch(e.target.value)}
           placeholder={`Search ${countries.length} countries or capitals…`}
           className="flex-1 bg-[#162535] border border-[#2a4055] rounded-lg px-4 py-2.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors"
@@ -81,7 +82,7 @@ export default function CountriesFilter({
       )}
 
       {isFiltered && (
-        <p className="text-[#5a7d99] text-xs mb-4">
+        <p className="text-[#78a8c4] text-xs mb-4">
           {filtered.length} {filtered.length === 1 ? "country" : "countries"} found
           {query ? ` matching "${search.trim()}"` : ""}
           {region ? ` in ${region}` : ""}
@@ -104,7 +105,7 @@ export default function CountriesFilter({
       {displayLetters.map((letter) => (
         <section key={letter} id={`country-letter-${letter}`} className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-[#3b87d6] font-bold text-lg w-6">{letter}</span>
+            <h2 className="text-[#3b87d6] font-bold text-lg w-6">{letter}</h2>
             <div className="flex-1 h-px bg-[#1e3347]" />
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -120,7 +121,7 @@ export default function CountriesFilter({
                     {country.name.common}
                   </div>
                   {country.capital?.[0] && (
-                    <div className="text-[#5a7d99] text-xs truncate">
+                    <div className="text-[#78a8c4] text-xs truncate">
                       {country.capital[0]}
                     </div>
                   )}

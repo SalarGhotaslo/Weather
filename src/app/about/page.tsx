@@ -67,7 +67,7 @@ export default function AboutPage() {
 
       <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-8 flex-1">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-6">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#78a8c4] mb-6">
           <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
           <span aria-hidden="true">/</span>
           <span className="text-[#7ea8c2]">About</span>
@@ -124,7 +124,7 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
-          <p className="text-[#5a7d99] text-xs mt-4">
+          <p className="text-[#78a8c4] text-xs mt-4">
             No API keys are required. All data is fetched server-side with ISR caching (weather: 30 min, country/city data: 24 h).
           </p>
         </section>

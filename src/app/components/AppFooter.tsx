@@ -9,7 +9,7 @@ export default function AppFooter({ note }: { note?: string }) {
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 mb-6 text-xs">
           <div>
             <p className="text-[#3b87d6] font-semibold mb-2 uppercase tracking-wider">Weather</p>
-            <ul className="space-y-1.5 text-[#5a7d99]">
+            <ul className="space-y-1.5 text-[#78a8c4]">
               <li><Link href="/" className="hover:text-[#7ea8c2] transition-colors">Search a city</Link></li>
               <li className="text-[#2a4055]">5-day forecast</li>
               <li className="text-[#2a4055]">Hourly detail</li>
@@ -17,14 +17,14 @@ export default function AppFooter({ note }: { note?: string }) {
           </div>
           <div>
             <p className="text-[#3b87d6] font-semibold mb-2 uppercase tracking-wider">Explore</p>
-            <ul className="space-y-1.5 text-[#5a7d99]">
+            <ul className="space-y-1.5 text-[#78a8c4]">
               <li><Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">All countries</Link></li>
               <li><Link href="/map" className="hover:text-[#7ea8c2] transition-colors">World map</Link></li>
             </ul>
           </div>
           <div>
             <p className="text-[#3b87d6] font-semibold mb-2 uppercase tracking-wider">App</p>
-            <ul className="space-y-1.5 text-[#5a7d99]">
+            <ul className="space-y-1.5 text-[#78a8c4]">
               <li><Link href="/about" className="hover:text-[#7ea8c2] transition-colors">About</Link></li>
               <li className="text-[#2a4055]">No account needed</li>
               <li className="text-[#2a4055]">Free &amp; open data</li>
