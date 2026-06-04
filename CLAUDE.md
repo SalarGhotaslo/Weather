@@ -41,9 +41,11 @@ DayPage (server)
   └── getHistorical(dateStr, lat, lon) → last-year archive (24 h ISR)
       → getHourlyAnalysis(hourly, dateStr, sunrise, sunset)
          returns { hours[24], bestWindows, badWindows }
+         windows detected only within ACTIVE_START–ACTIVE_END (6am–10pm)
          each OutdoorWindow: timeLabel, rating, conditions (avg precip, range if spread>30),
            isBad, peakHour, tempRange, activities[]
-         bad windows: minimum 3 consecutive score-0 hours
+         best windows: runs of score≥2 (relax to ≥1), ranked best-first (score→drier→calmer→earlier)
+         bad windows: minimum 2 consecutive score-0 hours within active hours
   → getWeatherFact(code, temp)     → fun fact string shown in "Did you know?" card
   → getWeatherAnimClass(code)      → CSS class for animated emoji
   → YoyStat (server component)    → 3-column year-over-year comparison tiles
@@ -61,10 +63,16 @@ click country
   → zoom to centroid (zoom=4)
   → showPanel(name) → cities in panel
   → fetchCityMarkers: sample up to 150 cities → geocode via Open-Meteo → top 10 by population
+  → loadWeather({country}) → /api/current resolves capital → inline weather card in panel
   → Marker: dot + glow ring always visible
       hover dot → <g> onMouseEnter → label appears above dot (styled rect + text)
                    dot grows (r×1.3) and brightens (#60a5fa) on hover
-      click dot → /?q=City, Country
+      click dot → loadWeather({lat,lon,name}) → inline weather card in panel
+
+inline weather card (top of cities panel): location name (+ "capital" badge),
+  emoji + temp + label, feels-like, live LocalTime, "Full 7-day forecast →" link.
+  Clicking a city in the panel list → loadWeather({city, country}).
+  cardReq ref tokens guard against out-of-order responses from rapid clicks.
 
 instruction bar hints: hover · click · scroll/pinch to zoom + drag to pan · hover dot for name
 ```

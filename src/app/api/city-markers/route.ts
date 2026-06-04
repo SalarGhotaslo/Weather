@@ -13,6 +13,7 @@ interface GeoRow {
   latitude: number;
   longitude: number;
   country?: string;
+  country_code?: string; // ISO 3166-1 alpha-2 from Open-Meteo
   population?: number;
 }
 
@@ -24,9 +25,36 @@ function validateCountry(raw: string | null): string | null {
   return trimmed;
 }
 
+// Resolve a country name to its ISO alpha-2 code (cached). Matching geocoded
+// cities by code is far more reliable than by name: it avoids both same-named
+// foreign cities (La Paz, Mexico vs Bolivia) and name-format mismatches
+// ("DR Congo" vs the geocoder's "Democratic Republic of the Congo").
+async function resolveCountryCode(name: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=name,cca2`,
+      { next: { revalidate: 86400 } },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const lower = name.toLowerCase();
+    const best =
+      data.find(
+        (c) =>
+          c?.name?.common?.toLowerCase() === lower ||
+          c?.name?.official?.toLowerCase() === lower,
+      ) ?? data[0];
+    return typeof best?.cca2 === "string" ? best.cca2.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
 async function geocodeCity(
   cityName: string,
   countryHint: string,
+  countryCode: string | null,
 ): Promise<CityMarker | null> {
   try {
     const res = await fetch(
@@ -38,11 +66,20 @@ async function geocodeCity(
     if (!data.results?.length) return null;
 
     const hint = countryHint.toLowerCase();
+    const results = data.results as GeoRow[];
+    // Prefer matching by ISO code (most reliable). Fall back to an exact, then
+    // fuzzy, country-name match only when the code couldn't be resolved.
+    // Crucially there is NO blind fall-through to the first global result — that
+    // used to drop a same-named foreign city onto the wrong country's map.
     const match: GeoRow | undefined =
-      (data.results as GeoRow[]).find((r) => {
+      (countryCode
+        ? results.find((r) => r.country_code?.toLowerCase() === countryCode)
+        : undefined) ??
+      results.find((r) => (r.country ?? "").toLowerCase() === hint) ??
+      results.find((r) => {
         const c = (r.country ?? "").toLowerCase();
-        return c === hint || c.includes(hint) || hint.includes(c);
-      }) ?? data.results[0];
+        return c.includes(hint) || hint.includes(c);
+      });
 
     if (!match) return null;
     return {
@@ -61,20 +98,24 @@ export async function GET(request: NextRequest) {
   if (!validated) return Response.json([]);
   const country = normalizeCountryName(validated);
 
-  // Fetch full city list (cached 24 h)
-  let cities: string[] = [];
-  try {
-    const res = await fetch(
-      `https://countriesnow.space/api/v0.1/countries/cities/q?country=${encodeURIComponent(country)}`,
-      { next: { revalidate: 86400 } },
-    );
-    if (res.ok) {
-      const data = await res.json();
-      if (!data.error && Array.isArray(data.data)) cities = data.data as string[];
-    }
-  } catch {
-    // proceed with empty list
-  }
+  // Resolve the ISO code (for reliable geocode matching) and the city list in
+  // parallel — neither depends on the other.
+  const [countryCode, cities] = await Promise.all([
+    resolveCountryCode(country),
+    (async (): Promise<string[]> => {
+      try {
+        const res = await fetch(
+          `https://countriesnow.space/api/v0.1/countries/cities/q?country=${encodeURIComponent(country)}`,
+          { next: { revalidate: 86400 } },
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return !data.error && Array.isArray(data.data) ? (data.data as string[]) : [];
+      } catch {
+        return [];
+      }
+    })(),
+  ]);
 
   // Sample up to 80 cities spread evenly across the alphabetically sorted list.
   const candidates = selectCandidates(cities, 80);
@@ -83,7 +124,7 @@ export async function GET(request: NextRequest) {
 
   // Geocode all candidates in parallel, filter valid, sort by population
   const geocoded = await Promise.all(
-    candidates.map((c) => geocodeCity(c, country)),
+    candidates.map((c) => geocodeCity(c, country, countryCode)),
   );
 
   const markers = geocoded

@@ -41,89 +41,6 @@ import LocalTime from "@/app/components/LocalTime";
 import { getWeatherTheme } from "@/lib/weatherTheme";
 import WeatherBackground from "@/app/components/WeatherBackground";
 
-// ── Server-rendered SVG temperature curve ─────────────────────────────
-
-function smoothPath(pts: { x: number; y: number }[]): string {
-  if (pts.length < 2) return "";
-  const parts = [`M ${pts[0].x},${pts[0].y}`];
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[Math.max(0, i - 1)];
-    const p1 = pts[i];
-    const p2 = pts[i + 1];
-    const p3 = pts[Math.min(pts.length - 1, i + 2)];
-    const t = 0.25;
-    const cp1x = p1.x + (p2.x - p0.x) * t;
-    const cp1y = p1.y + (p2.y - p0.y) * t;
-    const cp2x = p2.x - (p3.x - p1.x) * t;
-    const cp2y = p2.y - (p3.y - p1.y) * t;
-    parts.push(`C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x},${p2.y}`);
-  }
-  return parts.join(" ");
-}
-
-function TempCurve({
-  entries,
-  sunriseHour,
-  sunsetHour,
-}: {
-  entries: HourlyEntry[];
-  sunriseHour: number;
-  sunsetHour: number;
-}) {
-  if (entries.length < 2) return null;
-
-  const gradientId = `tempFill-${crypto.randomUUID()}`;
-  const W = 480;
-  const H = 64;
-  const PY = 10; // vertical padding
-  const temps = entries.map((e) => e.temp);
-  const minT = Math.min(...temps);
-  const maxT = Math.max(...temps);
-  const range = maxT - minT || 1;
-
-  const px = (i: number) => (i / (entries.length - 1)) * W;
-  const py = (t: number) => PY + (1 - (t - minT) / range) * (H - PY * 2);
-
-  const pts = entries.map((e, i) => ({ x: px(i), y: py(e.temp) }));
-  const linePath = smoothPath(pts);
-  const fillPath = `${linePath} L ${W},${H} L 0,${H} Z`;
-
-  // Sunrise / sunset x positions
-  const sxRise = px(Math.min(sunriseHour, entries.length - 1));
-  const sxSet = px(Math.min(sunsetHour, entries.length - 1));
-
-  return (
-    <div className="mb-4 -mx-1 px-1">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full h-16"
-        aria-hidden="true"
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b87d6" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#3b87d6" stopOpacity="0.03" />
-          </linearGradient>
-        </defs>
-        {/* Night shading */}
-        <rect x="0" y="0" width={sxRise} height={H} fill="#0e1723" fillOpacity="0.5" />
-        <rect x={sxSet} y="0" width={W - sxSet} height={H} fill="#0e1723" fillOpacity="0.5" />
-        {/* Sunrise/sunset lines */}
-        <line x1={sxRise} y1="0" x2={sxRise} y2={H} stroke="#fbbf24" strokeWidth="1" strokeDasharray="3,3" strokeOpacity="0.6" />
-        <line x1={sxSet} y1="0" x2={sxSet} y2={H} stroke="#f97316" strokeWidth="1" strokeDasharray="3,3" strokeOpacity="0.6" />
-        {/* Fill under curve */}
-        <path d={fillPath} fill={`url(#${gradientId})`} />
-        {/* Curve */}
-        <path d={linePath} fill="none" stroke="#3b87d6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Min/max labels */}
-        <text x="4" y={py(maxT) - 3} fontSize="9" fill="#7ea8c2">{maxT}°</text>
-        <text x="4" y={py(minT) + 9} fontSize="9" fill="#7ea8c2">{minT}°</text>
-      </svg>
-    </div>
-  );
-}
-
 const LONDON_LAT = 51.5074;
 const LONDON_LON = -0.1278;
 
@@ -304,7 +221,7 @@ function PrecipBars({
   const H = 20;
   const bw = W / entries.length;
   return (
-    <div className="mb-3 -mx-1 px-1">
+    <div className="mb-3">
       <p className="text-[var(--text-muted)] text-[9px] uppercase tracking-wider mb-1">Rain probability</p>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-5" aria-hidden="true" preserveAspectRatio="none">
         {entries.map((e, i) => {
@@ -702,10 +619,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         {/* Hourly forecast */}
         {hourlyEntries.length > 0 && (
           <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
-            <h2 className="text-white font-semibold mb-3">Hourly Forecast</h2>
-            {/* SVG temperature curve */}
-            <TempCurve entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
-            {/* Precipitation probability bars */}
+            <h2 className="text-white font-semibold mb-4 text-lg">Hourly Forecast</h2>
+            {/* Compact rain-probability overview above the hour-by-hour cards */}
             <PrecipBars entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
             <div
               tabIndex={0}
@@ -713,7 +628,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
               aria-label="Hourly forecast — scroll horizontally for more hours"
               className="overflow-x-auto -mx-1 px-1 scroll-fade-right"
             >
-              <div className="flex gap-1 min-w-max">
+              <div className="flex gap-1.5 min-w-max">
                 {hourlyEntries.map((entry) => {
                   const hourIsNight =
                     entry.hour < sunriseHour || entry.hour >= sunsetHour;
@@ -722,7 +637,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                     <div
                       key={entry.hour}
                       aria-current={isCurrentHour ? "time" : undefined}
-                      className={`flex flex-col items-center gap-1.5 py-2.5 px-1.5 rounded-lg min-w-[42px] ${
+                      className={`flex flex-col items-center gap-2 py-3.5 px-2.5 rounded-xl min-w-[58px] ${
                         isCurrentHour
                           ? "bg-[var(--card-bg-secondary)] ring-2 ring-[var(--accent-color)]"
                           : hourIsNight
@@ -731,22 +646,22 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       }`}
                     >
                       <span
-                        className={`text-[10px] font-medium whitespace-nowrap ${
+                        className={`text-xs font-semibold whitespace-nowrap ${
                           isCurrentHour ? "text-[var(--text-accent)]" : hourIsNight ? "text-[var(--text-faint)]" : "text-[var(--text-muted)]"
                         }`}
                       >
                         {isCurrentHour ? "Now" : entry.label}
                       </span>
-                      <span className="text-lg leading-none" aria-hidden="true">
+                      <span className="text-3xl leading-none" aria-hidden="true">
                         {hourIsNight ? "🌙" : getWeatherInfo(entry.weatherCode).emoji}
                       </span>
                       <span
-                        className={`text-sm font-semibold ${hourIsNight && !isCurrentHour ? "text-[var(--text-faint)]" : "text-white"}`}
+                        className={`text-lg font-bold ${hourIsNight && !isCurrentHour ? "text-[var(--text-faint)]" : "text-white"}`}
                       >
                         {entry.temp}°
                       </span>
                       <span
-                        className={`text-[10px] ${
+                        className={`text-xs font-medium ${
                           entry.precipProb >= 60
                             ? "text-blue-400"
                             : entry.precipProb >= 30
@@ -756,10 +671,10 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                                 : "text-[var(--text-faint)]"
                         }`}
                       >
-                        {entry.precipProb}%
+                        💧{entry.precipProb}%
                       </span>
-                      <span className={`text-[9px] ${isCurrentHour ? "text-[var(--text-muted)]" : "text-[var(--text-faint)]"}`}>
-                        {entry.windSpeed}
+                      <span className={`text-[10px] ${isCurrentHour ? "text-[var(--text-muted)]" : "text-[var(--text-faint)]"}`}>
+                        💨{entry.windSpeed}
                       </span>
                     </div>
                   );
@@ -783,7 +698,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
               {getOutdoorSummary(outdoorAnalysis.bestWindows, outdoorAnalysis.badWindows)}
             </p>
             <p className="text-[var(--text-muted)] text-xs mb-4">
-              Scored by temperature, rain chance and wind
+              Best options scored within typical hours out (6am–10pm) by
+              temperature, rain chance and wind
             </p>
 
             {/* 24-hour colour strip — a visual summary of the textual best/worst
@@ -851,7 +767,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             {outdoorAnalysis.bestWindows.length > 0 && (
               <div className="mb-4">
                 <p className="text-[var(--text-accent)] text-xs font-semibold uppercase tracking-wider mb-2">
-                  Best times to go out
+                  Best times to go out{outdoorAnalysis.bestWindows.length > 1 ? ` · ${outdoorAnalysis.bestWindows.length} options` : ""}
                 </p>
                 {outdoorAnalysis.bestWindows.map((w, i) => (
                   <div

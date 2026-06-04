@@ -385,7 +385,14 @@ export interface HourData {
   precipProb: number;
   windSpeed: number;
   score: number; // -1=night  0=bad  1=poor  2=good  3=excellent
+  active: boolean; // within typical waking/social hours (see ACTIVE_START/END)
 }
+
+// Best- and worst-time windows are detected only within the hours people
+// realistically want to be outside — a 6am–10pm waking window. The night score
+// (-1) still trims any dark hours inside that range (e.g. pre-sunrise winter).
+export const ACTIVE_START = 6; // 6am, inclusive
+export const ACTIVE_END = 22; // 10pm, exclusive
 
 export interface OutdoorWindow {
   timeLabel: string;
@@ -448,14 +455,15 @@ export function getHourlyAnalysis(
           hourly.wind_speed_10m[i] ?? 0,
           isNight,
         ),
+        active: hour >= ACTIVE_START && hour < ACTIVE_END,
       };
     });
 
-  function findRuns(pred: (s: number) => boolean, minLen = 2): { start: number; end: number }[] {
+  function findRuns(pred: (h: HourData) => boolean, minLen = 2): { start: number; end: number }[] {
     const runs: { start: number; end: number }[] = [];
     let start = -1;
     hours.forEach((h, idx) => {
-      if (pred(h.score)) {
+      if (pred(h)) {
         if (start === -1) start = idx;
       } else if (start !== -1) {
         if (idx - start >= minLen) runs.push({ start, end: idx - 1 });
@@ -527,11 +535,15 @@ export function getHourlyAnalysis(
     if (maxPrecip < 5) bits.push("completely dry");
     else if (avgPrecip < 10) bits.push("mostly dry");
     else if (avgPrecip < 20) bits.push("low rain risk");
-    else if (avgPrecip < 30) bits.push("passable with occasional drops");
+    else if (avgPrecip < 35) bits.push("some rain risk");
+    else if (avgPrecip < 55) bits.push(`a fair chance of rain (${avgPrecip}%)`);
+    else bits.push(`rain likely (${avgPrecip}%)`);
 
     if (avgWind < 10) bits.push("calm");
     else if (avgWind < 18) bits.push("light breeze");
     else if (avgWind < 25) bits.push("gentle breeze");
+    else if (avgWind < 35) bits.push("breezy");
+    else bits.push(`windy (${avgWind} km/h)`);
 
     if (bits.length === 0) return "Conditions are acceptable for outdoor time";
     const joined = bits.join(", ");
@@ -574,13 +586,18 @@ export function getHourlyAnalysis(
     );
     const peakHour = slice[peakIdx]?.label;
 
+    // Honest about marginal windows: a stretch that only ever reaches "Good"
+    // (score 2 — e.g. 30–50% rain risk) is Fair, not Good, so a wet day's
+    // least-bad slot isn't oversold.
     const rating: OutdoorWindow["rating"] = isBad
       ? "Poor"
       : avgScore >= 3.3
         ? "Excellent"
-        : avgScore >= 2.7
+        : avgScore >= 2.3
           ? "Good"
-          : "Fair";
+          : avgScore >= 1.3
+            ? "Fair"
+            : "Poor";
 
     // Use avg precip (not max) so a single heavy-rain hour doesn't inflate the description.
     // Show a range when there's significant spread across the window.
@@ -613,20 +630,44 @@ export function getHourlyAnalysis(
     };
   }
 
-  // Best windows: score >= 3 (good or excellent hours only)
-  const bestWindows = findRuns((s) => s >= 3)
+  const runStats = (r: { start: number; end: number }) => {
+    const slice = hours.slice(r.start, r.end + 1);
+    return {
+      score: slice.reduce((s, h) => s + h.score, 0),
+      precip: slice.reduce((s, h) => s + h.precipProb, 0),
+      wind: slice.reduce((s, h) => s + h.windSpeed, 0),
+    };
+  };
+
+  // Best windows — only ever within active social hours. A window counts as a
+  // good time to be out if every hour is at least "Good" (score ≥ 2); we do NOT
+  // require every hour to be pristine. Requiring ≥ 3 used to collapse a long,
+  // comfortable afternoon (e.g. 25% rain risk) down to a single slightly-better
+  // evening hour. We only relax to "Poor" (≥ 1) when nothing better exists, so a
+  // rough day still surfaces its least-bad options instead of reporting nothing.
+  let bestRuns = findRuns((h) => h.active && h.score >= 2);
+  if (bestRuns.length === 0) bestRuns = findRuns((h) => h.active && h.score >= 1);
+
+  const bestWindows = bestRuns
+    // Rank best-first: total quality (so a long pleasant stretch beats a brief
+    // perfect one), then drier, then calmer, then earlier. The drier tiebreak
+    // matters when two windows score equally — e.g. a damp 6am vs a clearing
+    // 7pm both rate "Fair", but the evening is the better shout.
+    .map((r) => ({ r, st: runStats(r) }))
     .sort(
       (a, b) =>
-        hours.slice(b.start, b.end + 1).reduce((s, h) => s + h.score, 0) -
-        hours.slice(a.start, a.end + 1).reduce((s, h) => s + h.score, 0),
+        b.st.score - a.st.score ||
+        a.st.precip - b.st.precip ||
+        a.st.wind - b.st.wind ||
+        a.r.start - b.r.start,
     )
     .slice(0, 3)
-    .sort((a, b) => a.start - b.start)
-    .map((r) => runToWindow(r, false));
+    .map(({ r }) => runToWindow(r, false));
 
-  // Require at least 3 consecutive bad hours to surface an "avoid" window,
-  // to filter out brief/isolated poor spells that aren't worth calling out.
-  const badWindows = findRuns((s) => s === 0, 3)
+  // Worst windows — genuinely bad stretches (score 0) inside active hours.
+  // Two consecutive bad hours is enough to flag once we're already confined to
+  // the part of the day people actually go out in.
+  const badWindows = findRuns((h) => h.active && h.score === 0)
     .sort((a, b) => b.end - b.start - (a.end - a.start))
     .slice(0, 2)
     .map((r, i) => runToWindow(r, true, i === 0 ? "worst" : "bad"));
@@ -676,23 +717,47 @@ export function getOutdoorSummary(
   bestWindows: OutdoorWindow[],
   badWindows: OutdoorWindow[],
 ): string {
+  const lc = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+
   if (bestWindows.length === 0 && badWindows.length > 0) {
     const why = badWindows[0].reason ?? "conditions are poor";
-    return `Tricky day for outdoor plans — ${why.charAt(0).toLowerCase() + why.slice(1)}. Avoid ${badWindows[0].timeLabel} especially.`;
+    return `Tricky day for outdoor plans — ${lc(why)}. Avoid ${badWindows[0].timeLabel} especially.`;
   }
   if (bestWindows.length === 0) {
-    return "No standout outdoor windows today, but conditions are broadly reasonable.";
+    return `No standout outdoor windows between ${formatHour(ACTIVE_START)} and ${formatHour(ACTIVE_END)} today, but conditions are broadly reasonable.`;
   }
+
   const best = bestWindows[0];
   const acts =
     best.activities && best.activities.length > 0
       ? best.activities.slice(0, 2).join(" or ").toLowerCase()
       : "outdoor activity";
+
+  // When even the best stretch is only Fair/Poor it's a rough day — say so and
+  // frame the window as the least-bad option rather than a positive pick.
+  const isToughDay = best.rating === "Fair" || best.rating === "Poor";
+
+  let summary: string;
   if (best.rating === "Excellent")
-    return `Excellent: ${best.timeLabel}. ${best.reason ?? "Great conditions"}. Perfect for ${acts}.`;
-  if (best.rating === "Good")
-    return `Good window for ${acts}: ${best.timeLabel}. ${best.reason ?? "Decent conditions"}.`;
-  return `Decent conditions around ${best.timeLabel}. ${best.reason ?? "Reasonable for a stroll"}.`;
+    summary = `Excellent: ${best.timeLabel}. ${best.reason ?? "Great conditions"}. Perfect for ${acts}.`;
+  else if (best.rating === "Good")
+    summary = `Good window for ${acts}: ${best.timeLabel}. ${best.reason ?? "Decent conditions"}.`;
+  else
+    summary = `A rough day to be outside — your best bet is ${best.timeLabel}${best.reason ? `: ${lc(best.reason)}` : ""}. Indoors is the safer call.`;
+
+  // Point to the other options so the reader sees more than one choice — but
+  // only when the day is actually good; on a tough day extra "options" mislead.
+  if (!isToughDay && bestWindows.length > 1) {
+    const others = bestWindows.slice(1, 3).map((w) => w.timeLabel).join(" and ");
+    summary += ` Also worth a look: ${others}.`;
+  }
+
+  // Always name the worst stretch to steer clear of, when there is one.
+  if (badWindows.length > 0) {
+    summary += ` Steer clear of ${badWindows[0].timeLabel}.`;
+  }
+
+  return summary;
 }
 
 // ── Weather alert banner ─────────────────────────────────────────────

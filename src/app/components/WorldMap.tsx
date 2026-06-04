@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ComposableMap,
@@ -13,7 +12,10 @@ import {
 import { geoCentroid } from "d3-geo";
 import type { Feature } from "geojson";
 import { normalizeCountryName } from "@/lib/countries";
+import { getWeatherInfo, formatCityTime } from "@/lib/weather";
+import LocalTime from "./LocalTime";
 import type { CityMarker } from "@/app/api/city-markers/route";
+import type { CurrentWeather } from "@/app/api/current/route";
 
 const GEO_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -24,7 +26,6 @@ interface Position {
 }
 
 export default function WorldMap() {
-  const router = useRouter();
   const [position, setPosition] = useState<Position>({
     coordinates: [0, 20],
     zoom: 1,
@@ -37,10 +38,62 @@ export default function WorldMap() {
   const [cityFilter, setCityFilter] = useState("");
   const [cityMarkers, setCityMarkers] = useState<CityMarker[]>([]);
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
+  // Inline weather card shown when a country, city marker, or panel city is
+  // clicked. `country` is carried alongside so the "full forecast" link works.
+  const [card, setCard] = useState<(CurrentWeather & { country: string }) | null>(null);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardError, setCardError] = useState(false);
 
   const citiesCache = useRef<Record<string, string[]>>({});
   const markersCache = useRef<Record<string, CityMarker[]>>({});
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Monotonic token so a slow request from an earlier click can't overwrite the
+  // card with stale data after a newer click has started.
+  const cardReq = useRef(0);
+
+  const loadWeather = useCallback(
+    async (params: {
+      country: string; // normalized country name — used for the forecast link + geocode hint
+      lat?: number;
+      lon?: number;
+      name?: string; // city label when already known
+      cityQuery?: string; // city to geocode by name
+    }) => {
+      const token = ++cardReq.current;
+      setCardError(false);
+      setCardLoading(true);
+      setCard(null);
+
+      const qs = new URLSearchParams();
+      if (params.lat !== undefined && params.lon !== undefined) {
+        qs.set("lat", String(params.lat));
+        qs.set("lon", String(params.lon));
+        if (params.name) qs.set("name", params.name);
+      } else if (params.cityQuery) {
+        qs.set("city", params.cityQuery);
+        qs.set("country", params.country);
+      } else {
+        qs.set("country", params.country);
+      }
+
+      try {
+        const res = await fetch(`/api/current?${qs.toString()}`);
+        if (token !== cardReq.current) return; // superseded by a newer click
+        const data: CurrentWeather | null = res.ok ? await res.json() : null;
+        if (token !== cardReq.current) return;
+        if (!data) {
+          setCardError(true);
+        } else {
+          setCard({ ...data, country: params.country });
+        }
+      } catch {
+        if (token === cardReq.current) setCardError(true);
+      } finally {
+        if (token === cardReq.current) setCardLoading(false);
+      }
+    },
+    [],
+  );
 
   const loadCities = useCallback(async (name: string): Promise<string[]> => {
     if (citiesCache.current[name]) return citiesCache.current[name];
@@ -119,11 +172,12 @@ export default function WorldMap() {
       setPosition({ coordinates: centroid, zoom: 4 });
       setCityMarkers([]);
 
-      // Panel and markers load independently — no need to await one before the other
+      // Panel, markers, and the capital's weather card load independently
       void showPanel(name);
       void fetchCityMarkers(name);
+      void loadWeather({ country: name });
     },
-    [showPanel, fetchCityMarkers],
+    [showPanel, fetchCityMarkers, loadWeather],
   );
 
   const handleReset = () => {
@@ -133,6 +187,10 @@ export default function WorldMap() {
     setPanelCities([]);
     setCityFilter("");
     setCityMarkers([]);
+    cardReq.current++; // cancel any in-flight card request
+    setCard(null);
+    setCardLoading(false);
+    setCardError(false);
   };
 
   const displayedCities = cityFilter.trim()
@@ -290,16 +348,22 @@ export default function WorldMap() {
                         aria-label={`View weather in ${marker.name}`}
                         style={{ cursor: "pointer", transition: "r 0.1s, fill 0.1s" }}
                         onClick={() =>
-                          router.push(
-                            `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
-                          )
+                          loadWeather({
+                            country: panelCountry ?? "",
+                            lat: marker.lat,
+                            lon: marker.lon,
+                            name: marker.name,
+                          })
                         }
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            router.push(
-                              `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
-                            );
+                            loadWeather({
+                              country: panelCountry ?? "",
+                              lat: marker.lat,
+                              lon: marker.lon,
+                              name: marker.name,
+                            });
                           }
                         }}
                       />
@@ -332,11 +396,65 @@ export default function WorldMap() {
               </h2>
               {!panelLoading && (
                 <p className="text-[var(--text-muted)] text-xs mt-0.5">
-                  {panelCities.length.toLocaleString()} cities · click to see
-                  weather
+                  {panelCities.length.toLocaleString()} cities · click one for
+                  its weather
                 </p>
               )}
             </div>
+
+            {/* Inline weather card — capital on country click, the city on a city click */}
+            {(cardLoading || card || cardError) && (
+              <div className="p-4 border-b border-[#1e3347] shrink-0 bg-[#0f1b29]">
+                {cardLoading ? (
+                  <div className="space-y-2 animate-pulse">
+                    <div className="h-4 w-32 bg-[#1c2f3f] rounded" />
+                    <div className="h-7 w-24 bg-[#1c2f3f] rounded" />
+                    <div className="h-3 w-40 bg-[#1c2f3f] rounded" />
+                  </div>
+                ) : cardError ? (
+                  <p className="text-[var(--text-muted)] text-xs">
+                    Weather unavailable for this location.
+                  </p>
+                ) : card ? (
+                  <>
+                    <p className="text-white text-sm font-semibold truncate">
+                      {card.name}
+                      {card.isCapital && (
+                        <span className="ml-1.5 text-[10px] uppercase tracking-wide text-[var(--text-accent)] font-medium">
+                          capital
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-2xl" aria-hidden="true">
+                        {getWeatherInfo(card.code).emoji}
+                      </span>
+                      <span className="text-white text-2xl font-bold">
+                        {card.temp}°
+                      </span>
+                      <span className="text-[var(--text-muted)] text-xs">
+                        {getWeatherInfo(card.code).label}
+                      </span>
+                    </div>
+                    <p className="text-[var(--text-muted)] text-xs mt-1">
+                      Feels {card.feelsLike}° ·{" "}
+                      <LocalTime
+                        timezone={card.timezone}
+                        initial={formatCityTime(card.timezone)}
+                        className="inline"
+                        label={`Local time in ${card.name}`}
+                      />
+                    </p>
+                    <a
+                      href={`/?q=${encodeURIComponent(`${card.name}, ${card.country}`)}`}
+                      className="inline-block mt-2 text-[var(--text-accent)] hover:text-white text-xs transition-colors"
+                    >
+                      Full 7-day forecast →
+                    </a>
+                  </>
+                ) : null}
+              </div>
+            )}
 
             <div className="p-3 border-b border-[#1e3347] shrink-0">
                 <input
@@ -359,13 +477,20 @@ export default function WorldMap() {
               ) : displayedCities.length > 0 ? (
                 <>
                   {displayedCities.map((city) => (
-                    <a
+                    <button
                       key={city}
-                      href={`/?q=${encodeURIComponent(`${city}, ${panelCountry}`)}`}
-                      className="block px-4 py-2 text-[var(--text-muted)] hover:text-white hover:bg-[#162535] text-xs transition-colors border-b border-[#1e3347]/40 last:border-0"
+                      type="button"
+                      onClick={() =>
+                        loadWeather({
+                          country: panelCountry ?? "",
+                          cityQuery: city,
+                          name: city,
+                        })
+                      }
+                      className="block w-full text-left px-4 py-2 text-[var(--text-muted)] hover:text-white hover:bg-[#162535] text-xs transition-colors border-b border-[#1e3347]/40 last:border-0"
                     >
                       {city}
-                    </a>
+                    </button>
                   ))}
                   {!cityFilter && panelCities.length > 60 && (
                     <p className="text-[var(--text-muted)] text-xs text-center py-3 px-4">

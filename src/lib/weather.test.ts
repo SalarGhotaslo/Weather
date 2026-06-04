@@ -724,10 +724,11 @@ describe("getOutdoorSummary", () => {
     expect(s).toContain("2pm – 4pm");
   });
 
-  it("returns decent summary for Fair rating", () => {
+  it("frames a Fair-only day as a rough day with the least-bad window", () => {
     const w = makeWindow("Fair", "11am – 1pm", ["Walking"], false);
     const s = getOutdoorSummary([w], []);
-    expect(s.toLowerCase()).toContain("decent");
+    expect(s.toLowerCase()).toContain("rough day");
+    expect(s).toContain("11am – 1pm");
   });
 
   it("mentions stay in when no best windows but bad window exists", () => {
@@ -984,6 +985,91 @@ describe("getHourlyAnalysis enhanced windows", () => {
     if (badWindows.length > 0) {
       expect(badWindows[0].activities).toEqual([]);
     }
+  });
+});
+
+describe("getHourlyAnalysis active-hours windows", () => {
+  function makeHourly(
+    pick: (i: number) => { temp: number; precip: number; wind: number },
+  ): HourlyForecastResponse["hourly"] {
+    const date = "2026-06-04";
+    return {
+      time: Array.from({ length: 24 }, (_, i) => `${date}T${String(i).padStart(2, "0")}:00`),
+      temperature_2m: Array.from({ length: 24 }, (_, i) => pick(i).temp),
+      precipitation_probability: Array.from({ length: 24 }, (_, i) => pick(i).precip),
+      wind_speed_10m: Array.from({ length: 24 }, (_, i) => pick(i).wind),
+      uv_index: Array.from({ length: 24 }, () => 3),
+      weather_code: Array.from({ length: 24 }, () => 1),
+    };
+  }
+
+  it("marks hours inside 6am–10pm as active", () => {
+    const hourly = makeHourly(() => ({ temp: 18, precip: 5, wind: 10 }));
+    const { hours } = getHourlyAnalysis(hourly, "2026-06-04", "2026-06-04T03:00", "2026-06-04T23:00");
+    expect(hours[5].active).toBe(false); // 5am
+    expect(hours[6].active).toBe(true); // 6am
+    expect(hours[21].active).toBe(true); // 9pm
+    expect(hours[22].active).toBe(false); // 10pm (exclusive)
+  });
+
+  it("includes an early-morning 6am window in best times", () => {
+    // 6–8am is the only pleasant stretch; with a 4am sunrise it isn't night.
+    const hourly = makeHourly((i) =>
+      i >= 6 && i <= 8
+        ? { temp: 22, precip: 3, wind: 8 } // excellent and now within active hours
+        : { temp: 4, precip: 10, wind: 35 }, // chilly + windy elsewhere
+    );
+    const { bestWindows } = getHourlyAnalysis(hourly, "2026-06-04", "2026-06-04T04:00", "2026-06-04T22:00");
+    expect(bestWindows.length).toBeGreaterThan(0);
+    expect(bestWindows[0].timeLabel.startsWith("6am")).toBe(true);
+  });
+
+  it("never starts a window before 6am", () => {
+    // 3–5am perfect (and daytime via a 2am sunrise), but before the active window.
+    const hourly = makeHourly((i) =>
+      i >= 3 && i <= 5
+        ? { temp: 22, precip: 3, wind: 8 }
+        : { temp: 18, precip: 5, wind: 10 },
+    );
+    const { bestWindows } = getHourlyAnalysis(hourly, "2026-06-04", "2026-06-04T02:00", "2026-06-04T22:00");
+    for (const w of bestWindows) {
+      expect(w.timeLabel.startsWith("3am")).toBe(false);
+      expect(w.timeLabel.startsWith("4am")).toBe(false);
+      expect(w.timeLabel.startsWith("5am")).toBe(false);
+    }
+  });
+
+  it("falls back to relatively-best options on a so-so day", () => {
+    // Nothing excellent, but the active day is usable — we should still offer options.
+    const hourly = makeHourly(() => ({ temp: 10, precip: 10, wind: 10 })); // score 2 everywhere daytime
+    const { bestWindows } = getHourlyAnalysis(hourly, "2026-06-04", "2026-06-04T06:00", "2026-06-04T21:00");
+    expect(bestWindows.length).toBeGreaterThan(0);
+  });
+
+  it("keeps a comfortable daytime window when only the evening is pristine", () => {
+    // Regression: a pleasant afternoon with a moderate rain-risk (score 2) used
+    // to be discarded in favour of a single clear evening hour (score 3+).
+    const hourly = makeHourly((i) => {
+      if (i >= 9 && i <= 17) return { temp: 18, precip: 25, wind: 12 }; // Good (score 2)
+      if (i >= 18 && i <= 20) return { temp: 17, precip: 5, wind: 12 }; // Excellent
+      return { temp: 4, precip: 80, wind: 30 }; // genuinely poor (score 1) elsewhere
+    });
+    const { bestWindows } = getHourlyAnalysis(hourly, "2026-06-04", "2026-06-04T05:00", "2026-06-04T22:00");
+    expect(bestWindows.length).toBeGreaterThan(0);
+    // The recommendation should span the day, not collapse to the evening only.
+    expect(bestWindows[0].timeLabel.startsWith("9am")).toBe(true);
+    expect(bestWindows[0].timeLabel).toContain("8pm");
+  });
+
+  it("flags a 2-hour bad stretch within active hours as a worst window", () => {
+    const hourly = makeHourly((i) =>
+      i >= 13 && i <= 14
+        ? { temp: 18, precip: 90, wind: 10 } // 2 consecutive bad hours
+        : { temp: 20, precip: 5, wind: 8 },
+    );
+    const { badWindows } = getHourlyAnalysis(hourly, "2026-06-04", "2026-06-04T06:00", "2026-06-04T21:00");
+    expect(badWindows.length).toBeGreaterThan(0);
+    expect(badWindows[0].severity).toBe("worst");
   });
 });
 

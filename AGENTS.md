@@ -28,6 +28,7 @@ Key features:
 | `/about` | Static page: features, data sources, tech stack, security note |
 | `/api/cities?country=Name` | Server proxy → CountriesNow, validated + cached 24 h |
 | `/api/city-markers?country=Name` | Geocodes up to 10 cities for map markers, validated + cached 24 h |
+| `/api/current?lat=&lon=[&name=]` / `?city=&country=` / `?country=` | Current temp + feels-like + weather code + IANA timezone for the map's inline weather card. 3 modes: direct coords, named city, or country→capital. Validated + cached 30 min |
 
 ## Code conventions
 - Server Components by default; only add `'use client'` for state/effects/browser APIs
@@ -61,9 +62,12 @@ Key features:
 - `getWeatherScore(code, tempMax)` — 0–4 score for best-day badge ranking
 - `getDaylightInfo(sunriseISO, sunsetISO)` — `{ hours, minutes, risePercent, lightPercent }`
 - `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` — `{ hours, bestWindows, badWindows }`
+  - Each `HourData` carries `active` (within `ACTIVE_START`–`ACTIVE_END`, i.e. **6am–10pm**). Best/bad windows are detected **only within active hours**; the night score (-1) trims dark hours.
+  - Best windows = runs where every active hour is at least "Good" (score ≥2), so a long comfortable stretch isn't discarded for one slightly-better hour; relaxes to ≥1 only if nothing qualifies. Separate windows appear only when split by genuinely poor hours. Ranked **best-first** by total score, then drier, then calmer, then earlier (a damp 6am loses to a clearing 7pm); max 3; each tags its peak hour.
+  - `rating` is honest about marginal stretches: a window that only ever reaches score 2 is **Fair**, not Good (Excellent ≥3.3, Good ≥2.3, Fair ≥1.3 avg).
   - Windows use **average** precip (not max); shows range if spread > 30 pp
-  - Bad windows require **≥ 3** consecutive score-0 hours (not 2)
-- `getOutdoorSummary(bestWindows, badWindows)` → natural-language summary sentence
+  - Bad windows require **≥ 2** consecutive score-0 hours within active hours (worst + also-avoid)
+- `getOutdoorSummary(bestWindows, badWindows)` → natural-language summary; when even the best window is Fair/Poor it frames it as "a rough day to be outside" with the least-bad slot rather than overselling.
 - `scoreHour(temp, precipProb, windSpeed, isNight)` → -1..3
 - `formatHour(hour)` → "9am", "12pm", etc.
 - `getWeatherInfo(code)`, `getDayName(dateStr)`, `getWeatherRating(code, temp)`, `describeUV(uv)`, `tempDiffDescription(forecast, historical)`

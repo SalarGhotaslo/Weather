@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 interface GeoResult {
   name: string;
   country: string;
-  admin1?: string;
 }
 
 export default function SearchAutocomplete({
@@ -62,7 +61,6 @@ export default function SearchAutocomplete({
           (r: GeoResult) => ({
             name: r.name,
             country: r.country,
-            admin1: r.admin1,
           }),
         );
         setSuggestions(results);
@@ -77,11 +75,9 @@ export default function SearchAutocomplete({
   }, [value]);
 
   const navigate = (suggestion: GeoResult) => {
-    const display = suggestion.admin1
-      ? `${suggestion.name}, ${suggestion.admin1}, ${suggestion.country}`
-      : `${suggestion.name}, ${suggestion.country}`;
+    // Keep it simple: just "City, Country" (no admin1/region clutter).
     const q = `${suggestion.name}, ${suggestion.country}`;
-    setValue(display);
+    setValue(q);
     setOpen(false);
     router.push(`/?q=${encodeURIComponent(q)}`);
   };
@@ -144,7 +140,11 @@ export default function SearchAutocomplete({
             className={inputClass}
             autoComplete="off"
           />
-          <button type="submit" className={buttonClass}>
+          <button
+            type="submit"
+            className={buttonClass}
+            suppressHydrationWarning
+          >
             Search
           </button>
         </div>
@@ -164,12 +164,7 @@ export default function SearchAutocomplete({
                   : "hover:bg-[#1c2f3f] text-white"
               }`}
             >
-              <span className="text-sm truncate">
-                {s.name}
-                {s.admin1 ? (
-                  <span className="text-[var(--text-muted)]">, {s.admin1}</span>
-                ) : null}
-              </span>
+              <span className="text-sm truncate">{s.name}</span>
               <span className="text-[var(--text-muted)] text-xs shrink-0">
                 {s.country}
               </span>
