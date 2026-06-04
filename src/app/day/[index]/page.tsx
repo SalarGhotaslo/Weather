@@ -15,6 +15,8 @@ import {
   getDayHourlyData,
   formatHour,
   getWeatherAnimClass,
+  getHourWeatherInfo,
+  getHourAnimClass,
   getWeatherFact,
   getWeatherAlert,
   getWindDirection,
@@ -520,7 +522,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       <span className="text-white">{getWeatherInfo(currentHourEntry.weatherCode).label}</span>
                     </span>
                     <span className="text-[var(--text-muted)]">
-                      <span aria-hidden="true">💧</span> {currentHourEntry.precipProb}% rain
+                      <span aria-hidden="true">💧</span> {currentHourEntry.precipProb}%{currentHourEntry.precip > 0 ? ` · ${currentHourEntry.precip.toFixed(1)}mm` : ""} rain
                     </span>
                     <span className="text-[var(--text-muted)]">
                       <span aria-hidden="true">💨</span> {currentHourEntry.windSpeed} km/h
@@ -652,8 +654,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       >
                         {isCurrentHour ? "Now" : entry.label}
                       </span>
-                      <span className="text-3xl leading-none" aria-hidden="true">
-                        {hourIsNight ? "🌙" : getWeatherInfo(entry.weatherCode).emoji}
+                      <span className={`text-3xl leading-none ${!hourIsNight ? getHourAnimClass(entry.weatherCode, entry.precipProb) : ""}`} aria-hidden="true">
+                        {hourIsNight ? "🌙" : getHourWeatherInfo(entry.weatherCode, entry.precipProb).emoji}
                       </span>
                       <span
                         className={`text-lg font-bold ${hourIsNight && !isCurrentHour ? "text-[var(--text-faint)]" : "text-white"}`}
@@ -673,6 +675,11 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       >
                         💧{entry.precipProb}%
                       </span>
+                      {entry.precip > 0 && (
+                        <span className={`text-[10px] ${isCurrentHour ? "text-[var(--text-muted)]" : "text-[var(--text-faint)]"}`}>
+                          {entry.precip.toFixed(1)}mm
+                        </span>
+                      )}
                       <span className={`text-[10px] ${isCurrentHour ? "text-[var(--text-muted)]" : "text-[var(--text-faint)]"}`}>
                         💨{entry.windSpeed}
                       </span>
@@ -684,6 +691,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[var(--text-muted)] text-[10px]">
               <span>🌙 Night hours dimmed</span>
               <span>💧 Rain probability</span>
+              <span>💧 mm Expected amount (if shown)</span>
               <span>💨 Wind (km/h, bottom row)</span>
             </div>
           </div>
@@ -699,7 +707,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             </p>
             <p className="text-[var(--text-muted)] text-xs mb-4">
               Best options scored within typical hours out (6am–10pm) by
-              temperature, rain chance and wind
+              temperature, rain chance, expected amount and wind
             </p>
 
             {/* 24-hour colour strip — a visual summary of the textual best/worst
@@ -715,7 +723,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                   <div
                     key={h.hour}
                     aria-current={isCurrentHour ? "time" : undefined}
-                    title={`${h.label}${isCurrentHour ? " (now)" : ""}: ${h.temp}°C · ${h.precipProb}% rain · ${h.windSpeed} km/h wind`}
+                    title={`${h.label}${isCurrentHour ? " (now)" : ""}: ${h.temp}°C · ${h.precipProb}% rain${h.precip > 0 ? ` · ${h.precip.toFixed(1)}mm` : ""} · ${h.windSpeed} km/h wind`}
                     className={`h-8 rounded-sm ${
                       isCurrentHour ? "ring-2 ring-white relative z-10" : ""
                     } ${

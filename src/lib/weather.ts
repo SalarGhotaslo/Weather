@@ -338,6 +338,7 @@ export interface HourlyEntry {
   label: string;
   temp: number;
   precipProb: number;
+  precip: number;
   windSpeed: number;
   weatherCode: number;
 }
@@ -356,6 +357,7 @@ export function getDayHourlyData(
         label: formatHour(hour),
         temp: Math.round(hourly.temperature_2m[i] ?? 0),
         precipProb: hourly.precipitation_probability[i] ?? 0,
+        precip: hourly.precipitation[i] ?? 0,
         windSpeed: Math.round(hourly.wind_speed_10m[i] ?? 0),
         weatherCode: hourly.weather_code[i] ?? 0,
       };
@@ -364,7 +366,7 @@ export function getDayHourlyData(
 
 export function buildHourlyForecastUrl(lat: number, lon: number, timezone?: string): string {
   const tz = timezone ? `&timezone=${encodeURIComponent(timezone)}` : "&timezone=auto";
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,wind_speed_10m,uv_index,weather_code${tz}&forecast_days=6`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,uv_index,weather_code${tz}&forecast_days=6`;
 }
 
 export interface HourlyForecastResponse {
@@ -372,6 +374,7 @@ export interface HourlyForecastResponse {
     time: string[];
     temperature_2m: number[];
     precipitation_probability: number[];
+    precipitation: number[];
     wind_speed_10m: number[];
     uv_index: number[];
     weather_code: number[];
@@ -383,6 +386,7 @@ export interface HourData {
   label: string;
   temp: number;
   precipProb: number;
+  precip: number;
   windSpeed: number;
   score: number; // -1=night  0=bad  1=poor  2=good  3=excellent
   active: boolean; // within typical waking/social hours (see ACTIVE_START/END)
@@ -416,15 +420,22 @@ export function formatHour(hour: number): string {
 export function scoreHour(
   temp: number,
   precipProb: number,
+  precip: number,
   windSpeed: number,
   isNight: boolean,
 ): number {
   if (isNight) return -1;
-  if (precipProb >= 85 || windSpeed > 60 || temp < -5 || temp > 42) return 0;
-  if (precipProb >= 60 || windSpeed > 45 || temp < 2 || temp > 36) return 1;
-  if (precipProb >= 35 || windSpeed > 30 || temp < 8 || temp > 30) return 2;
-  if (temp >= 14 && temp <= 26 && precipProb < 10 && windSpeed < 18) return 4;
-  if (temp >= 11 && temp <= 29 && precipProb < 20 && windSpeed < 25) return 3;
+  if (windSpeed > 60 || temp < -5 || temp > 42) return 0;
+
+  // Rain assessment blends probability AND expected amount:
+  // high chance of negligible drizzle is less concerning than
+  // moderate chance of a downpour.
+  if (precipProb >= 85 && precip >= 1) return 0;
+  if (precipProb >= 85 || (precipProb >= 60 && precip >= 2)) return 1;
+  if (windSpeed > 45 || temp < 2 || temp > 36) return 1;
+  if (precipProb >= 60 || (precipProb >= 35 && precip >= 2) || windSpeed > 30 || temp < 8 || temp > 30) return 2;
+  if (temp >= 14 && temp <= 26 && precipProb < 10 && precip < 0.5 && windSpeed < 18) return 4;
+  if (temp >= 11 && temp <= 29 && precipProb < 20 && precip < 1 && windSpeed < 25) return 3;
   return 2;
 }
 
@@ -448,10 +459,12 @@ export function getHourlyAnalysis(
         label: formatHour(hour),
         temp: Math.round(hourly.temperature_2m[i] ?? 0),
         precipProb: hourly.precipitation_probability[i] ?? 0,
+        precip: hourly.precipitation[i] ?? 0,
         windSpeed: Math.round(hourly.wind_speed_10m[i] ?? 0),
         score: scoreHour(
           hourly.temperature_2m[i] ?? 0,
           hourly.precipitation_probability[i] ?? 0,
+          hourly.precipitation[i] ?? 0,
           hourly.wind_speed_10m[i] ?? 0,
           isNight,
         ),
@@ -474,25 +487,27 @@ export function getHourlyAnalysis(
     return runs;
   }
 
-  function suggestActivities(avgTemp: number, maxPrecip: number, avgWind: number): string[] {
+  function suggestActivities(avgTemp: number, maxPrecipProb: number, maxPrecipAmount: number, avgWind: number): string[] {
     const acts: string[] = [];
-    if (maxPrecip < 5 && avgTemp >= 20 && avgWind < 15) acts.push("Picnic");
-    if (maxPrecip < 10 && avgTemp >= 12 && avgWind < 22) acts.push("Running");
-    if (maxPrecip < 15 && avgWind < 20 && avgTemp >= 10 && avgTemp <= 28) acts.push("Cycling");
-    if (maxPrecip < 10 && avgTemp >= 23 && avgWind < 18) acts.push("Swimming");
-    if (maxPrecip < 20 && avgTemp >= 6 && avgWind < 30) acts.push("Walking");
-    if (avgTemp >= 23 && maxPrecip < 5 && avgWind < 15) acts.push("Beach");
-    if (maxPrecip < 10 && (avgTemp >= 15 && avgTemp <= 22)) acts.push("Coffee outside");
-    if (maxPrecip < 5 && avgTemp >= 8 && avgTemp <= 14) acts.push("Leaf peeping");
-    if (maxPrecip < 5 && avgTemp < 8 && avgTemp >= 0) acts.push("Winter walk");
+    if (maxPrecipProb < 5 && maxPrecipAmount < 0.5 && avgTemp >= 20 && avgWind < 15) acts.push("Picnic");
+    if (maxPrecipProb < 10 && maxPrecipAmount < 1 && avgTemp >= 12 && avgWind < 22) acts.push("Running");
+    if (maxPrecipProb < 15 && maxPrecipAmount < 1.5 && avgWind < 20 && avgTemp >= 10 && avgTemp <= 28) acts.push("Cycling");
+    if (maxPrecipProb < 10 && maxPrecipAmount < 1 && avgTemp >= 23 && avgWind < 18) acts.push("Swimming");
+    if (maxPrecipProb < 20 && maxPrecipAmount < 2 && avgTemp >= 6 && avgWind < 30) acts.push("Walking");
+    if (avgTemp >= 23 && maxPrecipProb < 5 && maxPrecipAmount < 0.5 && avgWind < 15) acts.push("Beach");
+    if (maxPrecipProb < 10 && maxPrecipAmount < 1 && (avgTemp >= 15 && avgTemp <= 22)) acts.push("Coffee outside");
+    if (maxPrecipProb < 5 && maxPrecipAmount < 0.5 && avgTemp >= 8 && avgTemp <= 14) acts.push("Leaf peeping");
+    if (maxPrecipProb < 5 && maxPrecipAmount < 0.5 && avgTemp < 8 && avgTemp >= 0) acts.push("Winter walk");
     if (acts.length === 0) acts.push("Light stroll");
     return acts.slice(0, 3);
   }
 
   function buildReason(
     avgTemp: number,
-    avgPrecip: number,
-    maxPrecip: number,
+    avgPrecipProb: number,
+    maxPrecipProb: number,
+    avgPrecipAmount: number,
+    maxPrecipAmount: number,
     avgWind: number,
     maxWind: number,
     minTemp: number,
@@ -501,13 +516,26 @@ export function getHourlyAnalysis(
     rating: OutdoorWindow["rating"],
     precipTrend: "clearing" | "worsening" | "steady",
   ): string {
+    const fmtAmount = (mm: number) => `${mm.toFixed(1)}mm`;
+
     if (isBad) {
       const parts: string[] = [];
-      if (maxPrecip >= 80) parts.push(`torrential rain (up to ${maxPrecip}%)`);
-      else if (avgPrecip >= 65) parts.push(`persistent heavy rain (avg ${avgPrecip}%)`);
-      else if (avgPrecip >= 50) parts.push(`rain throughout (${avgPrecip}% avg)`);
-      else if (maxPrecip >= 60) parts.push(`frequent heavy showers (peaks at ${maxPrecip}%)`);
-      else if (avgPrecip >= 40) parts.push(`drizzly conditions (${avgPrecip}% avg)`);
+      if (maxPrecipProb >= 80) {
+        const amt = maxPrecipAmount >= 1 ? `, ${fmtAmount(maxPrecipAmount)}` : "";
+        parts.push(`torrential rain (up to ${maxPrecipProb}%${amt})`);
+      } else if (avgPrecipProb >= 65) {
+        const amt = avgPrecipAmount >= 1 ? `, ~${fmtAmount(avgPrecipAmount)}` : "";
+        parts.push(`persistent heavy rain (avg ${avgPrecipProb}%${amt})`);
+      } else if (avgPrecipProb >= 50) {
+        const amt = avgPrecipAmount >= 1 ? `, ~${fmtAmount(avgPrecipAmount)}` : "";
+        parts.push(`rain throughout (${avgPrecipProb}% avg${amt})`);
+      } else if (maxPrecipProb >= 60) {
+        const amt = maxPrecipAmount >= 1 ? `, ${fmtAmount(maxPrecipAmount)}` : "";
+        parts.push(`frequent heavy showers (peaks at ${maxPrecipProb}%${amt})`);
+      } else if (avgPrecipProb >= 40) {
+        const amt = avgPrecipAmount >= 0.5 ? `, ~${fmtAmount(avgPrecipAmount)}` : "";
+        parts.push(`drizzly conditions (${avgPrecipProb}% avg${amt})`);
+      }
       if (maxWind > 60) parts.push(`dangerous gusts (${maxWind} km/h)`);
       else if (avgWind > 45) parts.push(`strong, blustery winds (avg ${avgWind} km/h)`);
       else if (maxWind > 40) parts.push(`gusty winds (up to ${maxWind} km/h)`);
@@ -532,12 +560,18 @@ export function getHourlyAnalysis(
     else if (avgTemp > 28) bits.push("hot");
     else if (avgTemp >= 6 && avgTemp < 10) bits.push("chilly");
 
-    if (maxPrecip < 5) bits.push("completely dry");
-    else if (avgPrecip < 10) bits.push("mostly dry");
-    else if (avgPrecip < 20) bits.push("low rain risk");
-    else if (avgPrecip < 35) bits.push("some rain risk");
-    else if (avgPrecip < 55) bits.push(`a fair chance of rain (${avgPrecip}%)`);
-    else bits.push(`rain likely (${avgPrecip}%)`);
+    if (maxPrecipProb < 5) bits.push("completely dry");
+    else if (avgPrecipProb < 10) bits.push("mostly dry");
+    else if (avgPrecipProb < 20) bits.push("low rain risk");
+    else if (avgPrecipProb < 35) bits.push("some rain risk");
+    else if (avgPrecipProb < 55) bits.push(`a fair chance of rain (${avgPrecipProb}%)`);
+    else bits.push(`rain likely (${avgPrecipProb}%)`);
+
+    if (avgPrecipAmount >= 1) {
+      bits.push(`~${fmtAmount(avgPrecipAmount)} expected`);
+    } else if (avgPrecipAmount >= 0.5) {
+      bits.push(`~${fmtAmount(avgPrecipAmount)} expected`);
+    }
 
     if (avgWind < 10) bits.push("calm");
     else if (avgWind < 18) bits.push("light breeze");
@@ -575,6 +609,9 @@ export function getHourlyAnalysis(
     const minPrecip = Math.min(...slice.map((h) => h.precipProb));
     const maxPrecip = Math.max(...slice.map((h) => h.precipProb));
     const avgPrecip = Math.round(slice.reduce((s, h) => s + h.precipProb, 0) / slice.length);
+    const minPrecipAmount = Math.min(...slice.map((h) => h.precip));
+    const maxPrecipAmount = Math.max(...slice.map((h) => h.precip));
+    const avgPrecipAmount = slice.reduce((s, h) => s + h.precip, 0) / slice.length;
     const avgWind = Math.round(slice.reduce((s, h) => s + h.windSpeed, 0) / slice.length);
     const maxWind = Math.max(...slice.map((h) => h.windSpeed));
     const minTemp = Math.min(...slice.map((h) => h.temp));
@@ -602,12 +639,17 @@ export function getHourlyAnalysis(
     // Use avg precip (not max) so a single heavy-rain hour doesn't inflate the description.
     // Show a range when there's significant spread across the window.
     const precipSpread = maxPrecip - minPrecip;
+    const amountDesc = maxPrecipAmount > 0
+      ? maxPrecipAmount === minPrecipAmount
+        ? `, ${maxPrecipAmount.toFixed(1)}mm`
+        : `, ${minPrecipAmount.toFixed(1)}–${maxPrecipAmount.toFixed(1)}mm`
+      : "";
     const precipDesc =
       avgPrecip < 10
-        ? "dry"
+        ? `dry${amountDesc}`
         : precipSpread > 35
-          ? `${minPrecip}–${maxPrecip}% rain`
-          : `${avgPrecip}% rain chance`;
+          ? `${minPrecip}–${maxPrecip}% rain${amountDesc}`
+          : `${avgPrecip}% rain chance${amountDesc}`;
 
     const windDesc =
       avgWind < 12 ? "calm" : avgWind < 22 ? "light breeze" : avgWind < 35 ? "moderate wind" : `${avgWind} km/h wind`;
@@ -615,7 +657,7 @@ export function getHourlyAnalysis(
     const conditions = [`avg ${avgTemp}°C`, precipDesc, windDesc].join(", ");
 
     const precipTrend = computePrecipTrend(slice);
-    const reason = buildReason(avgTemp, avgPrecip, maxPrecip, avgWind, maxWind, minTemp, maxTemp, isBad, rating, precipTrend);
+    const reason = buildReason(avgTemp, avgPrecip, maxPrecip, avgPrecipAmount, maxPrecipAmount, avgWind, maxWind, minTemp, maxTemp, isBad, rating, precipTrend);
 
     return {
       timeLabel: `${hours[run.start]?.label ?? ""} – ${hours[run.end]?.label ?? ""}`,
@@ -626,7 +668,7 @@ export function getHourlyAnalysis(
       severity,
       peakHour,
       tempRange: `${minTemp}–${maxTemp}°C`,
-      activities: isBad ? [] : suggestActivities(avgTemp, maxPrecip, avgWind),
+      activities: isBad ? [] : suggestActivities(avgTemp, maxPrecip, maxPrecipAmount, avgWind),
     };
   }
 
@@ -880,6 +922,27 @@ export function getWeatherAnimClass(code: number): string {
   if (code >= 51 && code <= 53) return "weather-drizzle";
   if (code === 61 || code === 63) return "weather-drizzle";
   return "weather-cloudy";
+}
+
+// ── Hourly weather emoji and animation (considers precip probability) ─
+
+/** Weather info for an hourly forecast slot — overrides clear/cloudy emoji
+ *  when precipitation probability is high enough to warrant a rain icon. */
+export function getHourWeatherInfo(code: number, precipProb: number): { emoji: string; label: string } {
+  if ((code <= 3) && precipProb >= 60) {
+    return precipProb >= 85
+      ? { emoji: "🌧️", label: "Rain" }
+      : { emoji: "🌦️", label: "Rain Likely" };
+  }
+  return getWeatherInfo(code);
+}
+
+/** Animation class for an hourly slot — same precip-probability override. */
+export function getHourAnimClass(code: number, precipProb: number): string {
+  if ((code <= 3) && precipProb >= 60) {
+    return precipProb >= 85 ? "weather-rainy weather-heavy" : "weather-drizzle";
+  }
+  return getWeatherAnimClass(code);
 }
 
 // ── Fun weather facts ─────────────────────────────────────────────────

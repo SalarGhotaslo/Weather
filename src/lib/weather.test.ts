@@ -18,6 +18,8 @@ import {
   getDayHourlyData,
   findBestGeoMatch,
   getWeatherAnimClass,
+  getHourWeatherInfo,
+  getHourAnimClass,
   getWeatherFact,
   getWeatherAlert,
   getWindDirection,
@@ -204,22 +206,31 @@ describe("formatHour", () => {
 
 describe("scoreHour", () => {
   it("returns -1 for night hours", () => {
-    expect(scoreHour(15, 0, 10, true)).toBe(-1);
+    expect(scoreHour(15, 0, 0, 10, true)).toBe(-1);
   });
-  it("returns 0 for heavy rain", () => {
-    expect(scoreHour(18, 85, 10, false)).toBe(0);
+  it("returns 0 for heavy rain (high prob + significant amount)", () => {
+    expect(scoreHour(18, 85, 3, 10, false)).toBe(0);
   });
   it("returns 0 for extreme wind", () => {
-    expect(scoreHour(18, 10, 65, false)).toBe(0);
+    expect(scoreHour(18, 10, 0, 65, false)).toBe(0);
+  });
+  it("returns 1 for high prob but negligible amount", () => {
+    expect(scoreHour(18, 85, 0.1, 10, false)).toBe(1);
   });
   it("returns 2 for moderate rain chance", () => {
-    expect(scoreHour(18, 50, 10, false)).toBe(2);
+    expect(scoreHour(18, 50, 1, 10, false)).toBe(2);
   });
   it("returns 4 for ideal conditions", () => {
-    expect(scoreHour(20, 5, 10, false)).toBe(4);
+    expect(scoreHour(20, 5, 0, 10, false)).toBe(4);
   });
   it("returns 2 for good but not ideal conditions", () => {
-    expect(scoreHour(10, 10, 10, false)).toBe(2);
+    expect(scoreHour(10, 10, 0, 10, false)).toBe(2);
+  });
+  it("returns 1 for moderate prob with significant amount", () => {
+    expect(scoreHour(18, 60, 3, 10, false)).toBe(1);
+  });
+  it("returns 2 for moderate prob with moderate amount", () => {
+    expect(scoreHour(18, 35, 2, 10, false)).toBe(2);
   });
 });
 
@@ -230,6 +241,7 @@ describe("getHourlyAnalysis", () => {
       time: scores.map((_, i) => `${date}T${String(i).padStart(2, "0")}:00`),
       temperature_2m: scores.map((s) => s.temp),
       precipitation_probability: scores.map((s) => s.precip),
+      precipitation: scores.map((s) => s.precip >= 60 ? 3 : 0),
       wind_speed_10m: scores.map((s) => s.wind),
       uv_index: scores.fill({ temp: 0, precip: 0, wind: 0 }).map(() => 3),
       weather_code: scores.map(() => 1),
@@ -289,6 +301,7 @@ describe("getDayHourlyData", () => {
       time: Array.from({ length: 24 }, (_, i) => `${date}T${String(i).padStart(2, "0")}:00`),
       temperature_2m: Array.from({ length: 24 }, (_, i) => 10 + i * 0.5),
       precipitation_probability: Array.from({ length: 24 }, (_, i) => i * 4),
+      precipitation: Array.from({ length: 24 }, (_, i) => i * 0.1),
       wind_speed_10m: Array.from({ length: 24 }, () => 15),
       uv_index: Array.from({ length: 24 }, () => 3),
       weather_code: Array.from({ length: 24 }, () => 1),
@@ -300,7 +313,7 @@ describe("getDayHourlyData", () => {
     expect(entries).toHaveLength(24);
   });
 
-  it("sets hour, label, temp, precipProb, windSpeed, weatherCode correctly", () => {
+  it("sets hour, label, temp, precipProb, precip, windSpeed, weatherCode correctly", () => {
     const entries = getDayHourlyData(makeHourly24(), "2026-06-04");
     expect(entries[0].hour).toBe(0);
     expect(entries[0].label).toBe("12am");
@@ -308,6 +321,8 @@ describe("getDayHourlyData", () => {
     expect(entries[12].label).toBe("12pm");
     expect(entries[0].weatherCode).toBe(1);
     expect(entries[0].windSpeed).toBe(15);
+    expect(entries[0].precip).toBe(0);
+    expect(entries[5].precip).toBe(0.5);
   });
 
   it("returns empty array when date has no matching entries", () => {
@@ -895,6 +910,35 @@ describe("getWeatherAnimClass", () => {
   });
 });
 
+describe("getHourWeatherInfo", () => {
+  it("returns rain for code 0 with high precip prob", () => {
+    expect(getHourWeatherInfo(0, 85).emoji).toBe("🌧️");
+    expect(getHourWeatherInfo(0, 85).label).toBe("Rain");
+  });
+  it("returns rain likely for code 1 with moderate-high prob", () => {
+    expect(getHourWeatherInfo(1, 65).emoji).toBe("🌦️");
+    expect(getHourWeatherInfo(1, 65).label).toBe("Rain Likely");
+  });
+  it("falls back to weather code for low prob", () => {
+    expect(getHourWeatherInfo(1, 30)).toEqual(getWeatherInfo(1));
+  });
+  it("overrides cloudy codes (0-3) but not rain codes", () => {
+    expect(getHourWeatherInfo(61, 90)).toEqual(getWeatherInfo(61));
+  });
+});
+
+describe("getHourAnimClass", () => {
+  it("returns rain class for clear code with high precip prob", () => {
+    expect(getHourAnimClass(1, 85)).toBe("weather-rainy weather-heavy");
+  });
+  it("returns drizzle class for moderate-high prob", () => {
+    expect(getHourAnimClass(2, 65)).toBe("weather-drizzle");
+  });
+  it("falls back to weather code for low prob", () => {
+    expect(getHourAnimClass(3, 10)).toBe("weather-overcast");
+  });
+});
+
 describe("getWeatherFact", () => {
   it("returns a non-empty string for any weather code and temperature", () => {
     const codes = [0, 1, 2, 3, 45, 48, 51, 55, 61, 65, 71, 75, 80, 82, 95, 99];
@@ -941,6 +985,9 @@ describe("getHourlyAnalysis enhanced windows", () => {
       }),
       precipitation_probability: Array.from({ length: 24 }, (_, i) =>
         i >= 14 && i <= 16 ? 75 : 5,
+      ),
+      precipitation: Array.from({ length: 24 }, (_, i) =>
+        i >= 14 && i <= 16 ? 1.5 : 0,
       ),
       wind_speed_10m: Array.from({ length: 24 }, () => 10),
       uv_index: Array.from({ length: 24 }, () => 3),
@@ -997,6 +1044,10 @@ describe("getHourlyAnalysis active-hours windows", () => {
       time: Array.from({ length: 24 }, (_, i) => `${date}T${String(i).padStart(2, "0")}:00`),
       temperature_2m: Array.from({ length: 24 }, (_, i) => pick(i).temp),
       precipitation_probability: Array.from({ length: 24 }, (_, i) => pick(i).precip),
+      precipitation: Array.from({ length: 24 }, (_, i) => {
+        const p = pick(i);
+        return p.precip >= 60 ? 3 : 0;
+      }),
       wind_speed_10m: Array.from({ length: 24 }, (_, i) => pick(i).wind),
       uv_index: Array.from({ length: 24 }, () => 3),
       weather_code: Array.from({ length: 24 }, () => 1),
