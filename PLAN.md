@@ -1,13 +1,13 @@
 # Salar Weather App — Plan
 
 ## Overview
-A Next.js 16 weather app with global city search, 5-day forecasts, a countries browser, and an interactive world map. Styled after BBC Weather with a dark navy theme.
+A Next.js 16 weather app with global city search, 7-day forecasts, a countries browser, and an interactive world map. Dark navy theme.
 
 ## Tech Stack
-- **Framework**: Next.js 16 (App Router, Server Components, ISR)
+- **Framework**: Next.js 16 (App Router, Server Components, ISR, Turbopack)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4 + custom CSS animations
-- **APIs**: Open-Meteo (weather + geocoding), REST Countries, CountriesNow, Open-Meteo Archive
+- **APIs**: Open-Meteo (weather + geocoding + archive), REST Countries, CountriesNow, world-atlas
 - **Map**: react-simple-maps (SVG world map, d3-geo)
 - **Testing**: Vitest (163 tests)
 
@@ -27,15 +27,15 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 ## Features
 
 ### Home page (`/`)
-- City search with autocomplete dropdown (debounced, keyboard navigable)
+- City search with autocomplete dropdown (debounced 280 ms, keyboard navigable)
 - "Use my location" geolocation button → navigates to `/day/0`
 - Recent searches persisted in localStorage (with Clear button)
 - Popular cities quick-links grid
-- Current weather hero with time-of-day gradient overlay
+- Current weather hero with time-of-day gradient overlay (`TimeGradient`)
 - Animated weather emoji (sun spins, rain sways, thunder flashes, etc.)
 - Weather alert banner for today (thunderstorm, wind, UV, heavy rain)
 - 6-card stats strip: Humidity, Wind+direction, Precipitation, UV, Pressure, Sunrise/Sunset
-- 5-day forecast grid with temperature range bars, precipitation probability badge, **⭐ Best** badge
+- 7-day forecast grid with temperature range bars, precipitation probability badge, ⭐ Best badge
 - 5-day temperature trend indicator (warming/cooling/steady) + sparkline SVG
 - "Did you know?" fun weather fact
 - Country flag emoji next to location name
@@ -49,16 +49,17 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 - Main hero: temp, condition, rating, suggestion
 - Detail grid: Feels Like (with explanation), Humidity, Wind+direction, Precipitation, UV meter (coloured bar), Sunrise/Sunset + daylight progress bar, Pressure
 - Hourly forecast: SVG temperature curve (night shading, sunrise/sunset markers), precipitation probability bar chart, emoji strip with rain% and wind
-- Best Times Outside: 24-h colour strip + summary sentence + Excellent/Good windows (peak hour, temp range, activities) + Avoid windows
+- Best Times Outside: 24-h colour strip + summary sentence + "Good times to go out" windows (chip-style: temp range, rain%, wind) + "Best avoided" windows
+  - Outdoor windows use **average** precipitation probability (not max) to avoid misleading "100%" when only one hour spikes
+  - Minimum 3 consecutive bad-score hours to surface an "Avoid" window
 - What to Wear: clothing chip tags
-- Compared to Last Year: visual bar chart (this year vs last year)
+- Compared to Last Year: `YoyStat` 3-column grid (Max Temp, Min Temp, Rainfall) with colour-coded delta (▲/▼, orange=warmer, blue=cooler, blue=wetter, green=drier)
 - "Did you know?" fun weather fact
 
 ### Countries (`/countries`)
 - All ~250 countries A–Z with flag, name, capital
 - Live search by name or capital, region dropdown filter
 - Alphabet jump navigation (A–Z buttons)
-- Country data: population, subregion
 
 ### Country detail (`/countries/[code]`)
 - Country hero: flag, official name, capital, subregion, population (formatted)
@@ -68,11 +69,11 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 
 ### World map (`/map`)
 - Interactive SVG world map (react-simple-maps)
-- Hover country → city panel with filter (debounced 350ms, cached)
-- Click country → zoom to centroid, city panel, geocoded city markers
-- City markers: background label rect, glow ring, clear name labels
+- Instruction bar: hover/click/scroll-to-zoom/dot hints
+- Hover country → city panel with filter (debounced 350 ms, cached)
+- Click country → zoom to centroid (zoom=4), city panel, geocoded city markers
+- City markers: **hover-only labels** — dot always visible, label + border appears on hover, dot grows and brightens on hover; no overlap at any zoom level
 - "Browse all cities" → `/countries?search=X` deep link
-- Instruction bar showing hover/click/dot/browse hints
 
 ### About (`/about`)
 - Features overview, data sources, tech stack, security note
@@ -83,7 +84,7 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 | API | Purpose |
 |-----|---------|
 | `https://api.open-meteo.com/v1/forecast` | 7-day + current weather (incl. wind direction, pressure, precip probability) |
-| `https://archive-api.open-meteo.com/v1/archive` | Historical weather |
+| `https://archive-api.open-meteo.com/v1/archive` | Historical weather (same date last year) |
 | `https://geocoding-api.open-meteo.com/v1/search` | City search + autocomplete + country_code |
 | `https://restcountries.com/v3.1/all` | Country list (name, flag, capital, region, subregion, population) |
 | `https://countriesnow.space/api/v0.1/countries/cities/q` | Cities per country |
@@ -91,14 +92,17 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 
 ## Security
 
-- **HTTP headers**: Content-Security-Policy (connect-src allowlist for 5 APIs), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- **HTTP headers**: Content-Security-Policy (connect-src allowlist for 6 APIs), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-DNS-Prefetch-Control
 - **API route validation**: `country` param validated with Unicode letter allowlist, max 100 chars
 - **Coordinate validation**: `validateCoord()` rejects NaN, Infinity, and out-of-range lat/lon
 - **Name capping**: location name param capped at 200 chars
 - **Server Components** by default — minimal client-side state
 
 ## PWA Support
-`src/app/manifest.ts` produces `/manifest.webmanifest` (standalone display, dark theme). Layout sets `themeColor` meta. App is installable in supporting browsers.
+`src/app/manifest.ts` produces `/manifest.webmanifest` (standalone display, dark theme). Layout sets `themeColor` via `viewport` export (Next.js 16 requirement).
+
+## Module Compatibility
+`next.config.ts` sets `transpilePackages: ["react-simple-maps", "d3-geo", "d3-zoom", "topojson-client"]` — these ship CJS-only builds that need Turbopack to transpile them for the browser ESM context.
 
 ## Loading States
 Each dynamic route has a `loading.tsx` skeleton matching the page layout.
@@ -112,8 +116,9 @@ Each dynamic route has a `loading.tsx` skeleton matching the page layout.
 | Function | Returns |
 |----------|---------|
 | `buildForecastUrl(lat, lon)` | URL including forecast_days=7, wind, pressure, precip_probability |
+| `buildHourlyForecastUrl(lat, lon)` | 6-day hourly URL |
 | `validateCoord(value, min, max, fallback)` | Validated number or fallback |
-| `countryCodeToFlag(code)` | Flag emoji from ISO 3166-1 alpha-2 (e.g. "GB" → 🇬🇧) |
+| `countryCodeToFlag(code)` | Flag emoji from ISO 3166-1 alpha-2 |
 | `getFeelsLikeExplanation(actual, feelsLike, humidity, wind)` | Human-readable explanation |
 | `getWeatherScore(code, tempMax)` | 0–4 numeric score for best-day ranking |
 | `getDaylightInfo(sunriseISO, sunsetISO)` | `{ hours, minutes, risePercent, lightPercent }` |
@@ -124,7 +129,7 @@ Each dynamic route has a `loading.tsx` skeleton matching the page layout.
 | `getWindArrow(degrees)` | Unicode arrow (↑ ↗ → etc.) |
 | `getWeatherAnimClass(code)` | CSS animation class |
 | `getWeatherFact(code, temp)` | Contextual weather trivia string |
-| `getHourlyAnalysis(...)` | `{ hours, bestWindows, badWindows }` with peak hour, temp range, activities |
+| `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` | `{ hours, bestWindows, badWindows }` — uses avg precip (not max), min 3 h for bad windows |
 | `scoreHour(temp, precipProb, wind, isNight)` | -1..3 score |
 
 ### `src/lib/countries.ts`
@@ -137,7 +142,7 @@ Each dynamic route has a `loading.tsx` skeleton matching the page layout.
 | `selectCandidates(cities, max)` | Evenly-spaced city sample |
 | `formatPopulation(n)` | "1.4B" / "67.2M" / "50K" / "500" |
 
-## Test Coverage (163 tests)
+## Test Coverage (163 tests in `src/lib/weather.test.ts`)
 - `getWeatherInfo`, `getDayName`, `getFormattedDate`, `getLastYearDate`
 - `getWeatherRating`, `describeUV`, `tempDiffDescription`
 - `formatHour`, `scoreHour`, `getHourlyAnalysis`, `getDayHourlyData`
