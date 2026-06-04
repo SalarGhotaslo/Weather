@@ -8,7 +8,7 @@ import {
   describeUV,
   type WeatherResponse,
 } from "@/lib/weather";
-import SearchForm from "@/app/components/SearchForm";
+import SearchAutocomplete from "@/app/components/SearchAutocomplete";
 import Header from "@/app/components/Header";
 
 async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
@@ -61,13 +61,7 @@ export default async function Home({
   if (!q) {
     return (
       <div className="min-h-screen bg-[#0e1723] flex flex-col">
-        <header className="bg-[#121f2f] border-b border-[#1e3347]">
-          <div className="mx-auto max-w-4xl px-4 py-3 flex items-center gap-2.5">
-            <span className="text-white font-semibold text-sm tracking-wide">
-              Salar Weather
-            </span>
-          </div>
-        </header>
+        <Header />
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="w-full max-w-lg">
             <div className="text-center mb-8">
@@ -79,7 +73,7 @@ export default async function Home({
                 Search for a city, town or postcode
               </p>
             </div>
-            <SearchForm large />
+            <SearchAutocomplete large />
           </div>
         </div>
       </div>
