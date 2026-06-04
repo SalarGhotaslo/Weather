@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllCountries, type Country } from "@/lib/countries";
 import Header from "@/app/components/Header";
+import AppFooter from "@/app/components/AppFooter";
 import CountriesFilter from "./CountriesFilter";
 
 export const revalidate = 86400;
@@ -57,9 +58,7 @@ export default async function CountriesPage() {
         <CountriesFilter countries={countries} grouped={grouped} letters={letters} />
       </main>
 
-      <footer className="text-center text-xs text-[#2a4055] py-4">
-        Country data from <span className="text-[#3a5a72]">REST Countries</span>
-      </footer>
+      <AppFooter />
     </div>
   );
 }

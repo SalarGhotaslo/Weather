@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/app/components/Header";
+import AppFooter from "@/app/components/AppFooter";
 
 export const metadata: Metadata = {
   title: "About",
@@ -170,11 +171,7 @@ export default function AboutPage() {
         </div>
       </main>
 
-      <footer className="text-center text-xs text-[#2a4055] py-4">
-        Weather data from <span className="text-[#3a5a72]">Open-Meteo</span>
-        {" · "}
-        Country data from <span className="text-[#3a5a72]">REST Countries</span>
-      </footer>
+      <AppFooter />
     </div>
   );
 }

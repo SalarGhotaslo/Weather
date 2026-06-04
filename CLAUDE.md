@@ -62,6 +62,22 @@ Six keyframe animations exposed as CSS classes on emoji wrapper spans:
 
 Use `getWeatherAnimClass(code)` from `weather.ts` to get the right class.
 
+## Shared components
+- `AppFooter.tsx` — server component used as the footer on all pages (nav links + attribution + year)
+- `TimeGradient.tsx` — `'use client'` — reads browser hour, fades in a subtle time-of-day gradient overlay on hero cards
+
+## Key route `loading.tsx` skeletons
+- `src/app/loading.tsx` — home page
+- `src/app/day/[index]/loading.tsx` — day detail
+- `src/app/countries/loading.tsx` — countries grid
+
 ## Security
-- `next.config.ts` sets X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy on all routes
+- `next.config.ts`: Content-Security-Policy (connect-src allowlist for the 5 external APIs), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
 - API routes validate `country` param: `/^[\p{L}\s\-'.()]+$/u`, max 100 chars, empty → `[]`
+- `validateCoord(value, min, max, fallback)` in weather.ts — used for lat/lon in day detail page
+
+## `globals.css` utilities
+- `:focus-visible` rule — blue outline for keyboard navigation
+- Custom webkit scrollbar (dark themed)
+- `.card-hover` — smooth bg + shadow transition for interactive cards
+- Weather animation classes: `.weather-sunny`, `.weather-rainy`, `.weather-snowy`, `.weather-thunder`, `.weather-foggy`, `.weather-cloudy`

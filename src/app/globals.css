@@ -18,6 +18,44 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* ── Focus styles ────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid #3b87d6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Custom scrollbar (webkit) ───────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0e1723;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a4055;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b87d6;
+}
+
+/* ── Card transition utility ─────────────────────────────────────── */
+
+.card-hover {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 20px rgba(59, 135, 214, 0.1);
+}
+
 /* ── Weather emoji animations ─────────────────────────────────────── */
 
 @keyframes spin-slow {

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCountryByCode, getCitiesForCountry, formatPopulation } from "@/lib/countries";
+import { getCountryByCode, getCitiesForCountry, getCountriesByRegion, formatPopulation } from "@/lib/countries";
 import Header from "@/app/components/Header";
+import AppFooter from "@/app/components/AppFooter";
 import CitiesFilter from "./CitiesFilter";
 
 export const revalidate = 86400;
@@ -31,7 +32,14 @@ export default async function CountryPage({
   const country = await getCountryByCode(code);
   if (!country) notFound();
 
-  const cities = await getCitiesForCountry(country.name.common);
+  const [cities, regionCountries] = await Promise.all([
+    getCitiesForCountry(country.name.common),
+    getCountriesByRegion(country.region),
+  ]);
+
+  const sameRegion = regionCountries
+    .filter((c) => c.cca2 !== country.cca2)
+    .slice(0, 6);
 
   const capital = country.capital?.[0];
 
@@ -111,13 +119,37 @@ export default async function CountryPage({
             </div>
           )}
         </div>
+
+        {/* Same region */}
+        {sameRegion.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-white font-semibold mb-3">
+              More in {country.subregion ?? country.region}
+            </h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {sameRegion.map((c) => (
+                <Link
+                  key={c.cca2}
+                  href={`/countries/${c.cca2}`}
+                  className="flex items-center gap-2 bg-[#162535] hover:bg-[#1c2f3f] rounded-lg px-3 py-2.5 transition-colors group"
+                >
+                  <span className="text-lg shrink-0">{c.flag}</span>
+                  <div className="min-w-0">
+                    <p className="text-white text-xs font-medium truncate group-hover:text-[#3b87d6] transition-colors">
+                      {c.name.common}
+                    </p>
+                    {c.capital?.[0] && (
+                      <p className="text-[#5a7d99] text-[10px] truncate">{c.capital[0]}</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
-      <footer className="text-center text-xs text-[#2a4055] py-4">
-        City data from <span className="text-[#3a5a72]">CountriesNow</span>
-        {" · "}
-        Weather from <span className="text-[#3a5a72]">Open-Meteo</span>
-      </footer>
+      <AppFooter />
     </div>
   );
 }

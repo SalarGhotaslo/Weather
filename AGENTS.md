@@ -27,11 +27,13 @@ Key features:
 | Route | Description |
 |-------|-------------|
 | `/` | Home — `?q=CityName` fetches and renders 5-day forecast |
-| `/day/[index]` | Day detail — `?lat=&lon=&name=` params required |
-| `/countries` | All countries A–Z browser |
-| `/countries/[code]` | Cities for a country (ISO alpha-2 e.g. `GB`) |
-| `/map` | Interactive world map |
-| `/api/cities?country=Name` | Server proxy → CountriesNow, cached 24 h |
+| `/day/[index]` | Day detail — `?lat=&lon=&name=` params required; lat/lon validated |
+| `/countries` | All countries A–Z browser with search + region filter + alphabet jump nav |
+| `/countries/[code]` | Cities for a country (ISO alpha-2 e.g. `GB`) + same-region section |
+| `/map` | Interactive world map with instruction bar |
+| `/about` | Static page: features, data sources, tech stack, security note |
+| `/api/cities?country=Name` | Server proxy → CountriesNow, validated + cached 24 h |
+| `/api/city-markers?country=Name` | Geocodes up to 10 cities for map markers, validated + cached 24 h |
 
 ## Code conventions
 - Server Components by default; only add `'use client'` for state/effects/browser APIs
@@ -55,18 +57,32 @@ Key features:
 | `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` | Map TopoJSON |
 
 ## Key lib functions (`src/lib/weather.ts`)
-- `buildForecastUrl(lat, lon)` — daily + current forecast URL
+- `buildForecastUrl(lat, lon)` — daily + current forecast URL (includes wind_direction, surface_pressure, precip_probability_max)
 - `buildHourlyForecastUrl(lat, lon)` — 6-day hourly URL
-- `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` — returns `{ hours, bestWindows, badWindows }` for the Best Times Outside section; each `OutdoorWindow` includes `peakHour`, `tempRange`, and `activities[]`
+- `validateCoord(value, min, max, fallback)` — validates lat/lon params, rejects NaN/Infinity/out-of-range
+- `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` — `{ hours, bestWindows, badWindows }`; each `OutdoorWindow` includes `peakHour`, `tempRange`, `activities[]`
+- `getOutdoorSummary(bestWindows, badWindows)` → natural-language summary sentence
 - `scoreHour(temp, precipProb, windSpeed, isNight)` → -1..3
 - `formatHour(hour)` → "9am", "12pm", etc.
 - `getWeatherInfo(code)`, `getDayName(dateStr)`, `getWeatherRating(code, temp)`, `describeUV(uv)`, `tempDiffDescription(forecast, historical)`
-- `getWeatherAnimClass(code)` → CSS class string for animated emoji (weather-sunny, weather-rainy, etc.)
-- `getWeatherFact(code, temp)` → contextual fun weather fact string
+- `getWeatherAnimClass(code)` → CSS class for animated emoji
+- `getWeatherFact(code, temp)` → contextual fun weather fact
+- `getWeatherAlert(code, windMax, uvMax, precipSum)` → `WeatherAlert | null`
+- `getWindDirection(degrees)` → "N"|"NE"|...|"NW"; `getWindArrow(degrees)` → unicode arrow
+- `getDressCode(code, tempMax, windMax)` → `{ summary, items[] }`
+
+## Key lib functions (`src/lib/countries.ts`)
+- `normalizeCountryName(name)` — maps TopoJSON names to CountriesNow names
+- `getAllCountries()` — all ~250 countries (name, cca2, flag, capital, region, subregion, population)
+- `getCountryByCode(code)` — single country by ISO alpha-2
+- `getCountriesByRegion(region)` — all countries in a region (for "same region" section)
+- `selectCandidates(cities, max)` — evenly-spaced sample from a large city list
+- `formatPopulation(n)` → "1.4B" / "67.2M" / "50K" / "500"
 
 ## Security conventions
-- All API route `country` params are validated: must match `/^[\p{L}\s\-'.()]+$/u`, max 100 chars
-- Security headers set in `next.config.ts` for all routes (X-Frame-Options, X-Content-Type-Options, etc.)
+- All API route `country` params: must match `/^[\p{L}\s\-'.()]+$/u`, max 100 chars
+- CSP header in `next.config.ts`: connect-src allowlist for 5 external APIs; frame-ancestors, base-uri, form-action all restricted
+- `validateCoord` used for lat/lon in day detail; `name` param capped at 200 chars
 
 ## Open-Meteo weather codes
 0=clear · 1-2=partly cloudy · 3=overcast · 45/48=fog · 51-57=drizzle · 61-67=rain · 71-77=snow · 80-82=showers · 95+=thunderstorm

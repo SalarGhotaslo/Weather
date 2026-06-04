@@ -18,6 +18,7 @@ import Header from "@/app/components/Header";
 import RecentSearches from "@/app/components/RecentSearches";
 import SearchTracker from "@/app/components/SearchTracker";
 import TimeGradient from "@/app/components/TimeGradient";
+import AppFooter from "@/app/components/AppFooter";
 
 const POPULAR_CITIES = [
   "London, UK",
@@ -360,14 +361,8 @@ export default async function Home({ searchParams }: Props) {
           </div>
         </div>
 
-        <footer className="mt-4 text-center text-xs text-[#2a4055]">
-          Weather data from <span className="text-[#3a5a72]">Open-Meteo</span>
-          {" · "}
-          <Link href="/countries" className="text-[#3a5a72] hover:text-[#5a7d99] transition-colors">Browse countries</Link>
-          {" · "}
-          <Link href="/map" className="text-[#3a5a72] hover:text-[#5a7d99] transition-colors">World map</Link>
-        </footer>
       </main>
+      <AppFooter />
     </div>
   );
 }

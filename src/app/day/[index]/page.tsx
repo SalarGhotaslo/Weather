@@ -28,6 +28,7 @@ import {
   type HourlyEntry,
 } from "@/lib/weather";
 import Header from "@/app/components/Header";
+import AppFooter from "@/app/components/AppFooter";
 
 // ── Server-rendered SVG temperature curve ─────────────────────────────
 
@@ -771,13 +772,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         </div>
       </main>
 
-      <footer className="text-center text-xs text-[#2a4055] py-4">
-        Weather data from <span className="text-[#3a5a72]">Open-Meteo</span>
-        {" · "}
-        <Link href={`/?q=${searchQuery}`} className="text-[#3a5a72] hover:text-[#5a7d99] transition-colors">
-          Back to forecast
-        </Link>
-      </footer>
+      <AppFooter />
     </div>
   );
 }

@@ -24,7 +24,7 @@ import {
   type HourlyForecastResponse,
   type GeocodingResult,
 } from "./weather";
-import { formatPopulation } from "./countries";
+import { formatPopulation, normalizeCountryName, selectCandidates } from "./countries";
 import { normalizeCountryName, selectCandidates } from "./countries";
 
 describe("getWeatherInfo", () => {
@@ -507,6 +507,61 @@ describe("formatPopulation", () => {
   });
   it("formats small numbers without suffix", () => {
     expect(formatPopulation(500)).toBe("500");
+  });
+  it("formats exactly 1 billion", () => {
+    expect(formatPopulation(1_000_000_000)).toContain("B");
+  });
+  it("formats exactly 1 million", () => {
+    expect(formatPopulation(1_000_000)).toContain("M");
+  });
+});
+
+describe("normalizeCountryName (comprehensive)", () => {
+  it("maps all known TopoJSON names", () => {
+    const expected: Record<string, string> = {
+      "United States of America": "United States",
+      "Democratic Republic of the Congo": "DR Congo",
+      "Republic of the Congo": "Republic of Congo",
+      "United Republic of Tanzania": "Tanzania",
+      "Lao PDR": "Laos",
+      "Viet Nam": "Vietnam",
+      "Republic of Moldova": "Moldova",
+      "Syrian Arab Republic": "Syria",
+      "Czechia": "Czech Republic",
+      "North Macedonia": "Macedonia",
+      "Eswatini": "Swaziland",
+    };
+    for (const [raw, expected_val] of Object.entries(expected)) {
+      expect(normalizeCountryName(raw)).toBe(expected_val);
+    }
+  });
+
+  it("returns the original name for unmapped countries", () => {
+    expect(normalizeCountryName("Germany")).toBe("Germany");
+    expect(normalizeCountryName("Australia")).toBe("Australia");
+    expect(normalizeCountryName("Brazil")).toBe("Brazil");
+  });
+
+  it("is case-sensitive — capitalisation matters", () => {
+    // Map keys are exact strings, so lowercase won't match
+    expect(normalizeCountryName("czechia")).toBe("czechia");
+  });
+});
+
+describe("selectCandidates (additional edge cases)", () => {
+  it("returns empty array for empty input", () => {
+    expect(selectCandidates([], 10)).toEqual([]);
+  });
+  it("returns single-item list when max=1", () => {
+    expect(selectCandidates(["A", "B", "C"], 1)).toEqual(["A"]);
+  });
+  it("always includes the first city in the sample", () => {
+    const cities = Array.from({ length: 500 }, (_, i) => `City${i}`);
+    expect(selectCandidates(cities, 20)[0]).toBe("City0");
+  });
+  it("returns exactly max items when list > max", () => {
+    const cities = Array.from({ length: 1000 }, (_, i) => `X${i}`);
+    expect(selectCandidates(cities, 50)).toHaveLength(50);
   });
 });
 

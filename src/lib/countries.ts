@@ -66,6 +66,20 @@ export function selectCandidates(cities: string[], max: number): string[] {
   );
 }
 
+export async function getCountriesByRegion(region: string): Promise<Country[]> {
+  try {
+    const res = await fetch(
+      `https://restcountries.com/v3.1/region/${encodeURIComponent(region)}?fields=name,cca2,flag,capital,region,subregion,population`,
+      { next: { revalidate: 86400 } },
+    );
+    if (!res.ok) return [];
+    const data: Country[] = await res.json();
+    return data.sort((a, b) => a.name.common.localeCompare(b.name.common));
+  } catch {
+    return [];
+  }
+}
+
 export async function getCitiesForCountry(countryName: string): Promise<string[]> {
   try {
     const res = await fetch(
