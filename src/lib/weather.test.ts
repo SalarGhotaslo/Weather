@@ -911,31 +911,41 @@ describe("getWeatherAnimClass", () => {
 });
 
 describe("getHourWeatherInfo", () => {
-  it("returns rain for code 0 with high precip prob", () => {
-    expect(getHourWeatherInfo(0, 85).emoji).toBe("🌧️");
-    expect(getHourWeatherInfo(0, 85).label).toBe("Rain");
+  it("returns rain for code 0 with high precip prob and amount", () => {
+    expect(getHourWeatherInfo(0, 85, 2).emoji).toBe("🌧️");
+    expect(getHourWeatherInfo(0, 85, 2).label).toBe("Rain");
   });
-  it("returns rain likely for code 1 with moderate-high prob", () => {
-    expect(getHourWeatherInfo(1, 65).emoji).toBe("🌦️");
-    expect(getHourWeatherInfo(1, 65).label).toBe("Rain Likely");
+  it("returns rain likely for code 1 with moderate-high prob and amount", () => {
+    expect(getHourWeatherInfo(1, 65, 1.5).emoji).toBe("🌦️");
+    expect(getHourWeatherInfo(1, 65, 1.5).label).toBe("Rain Likely");
   });
   it("falls back to weather code for low prob", () => {
-    expect(getHourWeatherInfo(1, 30)).toEqual(getWeatherInfo(1));
+    expect(getHourWeatherInfo(1, 30, 0)).toEqual(getWeatherInfo(1));
+  });
+  it("shows possible rain when prob is very high but amount is 0", () => {
+    expect(getHourWeatherInfo(1, 85, 0).emoji).toBe("🌦️");
+    expect(getHourWeatherInfo(1, 85, 0).label).toBe("Possible Rain");
+  });
+  it("falls back to weather code when prob < 85 and amount is 0", () => {
+    expect(getHourWeatherInfo(1, 65, 0)).toEqual(getWeatherInfo(1));
   });
   it("overrides cloudy codes (0-3) but not rain codes", () => {
-    expect(getHourWeatherInfo(61, 90)).toEqual(getWeatherInfo(61));
+    expect(getHourWeatherInfo(61, 90, 3)).toEqual(getWeatherInfo(61));
   });
 });
 
 describe("getHourAnimClass", () => {
-  it("returns rain class for clear code with high precip prob", () => {
-    expect(getHourAnimClass(1, 85)).toBe("weather-rainy weather-heavy");
+  it("returns rain class for clear code with high precip prob and amount", () => {
+    expect(getHourAnimClass(1, 85, 2)).toBe("weather-rainy weather-heavy");
   });
-  it("returns drizzle class for moderate-high prob", () => {
-    expect(getHourAnimClass(2, 65)).toBe("weather-drizzle");
+  it("returns drizzle class for moderate-high prob and amount", () => {
+    expect(getHourAnimClass(2, 65, 0.5)).toBe("weather-drizzle");
+  });
+  it("shows drizzle anim when prob is very high but amount is 0", () => {
+    expect(getHourAnimClass(1, 85, 0)).toBe("weather-drizzle");
   });
   it("falls back to weather code for low prob", () => {
-    expect(getHourAnimClass(3, 10)).toBe("weather-overcast");
+    expect(getHourAnimClass(3, 10, 0)).toBe("weather-overcast");
   });
 });
 

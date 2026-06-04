@@ -927,20 +927,26 @@ export function getWeatherAnimClass(code: number): string {
 // ── Hourly weather emoji and animation (considers precip probability) ─
 
 /** Weather info for an hourly forecast slot — overrides clear/cloudy emoji
- *  when precipitation probability is high enough to warrant a rain icon. */
-export function getHourWeatherInfo(code: number, precipProb: number): { emoji: string; label: string } {
-  if ((code <= 3) && precipProb >= 60) {
+ *  when precipitation probability is high AND there's expected amount. */
+export function getHourWeatherInfo(code: number, precipProb: number, precip: number): { emoji: string; label: string } {
+  if ((code <= 3) && precipProb >= 60 && precip > 0) {
     return precipProb >= 85
       ? { emoji: "🌧️", label: "Rain" }
       : { emoji: "🌦️", label: "Rain Likely" };
   }
+  if ((code <= 3) && precipProb >= 85 && precip === 0) {
+    return { emoji: "🌦️", label: "Possible Rain" };
+  }
   return getWeatherInfo(code);
 }
 
-/** Animation class for an hourly slot — same precip-probability override. */
-export function getHourAnimClass(code: number, precipProb: number): string {
-  if ((code <= 3) && precipProb >= 60) {
+/** Animation class for an hourly slot — same precip override. */
+export function getHourAnimClass(code: number, precipProb: number, precip: number): string {
+  if ((code <= 3) && precipProb >= 60 && precip > 0) {
     return precipProb >= 85 ? "weather-rainy weather-heavy" : "weather-drizzle";
+  }
+  if ((code <= 3) && precipProb >= 85 && precip === 0) {
+    return "weather-drizzle";
   }
   return getWeatherAnimClass(code);
 }

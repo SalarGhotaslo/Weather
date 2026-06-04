@@ -97,9 +97,25 @@ function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
   );
 }
 
+const STAT_TOOLTIPS: Record<string, string> = {
+  "Humidity": "The amount of water vapour in the air. Higher humidity can make the air feel warmer and more oppressive.",
+  "Wind": "Air movement speed. Stronger wind increases wind chill, making it feel colder than the actual temperature.",
+  "Precipitation": "The total amount of rain or snow expected to fall from the sky over this period.",
+  "UV Index": "A measure of ultraviolet radiation from the sun. Higher values mean greater risk of sunburn.",
+  "Pressure": "Atmospheric pressure — high pressure usually means stable, clear weather, while low pressure brings clouds and rain.",
+  "Sunrise": "The time when the sun appears over the horizon. Sunset is when it disappears for the day.",
+};
+
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
+  const tooltip = STAT_TOOLTIPS[label];
   return (
-    <div className="bg-[var(--card-bg)] rounded-lg px-4 py-3">
+    <div className="bg-[var(--card-bg)] rounded-lg px-4 py-3 group relative">
+      {tooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#0e1723] border border-[#2a4055] text-[#c8dae7] text-[10px] leading-relaxed px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+          {tooltip}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#2a4055]" />
+        </div>
+      )}
       <div className="text-[var(--text-muted)] text-xs mb-1">{label}</div>
       <div className="flex items-center gap-1.5">
         <span className="text-base" aria-hidden="true">{icon}</span>
@@ -265,15 +281,12 @@ export default async function Home({ searchParams }: Props) {
     daily.precipitation_sum[0],
   );
 
-  // Find the best-rated day in the 7-day window (skip today — already prominent)
-  const bestDayIndex = daily.time.slice(1, 7).reduce(
-    (best, _, rawI) => {
-      const i = rawI + 1;
-      const s = getWeatherScore(daily.weather_code[i], daily.temperature_2m_max[i]);
-      return s > best.score ? { i, score: s } : best;
-    },
-    { i: -1, score: 0 },
-  ).i;
+  // Days that are excellent or good for going out (score ≥ 3)
+  const bestDayIndices = daily.time.slice(0, 5).reduce<number[]>((acc, _, i) => {
+    const s = getWeatherScore(daily.weather_code[i], daily.temperature_2m_max[i]);
+    if (s >= 3) acc.push(i);
+    return acc;
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: theme.bgGradient }} data-weather={theme.type}>
@@ -414,7 +427,7 @@ export default async function Home({ searchParams }: Props) {
                   <div className={`text-xs font-semibold mb-1 ${isToday ? "text-[var(--text-accent)]" : "text-[var(--text-muted)]"}`}>
                     {getDayName(dateStr)}
                   </div>
-                  {i === bestDayIndex && (
+                  {bestDayIndices.includes(i) && (
                     <div className="text-[9px] text-amber-400 mb-1">⭐ Best</div>
                   )}
                   <div className="text-2xl mb-2" aria-hidden="true">{info.emoji}</div>

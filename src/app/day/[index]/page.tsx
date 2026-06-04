@@ -34,7 +34,6 @@ import {
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
-  type HourlyEntry,
 } from "@/lib/weather";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
@@ -207,46 +206,15 @@ function YoyStat({
   );
 }
 
-// ── Server-rendered SVG precipitation probability bars ────────────────
-
-function PrecipBars({
-  entries,
-  sunriseHour,
-  sunsetHour,
-}: {
-  entries: HourlyEntry[];
-  sunriseHour: number;
-  sunsetHour: number;
-}) {
-  if (entries.length === 0) return null;
-  const W = 480;
-  const H = 20;
-  const bw = W / entries.length;
-  return (
-    <div className="mb-3">
-      <p className="text-[var(--text-muted)] text-[9px] uppercase tracking-wider mb-1">Rain probability</p>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-5" aria-hidden="true" preserveAspectRatio="none">
-        {entries.map((e, i) => {
-          const bh = (e.precipProb / 100) * H;
-          const isNight = e.hour < sunriseHour || e.hour >= sunsetHour;
-          const fill = e.precipProb >= 60 ? "#60a5fa" : e.precipProb >= 30 ? "#38bdf8" : "#1e3347";
-          return (
-            <rect
-              key={i}
-              x={i * bw + 0.5}
-              y={H - bh}
-              width={bw - 1}
-              height={Math.max(bh, 1)}
-              fill={fill}
-              fillOpacity={isNight ? 0.45 : 0.85}
-              rx="1"
-            />
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
+const STAT_TOOLTIPS: Record<string, string> = {
+  "Feels Like": "How the temperature actually feels when wind chill and humidity are factored in.",
+  "Humidity": "The amount of water vapour in the air. Higher humidity can make the air feel warmer and more oppressive.",
+  "Wind": "Air movement speed. Stronger wind increases wind chill, making it feel colder than the actual temperature.",
+  "Precipitation": "The total amount of rain or snow expected to fall from the sky over this period.",
+  "UV Index": "A measure of ultraviolet radiation from the sun. Higher values mean greater risk of sunburn and skin damage.",
+  "Pressure": "Atmospheric pressure — high pressure usually means stable, clear weather, while low pressure brings clouds and rain.",
+  "Sunrise / Sunset": "The times when the sun appears and disappears over the horizon each day.",
+};
 
 function DetailCard({
   icon,
@@ -259,8 +227,15 @@ function DetailCard({
   value: string;
   sub?: string;
 }) {
+  const tooltip = STAT_TOOLTIPS[label];
   return (
-    <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
+    <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3 group relative">
+      {tooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#0e1723] border border-[#2a4055] text-[#c8dae7] text-[10px] leading-relaxed px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+          {tooltip}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#2a4055]" />
+        </div>
+      )}
       <div className="text-[var(--text-muted)] text-xs mb-2 flex items-center gap-1">
         <span>{icon}</span>
         <span>{label}</span>
@@ -486,15 +461,21 @@ export default async function DayPage({ params, searchParams }: PageProps) {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[68px] font-light text-white leading-none tracking-tight">
-                {Math.round(daily.temperature_2m_max[dayIndex])}°C
+                {isToday && todayTemp !== null
+                  ? `${Math.round(todayTemp)}°C`
+                  : `${Math.round(daily.temperature_2m_max[dayIndex])}°C`}
               </div>
-              <div className="text-lg text-white mt-2 font-medium">
-                {dayName} · {info.label}
+              <div className="flex items-baseline gap-3 mt-2">
+                <span className="text-lg text-white font-medium">
+                  {dayName} · {info.label}
+                </span>
               </div>
               <div className="text-[var(--text-muted)] text-sm mt-1">
-                Low {Math.round(daily.temperature_2m_min[dayIndex])}°C
+                <span className="text-white font-semibold">{Math.round(daily.temperature_2m_max[dayIndex])}°</span>
+                {" / "}
+                <span>{Math.round(daily.temperature_2m_min[dayIndex])}°</span>
                 {isToday && todayTemp !== null
-                  ? ` · Currently ${Math.round(todayTemp)}°C`
+                  ? ` · High / Low`
                   : ""}
               </div>
             </div>
@@ -505,7 +486,11 @@ export default async function DayPage({ params, searchParams }: PageProps) {
           {isToday && (
             <div className="mt-4 pt-4 border-t border-[#1e3347]">
               <div className="flex items-center gap-2 mb-2">
-                <span aria-hidden="true">{isNight ? "🌙" : "🌤️"}</span>
+                <span aria-hidden="true">
+                  {currentHourEntry
+                    ? (isNight ? "🌙" : getHourWeatherInfo(currentHourEntry.weatherCode, currentHourEntry.precipProb, currentHourEntry.precip).emoji)
+                    : (isNight ? "🌙" : "🌤️")}
+                </span>
                 <span className="text-white text-sm font-medium">
                   Right now in {locationName.split(",")[0]}
                 </span>
@@ -522,7 +507,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       <span className="text-white">{getWeatherInfo(currentHourEntry.weatherCode).label}</span>
                     </span>
                     <span className="text-[var(--text-muted)]">
-                      <span aria-hidden="true">💧</span> {currentHourEntry.precipProb}%{currentHourEntry.precip > 0 ? ` · ${currentHourEntry.precip.toFixed(1)}mm` : ""} rain
+                      <span aria-hidden="true">💧</span> {currentHourEntry.precipProb}% rain
                     </span>
                     <span className="text-[var(--text-muted)]">
                       <span aria-hidden="true">💨</span> {currentHourEntry.windSpeed} km/h
@@ -590,7 +575,11 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             label="Precipitation"
             value={`${daily.precipitation_sum[dayIndex]} mm`}
           />
-          <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
+          <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3 group relative">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#0e1723] border border-[#2a4055] text-[#c8dae7] text-[10px] leading-relaxed px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+              A measure of ultraviolet radiation from the sun. Higher values mean greater risk of sunburn and skin damage.
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#2a4055]" />
+            </div>
             <div className="text-[var(--text-muted)] text-xs mb-2 flex items-center gap-1">
               <span aria-hidden="true">☀️</span>
               <span>UV Index</span>
@@ -599,7 +588,11 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             <div className="text-[var(--text-muted)] text-xs mt-0.5">{uv.tip}</div>
             <UvMeter uv={daily.uv_index_max[dayIndex]} />
           </div>
-          <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3">
+          <div className="bg-[var(--card-bg-alt)] rounded-lg px-4 py-3 group relative">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#0e1723] border border-[#2a4055] text-[#c8dae7] text-[10px] leading-relaxed px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+              The times when the sun appears and disappears over the horizon. Daylight length changes throughout the year based on your latitude.
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#2a4055]" />
+            </div>
             <div className="text-[var(--text-muted)] text-xs mb-2 flex items-center gap-1">
               <span aria-hidden="true">🌅</span>
               <span>Sunrise / Sunset</span>
@@ -622,15 +615,13 @@ export default async function DayPage({ params, searchParams }: PageProps) {
         {hourlyEntries.length > 0 && (
           <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
             <h2 className="text-white font-semibold mb-4 text-lg">Hourly Forecast</h2>
-            {/* Compact rain-probability overview above the hour-by-hour cards */}
-            <PrecipBars entries={hourlyEntries} sunriseHour={sunriseHour} sunsetHour={sunsetHour} />
             <div
               tabIndex={0}
               role="group"
               aria-label="Hourly forecast — scroll horizontally for more hours"
               className="overflow-x-auto -mx-1 px-1 scroll-fade-right"
             >
-              <div className="flex gap-1.5 min-w-max">
+              <div className="flex gap-2 min-w-max">
                 {hourlyEntries.map((entry) => {
                   const hourIsNight =
                     entry.hour < sunriseHour || entry.hour >= sunsetHour;
@@ -639,7 +630,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                     <div
                       key={entry.hour}
                       aria-current={isCurrentHour ? "time" : undefined}
-                      className={`flex flex-col items-center gap-2 py-3.5 px-2.5 rounded-xl min-w-[58px] ${
+                      className={`flex flex-col items-center gap-2.5 py-4 px-3 rounded-xl min-w-[72px] ${
                         isCurrentHour
                           ? "bg-[var(--card-bg-secondary)] ring-2 ring-[var(--accent-color)]"
                           : hourIsNight
@@ -648,40 +639,40 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       }`}
                     >
                       <span
-                        className={`text-xs font-semibold whitespace-nowrap ${
+                        className={`text-[11px] font-semibold whitespace-nowrap ${
                           isCurrentHour ? "text-[var(--text-accent)]" : hourIsNight ? "text-[var(--text-faint)]" : "text-[var(--text-muted)]"
                         }`}
                       >
                         {isCurrentHour ? "Now" : entry.label}
                       </span>
-                      <span className={`text-3xl leading-none ${!hourIsNight ? getHourAnimClass(entry.weatherCode, entry.precipProb) : ""}`} aria-hidden="true">
-                        {hourIsNight ? "🌙" : getHourWeatherInfo(entry.weatherCode, entry.precipProb).emoji}
+                      <span className={`text-2xl leading-none ${!hourIsNight ? getHourAnimClass(entry.weatherCode, entry.precipProb, entry.precip) : ""}`} aria-hidden="true">
+                        {hourIsNight ? "🌙" : getHourWeatherInfo(entry.weatherCode, entry.precipProb, entry.precip).emoji}
                       </span>
                       <span
-                        className={`text-lg font-bold ${hourIsNight && !isCurrentHour ? "text-[var(--text-faint)]" : "text-white"}`}
+                        className={`text-base font-bold ${hourIsNight && !isCurrentHour ? "text-[var(--text-faint)]" : "text-white"}`}
                       >
                         {entry.temp}°
                       </span>
-                      <span
-                        className={`text-xs font-medium ${
-                          entry.precipProb >= 60
-                            ? "text-blue-400"
-                            : entry.precipProb >= 30
-                              ? "text-sky-400"
-                              : isCurrentHour
-                                ? "text-[var(--text-muted)]"
-                                : "text-[var(--text-faint)]"
-                        }`}
-                      >
-                        💧{entry.precipProb}%
-                      </span>
-                      {entry.precip > 0 && (
-                        <span className={`text-[10px] ${isCurrentHour ? "text-[var(--text-muted)]" : "text-[var(--text-faint)]"}`}>
-                          {entry.precip.toFixed(1)}mm
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[11px] font-medium ${
+                            entry.precipProb >= 60
+                              ? "text-blue-400"
+                              : entry.precipProb >= 30
+                                ? "text-sky-400"
+                                : isCurrentHour
+                                  ? "text-[var(--text-muted)]"
+                                  : "text-[var(--text-faint)]"
+                          }`}
+                        >
+                          💧 {entry.precipProb}%
                         </span>
-                      )}
+                        <span className={`text-[9px] ${isCurrentHour ? "text-[var(--text-faint)]" : "text-[var(--text-faint)]"}`}>
+                          {entry.precip.toFixed(1)}
+                        </span>
+                      </div>
                       <span className={`text-[10px] ${isCurrentHour ? "text-[var(--text-muted)]" : "text-[var(--text-faint)]"}`}>
-                        💨{entry.windSpeed}
+                        💨 {entry.windSpeed}
                       </span>
                     </div>
                   );
@@ -691,8 +682,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[var(--text-muted)] text-[10px]">
               <span>🌙 Night hours dimmed</span>
               <span>💧 Rain probability</span>
-              <span>💧 mm Expected amount (if shown)</span>
-              <span>💨 Wind (km/h, bottom row)</span>
+              <span>💨 Wind (km/h)</span>
             </div>
           </div>
         )}
@@ -723,7 +713,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                   <div
                     key={h.hour}
                     aria-current={isCurrentHour ? "time" : undefined}
-                    title={`${h.label}${isCurrentHour ? " (now)" : ""}: ${h.temp}°C · ${h.precipProb}% rain${h.precip > 0 ? ` · ${h.precip.toFixed(1)}mm` : ""} · ${h.windSpeed} km/h wind`}
+                    title={`${h.label}${isCurrentHour ? " (now)" : ""}: ${h.temp}°C · ${h.precipProb}% rain · ${h.windSpeed} km/h wind`}
                     className={`h-8 rounded-sm ${
                       isCurrentHour ? "ring-2 ring-white relative z-10" : ""
                     } ${
