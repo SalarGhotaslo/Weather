@@ -26,12 +26,13 @@ export default async function CountryPage({
 
       <main className="mx-auto w-full max-w-5xl px-4 py-6 flex-1">
         {/* Breadcrumb */}
-        <Link
-          href="/countries"
-          className="inline-flex items-center gap-1.5 text-[#7ea8c2] hover:text-white text-sm mb-5 transition-colors"
-        >
-          ← All Countries
-        </Link>
+        <nav className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-5 flex-wrap">
+          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+          <span>/</span>
+          <Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">Countries</Link>
+          <span>/</span>
+          <span className="text-[#7ea8c2]">{country.name.common}</span>
+        </nav>
 
         {/* Country hero */}
         <div className="bg-[#162535] rounded-xl p-6 mb-6">

@@ -33,6 +33,13 @@ export default async function CountriesPage() {
       <Header />
 
       <main className="mx-auto w-full max-w-5xl px-4 py-6 flex-1">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4">
+          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+          <span>/</span>
+          <span className="text-[#7ea8c2]">Countries</span>
+        </nav>
+
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">All Countries</h1>
           <p className="text-[#5a7d99] text-sm mt-1">

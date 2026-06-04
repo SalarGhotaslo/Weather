@@ -13,6 +13,8 @@ import {
   getHourlyAnalysis,
   getDayHourlyData,
   formatHour,
+  getWeatherAnimClass,
+  getWeatherFact,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
@@ -89,25 +91,17 @@ function CompareRow({
   label,
   forecast,
   lastYear,
-  unit = "",
 }: {
   label: string;
   forecast: string;
   lastYear: string;
-  unit?: string;
 }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-[#1e3347] last:border-0">
       <span className="text-[#7ea8c2] text-sm">{label}</span>
       <div className="text-right">
-        <span className="text-white text-sm font-medium">
-          {forecast}
-          {unit}
-        </span>
-        <span className="text-[#5a7d99] text-xs ml-2">
-          vs {lastYear}
-          {unit} last year
-        </span>
+        <span className="text-white text-sm font-medium">{forecast}</span>
+        <span className="text-[#5a7d99] text-xs ml-2">vs {lastYear} last year</span>
       </div>
     </div>
   );
@@ -180,6 +174,7 @@ export default async function DayPage({
   );
 
   const info = getWeatherInfo(daily.weather_code[dayIndex]);
+  const animClass = getWeatherAnimClass(daily.weather_code[dayIndex]);
   const isToday = dayIndex === 0;
   const todayTemp = isToday ? current.temperature_2m : null;
   const rating = getWeatherRating(
@@ -188,19 +183,31 @@ export default async function DayPage({
   );
   const uv = describeUV(daily.uv_index_max[dayIndex]);
   const searchQuery = encodeURIComponent(locationName);
+  const weatherFact = getWeatherFact(
+    daily.weather_code[dayIndex],
+    daily.temperature_2m_max[dayIndex],
+  );
+
+  const dayName = getDayName(dateStr);
+
+  // Build day-picker links for sibling days
+  const baseParams = `lat=${lat}&lon=${lon}&name=${encodeURIComponent(locationName)}`;
 
   return (
     <div className="min-h-screen bg-[#0e1723] flex flex-col">
       <Header defaultSearch={locationName} />
 
       <main className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
-        {/* Back link */}
-        <Link
-          href={`/?q=${searchQuery}`}
-          className="inline-flex items-center gap-1.5 text-[#7ea8c2] hover:text-white text-sm mb-5 transition-colors"
-        >
-          ← {locationName}
-        </Link>
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4 flex-wrap">
+          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+          <span>/</span>
+          <Link href={`/?q=${searchQuery}`} className="hover:text-[#7ea8c2] transition-colors truncate max-w-[160px]">
+            {locationName}
+          </Link>
+          <span>/</span>
+          <span className="text-[#7ea8c2]">{dayName}</span>
+        </nav>
 
         {/* Day header */}
         <div className="mb-5">
@@ -213,6 +220,23 @@ export default async function DayPage({
           </p>
         </div>
 
+        {/* Day picker strip */}
+        <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
+          {daily.time.slice(0, 5).map((d, i) => (
+            <Link
+              key={d}
+              href={`/day/${i}?${baseParams}`}
+              className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                i === dayIndex
+                  ? "bg-[#3b87d6] text-white"
+                  : "bg-[#162535] text-[#7ea8c2] hover:bg-[#1c2f3f] hover:text-white"
+              }`}
+            >
+              {getDayName(d)}
+            </Link>
+          ))}
+        </div>
+
         {/* Main weather card */}
         <div className="bg-[#162535] rounded-xl p-6 mb-3">
           <div className="flex items-start justify-between">
@@ -221,7 +245,7 @@ export default async function DayPage({
                 {Math.round(daily.temperature_2m_max[dayIndex])}°C
               </div>
               <div className="text-lg text-white mt-2 font-medium">
-                {getDayName(dateStr)} · {info.label}
+                {dayName} · {info.label}
               </div>
               <div className="text-[#7ea8c2] text-sm mt-1">
                 Low {Math.round(daily.temperature_2m_min[dayIndex])}°C
@@ -230,14 +254,12 @@ export default async function DayPage({
                   : ""}
               </div>
             </div>
-            <div className="text-[72px] leading-none">{info.emoji}</div>
+            <span className={`text-[72px] leading-none ${animClass}`}>{info.emoji}</span>
           </div>
 
           {/* Rating bar */}
           <div className="mt-4 pt-4 border-t border-[#1e3347] flex items-center justify-between">
-            <span className="text-white text-sm font-medium">
-              {rating.rating}
-            </span>
+            <span className="text-white text-sm font-medium">{rating.rating}</span>
             <span className="text-[#7ea8c2] text-sm">{rating.suggestion}</span>
           </div>
         </div>
@@ -341,14 +363,158 @@ export default async function DayPage({
           </div>
         )}
 
+        {/* Best Times Outside — enhanced */}
+        {outdoorAnalysis && (
+          <div className="bg-[#162535] rounded-xl p-5 mb-3">
+            <h2 className="text-white font-semibold mb-1">Best Times Outside</h2>
+            <p className="text-[#5a7d99] text-xs mb-4">
+              Scored by temperature, rain chance and wind
+            </p>
+
+            {/* 24-hour colour strip */}
+            <div
+              className="grid gap-px mb-1"
+              style={{ gridTemplateColumns: "repeat(24, 1fr)" }}
+            >
+              {outdoorAnalysis.hours.map((h) => (
+                <div
+                  key={h.hour}
+                  title={`${h.label}: ${h.temp}°C · ${h.precipProb}% rain · ${h.windSpeed} km/h wind`}
+                  className={`h-8 rounded-sm ${
+                    h.score === -1
+                      ? "bg-[#1a2d3e] border border-[#1e3347]"
+                      : h.score === 0
+                        ? "bg-red-500/60"
+                        : h.score === 1
+                          ? "bg-amber-500/60"
+                          : h.score === 2
+                            ? "bg-blue-500/60"
+                            : "bg-green-500/70"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Hour labels every 6 h */}
+            <div
+              className="grid mb-4"
+              style={{ gridTemplateColumns: "repeat(24, 1fr)" }}
+            >
+              {outdoorAnalysis.hours.map((h) => (
+                <div key={h.hour} className="text-[9px] text-[#5a7d99] overflow-hidden whitespace-nowrap">
+                  {h.hour % 6 === 0 ? formatHour(h.hour) : ""}
+                </div>
+              ))}
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mb-5 text-xs text-[#7ea8c2]">
+              {[
+                { cls: "bg-green-500/70", label: "Excellent" },
+                { cls: "bg-blue-500/60", label: "Good" },
+                { cls: "bg-amber-500/60", label: "Fair" },
+                { cls: "bg-red-500/60", label: "Bad" },
+                { cls: "bg-[#1a2d3e] border border-[#1e3347]", label: "Night" },
+              ].map(({ cls, label }) => (
+                <span key={label} className="flex items-center gap-1.5">
+                  <span className={`w-3 h-3 rounded-sm inline-block ${cls}`} />
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            {/* Best windows */}
+            {outdoorAnalysis.bestWindows.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[#3b87d6] text-xs font-semibold uppercase tracking-wider mb-2">
+                  Go outside
+                </p>
+                {outdoorAnalysis.bestWindows.map((w, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg bg-[#0e1f2f] p-3 mb-2 border border-[#1a3347]"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-400 text-base">✓</span>
+                        <div>
+                          <span className="text-white text-sm font-semibold">{w.timeLabel}</span>
+                          {w.peakHour && (
+                            <span className="text-[#5a7d99] text-xs ml-2">peak: {w.peakHour}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`text-xs font-semibold shrink-0 px-2 py-0.5 rounded-full ${
+                        w.rating === "Excellent" ? "bg-green-500/20 text-green-400"
+                        : w.rating === "Good" ? "bg-blue-500/20 text-blue-400"
+                        : "bg-amber-500/20 text-amber-400"
+                      }`}>
+                        {w.rating}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-[10px] text-[#7ea8c2] mb-2">
+                      {w.tempRange && <span className="bg-[#162535] px-2 py-0.5 rounded">🌡️ {w.tempRange}</span>}
+                      <span className="bg-[#162535] px-2 py-0.5 rounded">{w.conditions.split(", ").slice(1).join(", ")}</span>
+                    </div>
+                    {w.activities && w.activities.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {w.activities.map((act) => (
+                          <span key={act} className="text-[10px] text-[#3b87d6] bg-[#0d1d2e] border border-[#1a3347] px-2 py-0.5 rounded-full">
+                            {act}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Bad windows */}
+            {outdoorAnalysis.badWindows.length > 0 && (
+              <div>
+                <p className="text-red-400/70 text-xs font-semibold uppercase tracking-wider mb-2">
+                  Avoid going out
+                </p>
+                {outdoorAnalysis.badWindows.map((w, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg bg-[#1f0e0e] p-3 mb-2 border border-[#3a1a1a]"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-400">✗</span>
+                        <div>
+                          <span className="text-white text-sm font-semibold">{w.timeLabel}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-semibold shrink-0 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
+                        Avoid
+                      </span>
+                    </div>
+                    <p className="text-[#7ea8c2] text-xs mt-2 ml-6">{w.conditions}</p>
+                    {w.tempRange && (
+                      <p className="text-[#5a7d99] text-[10px] mt-1 ml-6">
+                        Temperature range: {w.tempRange}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {outdoorAnalysis.bestWindows.length === 0 && outdoorAnalysis.badWindows.length === 0 && (
+              <p className="text-[#5a7d99] text-sm border-t border-[#1e3347] pt-3">
+                No significant outdoor windows identified today.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Historical comparison */}
         <div className="bg-[#162535] rounded-xl p-5 mb-3">
-          <h2 className="text-white font-semibold mb-1">
-            Compared to Last Year
-          </h2>
-          <p className="text-[#5a7d99] text-xs mb-4">
-            Same date, one year ago
-          </p>
+          <h2 className="text-white font-semibold mb-1">Compared to Last Year</h2>
+          <p className="text-[#5a7d99] text-xs mb-4">Same date, one year ago</p>
 
           {historical ? (
             <div>
@@ -384,111 +550,22 @@ export default async function DayPage({
           )}
         </div>
 
-        {/* Best Times Outside */}
-        {outdoorAnalysis && (
-          <div className="bg-[#162535] rounded-xl p-5 mb-3">
-            <h2 className="text-white font-semibold mb-1">Best Times Outside</h2>
-            <p className="text-[#5a7d99] text-xs mb-4">
-              Based on temperature, rain chance and wind
-            </p>
-
-            {/* 24-hour colour strip */}
-            <div
-              className="grid gap-px mb-1"
-              style={{ gridTemplateColumns: "repeat(24, 1fr)" }}
-            >
-              {outdoorAnalysis.hours.map((h) => (
-                <div
-                  key={h.hour}
-                  title={`${h.label}: ${h.temp}°C · ${h.precipProb}% rain · ${h.windSpeed} km/h wind`}
-                  className={`h-7 rounded-sm ${
-                    h.score === -1
-                      ? "bg-[#1a2d3e] border border-[#1e3347]"
-                      : h.score === 0
-                        ? "bg-red-500/60"
-                        : h.score === 1
-                          ? "bg-amber-500/60"
-                          : h.score === 2
-                            ? "bg-blue-500/60"
-                            : "bg-green-500/70"
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* Hour labels every 6 h */}
-            <div
-              className="grid mb-4"
-              style={{ gridTemplateColumns: "repeat(24, 1fr)" }}
-            >
-              {outdoorAnalysis.hours.map((h) => (
-                <div key={h.hour} className="text-[9px] text-[#5a7d99] overflow-hidden whitespace-nowrap">
-                  {h.hour % 6 === 0 ? formatHour(h.hour) : ""}
-                </div>
-              ))}
-            </div>
-
-            {/* Legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs text-[#7ea8c2]">
-              {[
-                { cls: "bg-green-500/70", label: "Excellent" },
-                { cls: "bg-blue-500/60", label: "Good" },
-                { cls: "bg-amber-500/60", label: "Poor" },
-                { cls: "bg-red-500/60", label: "Bad" },
-                { cls: "bg-[#1a2d3e] border border-[#1e3347]", label: "Night" },
-              ].map(({ cls, label }) => (
-                <span key={label} className="flex items-center gap-1.5">
-                  <span className={`w-3 h-3 rounded-sm inline-block ${cls}`} />
-                  {label}
-                </span>
-              ))}
-            </div>
-
-            {/* Windows */}
-            {outdoorAnalysis.bestWindows.length > 0 ? (
-              <div>
-                {outdoorAnalysis.bestWindows.map((w, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between py-2.5 border-t border-[#1e3347]"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-green-400">✓</span>
-                      <div>
-                        <span className="text-white text-sm font-medium">{w.timeLabel}</span>
-                        <span className="text-[#7ea8c2] text-xs ml-2">{w.conditions}</span>
-                      </div>
-                    </div>
-                    <span className="text-green-400 text-xs font-medium shrink-0">{w.rating}</span>
-                  </div>
-                ))}
-                {outdoorAnalysis.badWindows.map((w, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between py-2.5 border-t border-[#1e3347]"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-red-400">✗</span>
-                      <div>
-                        <span className="text-white text-sm font-medium">{w.timeLabel}</span>
-                        <span className="text-[#7ea8c2] text-xs ml-2">{w.conditions}</span>
-                      </div>
-                    </div>
-                    <span className="text-red-400 text-xs font-medium shrink-0">Avoid</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[#5a7d99] text-sm border-t border-[#1e3347] pt-3">
-                No favourable outdoor windows today.
-              </p>
-            )}
+        {/* Fun weather fact */}
+        <div className="bg-[#162535] rounded-xl p-4 mb-3 flex items-start gap-3">
+          <span className="text-2xl shrink-0">💡</span>
+          <div>
+            <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
+            <p className="text-[#c8dae7] text-sm leading-relaxed">{weatherFact}</p>
           </div>
-        )}
+        </div>
       </main>
 
       <footer className="text-center text-xs text-[#2a4055] py-4">
         Weather data from <span className="text-[#3a5a72]">Open-Meteo</span>
+        {" · "}
+        <Link href={`/?q=${searchQuery}`} className="text-[#3a5a72] hover:text-[#5a7d99] transition-colors">
+          Back to forecast
+        </Link>
       </footer>
     </div>
   );

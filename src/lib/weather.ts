@@ -266,6 +266,9 @@ export interface OutdoorWindow {
   rating: "Excellent" | "Good" | "Fair" | "Poor";
   conditions: string;
   isBad: boolean;
+  peakHour?: string;
+  tempRange?: string;
+  activities?: string[];
 }
 
 export function formatHour(hour: number): string {
@@ -333,12 +336,32 @@ export function getHourlyAnalysis(
     return runs;
   }
 
+  function suggestActivities(avgTemp: number, maxPrecip: number, avgWind: number): string[] {
+    const acts: string[] = [];
+    if (maxPrecip < 10 && avgTemp >= 12) acts.push("Running");
+    if (maxPrecip < 15 && avgWind < 20 && avgTemp >= 10 && avgTemp <= 28) acts.push("Cycling");
+    if (maxPrecip < 5 && avgTemp >= 18 && avgWind < 15) acts.push("Picnic");
+    if (maxPrecip < 20 && avgTemp >= 6) acts.push("Walking");
+    if (avgTemp >= 23 && maxPrecip < 5) acts.push("Beach");
+    if (acts.length === 0) acts.push("Light stroll");
+    return acts.slice(0, 3);
+  }
+
   function runToWindow(run: { start: number; end: number }, isBad: boolean): OutdoorWindow {
     const slice = hours.slice(run.start, run.end + 1);
     const avgTemp = Math.round(slice.reduce((s, h) => s + h.temp, 0) / slice.length);
     const avgScore = slice.reduce((s, h) => s + h.score, 0) / slice.length;
     const maxPrecip = Math.max(...slice.map((h) => h.precipProb));
     const avgWind = Math.round(slice.reduce((s, h) => s + h.windSpeed, 0) / slice.length);
+    const minTemp = Math.min(...slice.map((h) => h.temp));
+    const maxTemp = Math.max(...slice.map((h) => h.temp));
+
+    const peakIdx = slice.reduce(
+      (best, h, i) => (h.score > slice[best].score ? i : best),
+      0,
+    );
+    const peakHour = slice[peakIdx]?.label;
+
     const rating: OutdoorWindow["rating"] = isBad
       ? "Poor"
       : avgScore >= 2.7
@@ -347,7 +370,7 @@ export function getHourlyAnalysis(
           ? "Good"
           : "Fair";
     const conditions = [
-      `${avgTemp}°C`,
+      `avg ${avgTemp}°C`,
       maxPrecip < 15 ? "dry" : `${maxPrecip}% rain chance`,
       avgWind < 15 ? "calm" : avgWind < 28 ? "light breeze" : `${avgWind} km/h wind`,
     ].join(", ");
@@ -356,6 +379,9 @@ export function getHourlyAnalysis(
       rating,
       conditions,
       isBad,
+      peakHour,
+      tempRange: `${minTemp}–${maxTemp}°C`,
+      activities: isBad ? [] : suggestActivities(avgTemp, maxPrecip, avgWind),
     };
   }
 
@@ -375,4 +401,45 @@ export function getHourlyAnalysis(
     .map((r) => runToWindow(r, true));
 
   return { hours, bestWindows, badWindows };
+}
+
+// ── Weather emoji animation class ────────────────────────────────────
+
+export function getWeatherAnimClass(code: number): string {
+  if (code === 0) return "weather-sunny weather-sunny-glow";
+  if (code === 1 || code === 2) return "weather-cloudy";
+  if (code === 3) return "weather-cloudy";
+  if (code === 45 || code === 48) return "weather-foggy";
+  if (code >= 95) return "weather-thunder";
+  if (code >= 71 && code <= 77) return "weather-snowy";
+  if (code >= 51 && code <= 82) return "weather-rainy";
+  return "weather-cloudy";
+}
+
+// ── Fun weather facts ─────────────────────────────────────────────────
+
+export function getWeatherFact(code: number, temp: number): string {
+  if (code >= 95)
+    return "Lightning strikes Earth ~100 times every second — about 8 million bolts a day.";
+  if (code >= 71 && code <= 77)
+    return "No two snowflakes are identical. Each crystal forms a unique pattern as it falls through different temperature layers.";
+  if (code >= 61 && code <= 67)
+    return "A typical rain cloud weighs around 500,000 kg — roughly the same as 100 elephants.";
+  if (code >= 51 && code <= 57)
+    return "Drizzle droplets are less than 0.5 mm across. Despite their tiny size, billions can fall in a single minute.";
+  if (code === 45 || code === 48)
+    return "Fog is essentially a cloud at ground level. The densest fog ever recorded reduced London visibility to near zero in 1952.";
+  if (temp >= 35)
+    return "The hottest air temperature ever recorded was 56.7 °C (134 °F) in Death Valley, California, in July 1913.";
+  if (temp <= -10)
+    return "At −40 °C, Celsius and Fahrenheit read exactly the same — the only point where the two scales agree.";
+  if (code === 0 && temp >= 20)
+    return "Sunshine boosts serotonin production in the brain, which can lift mood and sharpen focus. Get outside!";
+  if (code <= 2 && temp >= 14)
+    return "Sunlight takes about 8 minutes 20 seconds to reach Earth. The light you see outside is already 8 minutes old.";
+  if (code === 3)
+    return "Heavy cloud cover can block up to 70–90 % of UV radiation — handy if you forgot sunscreen.";
+  if (temp <= 5)
+    return "Cold air holds less moisture than warm air. That's why winter air often feels crisp and dry even without frost.";
+  return "Wind is caused by pressure differences — air always rushes from high-pressure areas toward low-pressure ones.";
 }

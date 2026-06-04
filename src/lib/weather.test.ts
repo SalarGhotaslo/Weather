@@ -12,6 +12,8 @@ import {
   getHourlyAnalysis,
   getDayHourlyData,
   findBestGeoMatch,
+  getWeatherAnimClass,
+  getWeatherFact,
   type HourlyForecastResponse,
   type GeocodingResult,
 } from "./weather";
@@ -411,6 +413,133 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("getWeatherAnimClass", () => {
+  it("returns sunny class for clear sky (code 0)", () => {
+    const cls = getWeatherAnimClass(0);
+    expect(cls).toContain("weather-sunny");
+  });
+  it("returns cloudy class for partly cloudy (codes 1-2)", () => {
+    expect(getWeatherAnimClass(1)).toBe("weather-cloudy");
+    expect(getWeatherAnimClass(2)).toBe("weather-cloudy");
+  });
+  it("returns thunder class for thunderstorm (code 95+)", () => {
+    expect(getWeatherAnimClass(95)).toBe("weather-thunder");
+    expect(getWeatherAnimClass(99)).toBe("weather-thunder");
+  });
+  it("returns snowy class for snow (codes 71-77)", () => {
+    expect(getWeatherAnimClass(71)).toBe("weather-snowy");
+    expect(getWeatherAnimClass(77)).toBe("weather-snowy");
+  });
+  it("returns rainy class for rain (codes 61-67)", () => {
+    expect(getWeatherAnimClass(61)).toBe("weather-rainy");
+    expect(getWeatherAnimClass(67)).toBe("weather-rainy");
+  });
+  it("returns rainy class for showers (codes 80-82)", () => {
+    expect(getWeatherAnimClass(80)).toBe("weather-rainy");
+    expect(getWeatherAnimClass(82)).toBe("weather-rainy");
+  });
+  it("returns foggy class for fog (codes 45, 48)", () => {
+    expect(getWeatherAnimClass(45)).toBe("weather-foggy");
+    expect(getWeatherAnimClass(48)).toBe("weather-foggy");
+  });
+  it("returns cloudy as default for overcast (code 3)", () => {
+    expect(getWeatherAnimClass(3)).toBe("weather-cloudy");
+  });
+});
+
+describe("getWeatherFact", () => {
+  it("returns a non-empty string for any weather code and temperature", () => {
+    const codes = [0, 1, 2, 3, 45, 48, 51, 55, 61, 65, 71, 75, 80, 82, 95, 99];
+    const temps = [-20, -5, 0, 10, 20, 35, 40];
+    for (const code of codes) {
+      for (const temp of temps) {
+        const fact = getWeatherFact(code, temp);
+        expect(typeof fact).toBe("string");
+        expect(fact.length).toBeGreaterThan(10);
+      }
+    }
+  });
+  it("returns lightning fact for thunderstorm", () => {
+    const fact = getWeatherFact(95, 20);
+    expect(fact.toLowerCase()).toContain("lightning");
+  });
+  it("returns snowflake fact for snow", () => {
+    const fact = getWeatherFact(71, 0);
+    expect(fact.toLowerCase()).toContain("snowflake");
+  });
+  it("returns rain cloud fact for heavy rain", () => {
+    const fact = getWeatherFact(63, 15);
+    expect(fact.toLowerCase()).toContain("cloud");
+  });
+  it("returns heat fact for very high temperature", () => {
+    const fact = getWeatherFact(0, 40);
+    expect(fact.toLowerCase()).toMatch(/death valley|hottest/);
+  });
+  it("returns cold fact for very low temperature", () => {
+    const fact = getWeatherFact(0, -15);
+    expect(fact.toLowerCase()).toContain("−40");
+  });
+});
+
+describe("getHourlyAnalysis enhanced windows", () => {
+  function makeIdealHourly(): HourlyForecastResponse["hourly"] {
+    const date = "2026-06-04";
+    return {
+      time: Array.from({ length: 24 }, (_, i) => `${date}T${String(i).padStart(2, "0")}:00`),
+      temperature_2m: Array.from({ length: 24 }, (_, i) => {
+        // Ideal temp 9am-5pm
+        if (i >= 9 && i <= 17) return 20;
+        return 8;
+      }),
+      precipitation_probability: Array.from({ length: 24 }, (_, i) =>
+        i >= 14 && i <= 16 ? 75 : 5,
+      ),
+      wind_speed_10m: Array.from({ length: 24 }, () => 10),
+      uv_index: Array.from({ length: 24 }, () => 3),
+      weather_code: Array.from({ length: 24 }, () => 1),
+    };
+  }
+
+  it("populates peakHour on best windows", () => {
+    const hourly = makeIdealHourly();
+    const { bestWindows } = getHourlyAnalysis(
+      hourly, "2026-06-04", "2026-06-04T06:00", "2026-06-04T21:00",
+    );
+    expect(bestWindows.length).toBeGreaterThan(0);
+    expect(bestWindows[0].peakHour).toBeTruthy();
+    expect(typeof bestWindows[0].peakHour).toBe("string");
+  });
+
+  it("populates tempRange on best windows", () => {
+    const hourly = makeIdealHourly();
+    const { bestWindows } = getHourlyAnalysis(
+      hourly, "2026-06-04", "2026-06-04T06:00", "2026-06-04T21:00",
+    );
+    expect(bestWindows.length).toBeGreaterThan(0);
+    expect(bestWindows[0].tempRange).toMatch(/\d+–\d+°C/);
+  });
+
+  it("populates activities on best windows", () => {
+    const hourly = makeIdealHourly();
+    const { bestWindows } = getHourlyAnalysis(
+      hourly, "2026-06-04", "2026-06-04T06:00", "2026-06-04T21:00",
+    );
+    expect(bestWindows.length).toBeGreaterThan(0);
+    expect(Array.isArray(bestWindows[0].activities)).toBe(true);
+    expect(bestWindows[0].activities!.length).toBeGreaterThan(0);
+  });
+
+  it("returns empty activities for bad windows", () => {
+    const hourly = makeIdealHourly();
+    const { badWindows } = getHourlyAnalysis(
+      hourly, "2026-06-04", "2026-06-04T06:00", "2026-06-04T21:00",
+    );
+    if (badWindows.length > 0) {
+      expect(badWindows[0].activities).toEqual([]);
+    }
   });
 });
 

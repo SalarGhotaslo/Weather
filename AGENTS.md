@@ -57,10 +57,16 @@ Key features:
 ## Key lib functions (`src/lib/weather.ts`)
 - `buildForecastUrl(lat, lon)` — daily + current forecast URL
 - `buildHourlyForecastUrl(lat, lon)` — 6-day hourly URL
-- `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` — returns `{ hours, bestWindows, badWindows }` for the Best Times Outside section
+- `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` — returns `{ hours, bestWindows, badWindows }` for the Best Times Outside section; each `OutdoorWindow` includes `peakHour`, `tempRange`, and `activities[]`
 - `scoreHour(temp, precipProb, windSpeed, isNight)` → -1..3
 - `formatHour(hour)` → "9am", "12pm", etc.
 - `getWeatherInfo(code)`, `getDayName(dateStr)`, `getWeatherRating(code, temp)`, `describeUV(uv)`, `tempDiffDescription(forecast, historical)`
+- `getWeatherAnimClass(code)` → CSS class string for animated emoji (weather-sunny, weather-rainy, etc.)
+- `getWeatherFact(code, temp)` → contextual fun weather fact string
+
+## Security conventions
+- All API route `country` params are validated: must match `/^[\p{L}\s\-'.()]+$/u`, max 100 chars
+- Security headers set in `next.config.ts` for all routes (X-Frame-Options, X-Content-Type-Options, etc.)
 
 ## Open-Meteo weather codes
 0=clear · 1-2=partly cloudy · 3=overcast · 45/48=fog · 51-57=drizzle · 61-67=rain · 71-77=snow · 80-82=showers · 95+=thunderstorm

@@ -6,10 +6,10 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router, Server Components)
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
+- **Styling**: Tailwind CSS v4 + custom CSS animations
 - **APIs**: Open-Meteo (weather + geocoding), REST Countries, CountriesNow, Open-Meteo Archive
 - **Map**: react-simple-maps (SVG world map)
-- **Testing**: Vitest
+- **Testing**: Vitest (81 tests)
 
 ## Requirements
 
@@ -19,15 +19,21 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 - Show a **5-day forecast** with daily max/min temps, weather condition, temperature range bar
 - Click any forecast day card to open a **day detail page** with:
   - Expanded data: UV index, sunrise/sunset, feels-like, humidity, precipitation, wind
+  - **Day picker strip** — jump between the 5 forecast days directly
   - Historical comparison: same calendar date last year (temp, precipitation, verdict)
   - Activity rating & suggestion
+  - **Best Times Outside** — 24-hour colour strip + scored windows with peak hour, temperature range, and activity suggestions (Cycling, Running, Picnic, etc.)
+  - **Avoid windows** — periods to stay indoors with detailed conditions
+  - **Did you know?** fun weather fact relevant to the day's conditions
+- **Breadcrumb navigation** on every page: Home / Country / Day / etc.
 - **Countries tab** — browse all ~250 countries A–Z (flag, name, capital)
   - Click a country → city list with live filter (can have thousands of cities)
   - Click a city → weather forecast for that city
 - **Map tab** — interactive SVG world map
   - Hover over a country → side panel loads and shows its cities (debounced 350ms, cached)
   - Click a country → map zooms to that country's centroid; side panel shows its cities
-  - Click a city in the side panel → weather forecast for that city
+  - City markers with **label background rects** for clear readability and glow rings for visibility
+  - Click a city in the side panel or on map → weather forecast for that city
   - "← World" button resets zoom
 - Graceful error handling for all API failures
 - Data revalidates every 30 minutes (ISR); country/city data every 24 hours
@@ -36,26 +42,30 @@ A Next.js 16 weather app with global city search, 5-day forecasts, a countries b
 - Server Components by default; `'use client'` only for interactive pieces
 - Mobile-responsive layout (stacked on mobile, side-by-side on desktop)
 - Dark navy theme (BBC Weather-inspired)
+- **Security**: HTTP security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy), strict input validation on all API routes
+- **Animations**: Weather-specific CSS animations — sun spins with glow, clouds bob, rain sways, snow drifts, thunder flashes, fog drifts
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── globals.css                    # Tailwind base + CSS vars
+│   ├── globals.css                    # Tailwind base + CSS vars + weather animations
 │   ├── layout.tsx                     # Root layout (fonts, metadata)
 │   ├── page.tsx                       # Home — weather search & 5-day forecast
 │   ├── api/
-│   │   └── cities/
-│   │       └── route.ts               # GET /api/cities?country=X (proxy for map)
+│   │   ├── cities/
+│   │   │   └── route.ts               # GET /api/cities?country=X (proxy + validation)
+│   │   └── city-markers/
+│   │       └── route.ts               # GET /api/city-markers?country=X (geocoded dots)
 │   ├── countries/
-│   │   ├── page.tsx                   # All countries A–Z list
+│   │   ├── page.tsx                   # All countries A–Z list + breadcrumb
 │   │   └── [code]/
-│   │       ├── page.tsx               # Cities for a country
+│   │       ├── page.tsx               # Cities for a country + breadcrumb
 │   │       └── CitiesFilter.tsx       # 'use client' — live filter for city grid
 │   ├── day/
 │   │   └── [index]/
-│   │       └── page.tsx               # Day detail page
+│   │       └── page.tsx               # Day detail — breadcrumb, day picker, windows, fun fact
 │   ├── map/
 │   │   └── page.tsx                   # Map page (server wrapper)
 │   └── components/
@@ -65,46 +75,51 @@ src/
 │       ├── WorldMapLoader.tsx         # 'use client' — dynamic(WorldMap, {ssr:false})
 │       └── WorldMap.tsx               # 'use client' — react-simple-maps interactive map
 ├── lib/
-│   ├── weather.ts                     # Weather API helpers + types
-│   ├── weather.test.ts                # Unit tests
+│   ├── weather.ts                     # Weather API helpers + types + facts + animation classes
+│   ├── weather.test.ts                # Unit tests (81 tests)
 │   └── countries.ts                   # Country/city API helpers + types
+└── types/
+    └── react-simple-maps.d.ts         # TypeScript declarations for react-simple-maps
 ```
 
 ## APIs
 
-| API | Purpose | Key |
-|-----|---------|-----|
-| `https://api.open-meteo.com/v1/forecast` | 5-day + current weather | None |
-| `https://archive-api.open-meteo.com/v1/archive` | Historical weather (day detail) | None |
-| `https://geocoding-api.open-meteo.com/v1/search` | City search + autocomplete | None |
-| `https://restcountries.com/v3.1/all` | Country list (name, flag, capital, code) | None |
-| `https://countriesnow.space/api/v0.1/countries/cities/q` | Cities per country | None |
-| `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` | World map TopoJSON | None |
+| API | Purpose |
+|-----|---------|
+| `https://api.open-meteo.com/v1/forecast` | 5-day + current weather |
+| `https://archive-api.open-meteo.com/v1/archive` | Historical weather (day detail) |
+| `https://geocoding-api.open-meteo.com/v1/search` | City search + autocomplete |
+| `https://restcountries.com/v3.1/all` | Country list (name, flag, capital, code) |
+| `https://countriesnow.space/api/v0.1/countries/cities/q` | Cities per country |
+| `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` | World map TopoJSON |
 
-## Map Interaction Detail
+## Security
 
-```
-User hovers country (350ms delay)
-  → fetch /api/cities?country=Name  (cached in-memory + server 24h revalidate)
-  → side panel shows city list with filter
+- **HTTP headers** (via `next.config.ts`): X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-DNS-Prefetch-Control
+- **API route validation**: `country` parameter is stripped, length-checked (max 100 chars) and validated against a Unicode letter/space/punctuation allowlist before being forwarded to external APIs
+- **Cache headers**: API routes set `Cache-Control: public, s-maxage=86400, stale-while-revalidate` to reduce backend exposure
+- **Server Components** as default: user data never touches client-side state unless necessary
 
-User clicks country
-  → map zooms to country centroid (zoom level 4)
-  → same city list shown in panel
-  → "← World" button resets zoom + clears panel
+## New Functions (`src/lib/weather.ts`)
 
-User clicks city in panel
-  → navigates to /?q=City, Country
-  → weather forecast page loads
-```
+| Function | Purpose |
+|----------|---------|
+| `getWeatherAnimClass(code)` | Returns CSS class for animated weather emoji |
+| `getWeatherFact(code, temp)` | Returns a contextual fun weather fact |
+| `suggestActivities(...)` | Internal — suggests activities for an outdoor window |
 
-## Build & Run
+## Enhanced OutdoorWindow
 
-```bash
-npm install        # Install dependencies (includes react-simple-maps)
-npm run dev        # Start dev server (http://localhost:3000)
-npm run build      # Production build (also runs type check)
-npm run test       # Run Vitest unit tests
+```typescript
+interface OutdoorWindow {
+  timeLabel: string;       // "9am – 1pm"
+  rating: "Excellent" | "Good" | "Fair" | "Poor";
+  conditions: string;      // "avg 18°C, dry, calm"
+  isBad: boolean;
+  peakHour?: string;       // best single hour in the window
+  tempRange?: string;      // "15–21°C"
+  activities?: string[];   // ["Running", "Cycling", "Picnic"]
+}
 ```
 
 ## Implemented
@@ -120,3 +135,13 @@ npm run test       # Run Vitest unit tests
 - [x] City markers on map when zoomed into a country (geocoded dots, click → weather)
 - [x] Best Times Outside on day detail (24-h colour strip + scored windows)
 - [x] Search autocomplete dropdown (debounced, keyboard navigable)
+- [x] Weather emoji CSS animations (sun, cloud, rain, snow, thunder, fog)
+- [x] Fun weather facts on home + day detail pages
+- [x] Day picker strip on day detail (jump between 5 forecast days)
+- [x] Breadcrumbs on all pages (Home / Location / Day etc.)
+- [x] Enhanced outdoor windows (peak hour, temp range, activity suggestions)
+- [x] Improved map city labels (background rect, glow ring, larger font)
+- [x] Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+- [x] API route input validation + sanitisation
+- [x] TypeScript declarations for react-simple-maps + d3-geo
+- [x] 81 unit tests covering all lib functions including new ones

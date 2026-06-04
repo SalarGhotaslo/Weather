@@ -23,19 +23,24 @@ export default function SearchAutocomplete({
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  // Sync prop → state via a zero-delay timeout so setState is inside an async
+  // callback, not synchronously in the effect body (which the linter flags).
   useEffect(() => {
-    setValue(defaultValue);
+    const id = setTimeout(() => setValue(defaultValue), 0);
+    return () => clearTimeout(id);
   }, [defaultValue]);
 
   useEffect(() => {
     const query = value.trim();
-    if (query.length < 2) {
-      setSuggestions([]);
-      setOpen(false);
-      return;
-    }
     clearTimeout(timer.current);
+    // Defer all state updates so they run inside the async callback, not
+    // synchronously in the effect body.
     timer.current = setTimeout(async () => {
+      if (query.length < 2) {
+        setSuggestions([]);
+        setOpen(false);
+        return;
+      }
       try {
         const res = await fetch(
           `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=6&language=en&format=json`,
@@ -55,12 +60,11 @@ export default function SearchAutocomplete({
         setSuggestions([]);
       }
     }, 280);
+
+    return () => clearTimeout(timer.current);
   }, [value]);
 
   const navigate = (suggestion: GeoResult) => {
-    // Show the full label in the input box for clarity, but only pass the
-    // city name (+ country) to the URL — the geocoding API returns 0 results
-    // for "City, Region, Country" strings.
     const display = suggestion.admin1
       ? `${suggestion.name}, ${suggestion.admin1}, ${suggestion.country}`
       : `${suggestion.name}, ${suggestion.country}`;

@@ -17,3 +17,53 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/* ── Weather emoji animations ─────────────────────────────────────── */
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes rain-sway {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50%       { transform: rotate(8deg) translateY(5px); }
+}
+
+@keyframes snow-drift {
+  0%   { transform: translateX(0) translateY(0) rotate(0deg); }
+  33%  { transform: translateX(5px) translateY(-3px) rotate(12deg); }
+  66%  { transform: translateX(-4px) translateY(4px) rotate(-10deg); }
+  100% { transform: translateX(0) translateY(0) rotate(0deg); }
+}
+
+@keyframes thunder-flash {
+  0%, 82%, 100% { opacity: 1; filter: brightness(1); }
+  86%            { opacity: 0.3; filter: brightness(2.5); }
+  90%            { opacity: 1;   filter: brightness(1.2); }
+  94%            { opacity: 0.5; filter: brightness(1.8); }
+}
+
+@keyframes fog-drift {
+  0%, 100% { transform: translateX(0); opacity: 1; }
+  50%       { transform: translateX(6px); opacity: 0.75; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 0px transparent); }
+  50%       { filter: drop-shadow(0 0 8px rgba(251,191,36,0.6)); }
+}
+
+/* Apply via className on emoji wrapper spans */
+.weather-sunny   { animation: spin-slow 14s linear infinite; display: inline-block; }
+.weather-sunny-glow { animation: pulse-glow 3s ease-in-out infinite; display: inline-block; }
+.weather-cloudy  { animation: bob 4s ease-in-out infinite; display: inline-block; }
+.weather-rainy   { animation: rain-sway 2.2s ease-in-out infinite; display: inline-block; }
+.weather-snowy   { animation: snow-drift 5s ease-in-out infinite; display: inline-block; }
+.weather-thunder { animation: thunder-flash 6s ease-in-out infinite; display: inline-block; }
+.weather-foggy   { animation: fog-drift 7s ease-in-out infinite; display: inline-block; }

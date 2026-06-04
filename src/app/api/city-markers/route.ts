@@ -16,6 +16,14 @@ interface GeoRow {
   population?: number;
 }
 
+function validateCountry(raw: string | null): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0 || trimmed.length > 100) return null;
+  if (!/^[\p{L}\s\-'.()]+$/u.test(trimmed)) return null;
+  return trimmed;
+}
+
 async function geocodeCity(
   cityName: string,
   countryHint: string,
@@ -49,9 +57,9 @@ async function geocodeCity(
 }
 
 export async function GET(request: NextRequest) {
-  const raw = request.nextUrl.searchParams.get("country");
-  if (!raw) return Response.json([]);
-  const country = normalizeCountryName(raw);
+  const validated = validateCountry(request.nextUrl.searchParams.get("country"));
+  if (!validated) return Response.json([]);
+  const country = normalizeCountryName(validated);
 
   // Fetch full city list (cached 24 h)
   let cities: string[] = [];
@@ -69,8 +77,6 @@ export async function GET(request: NextRequest) {
   }
 
   // Sample up to 150 cities spread evenly across the alphabetically sorted list.
-  // First-per-letter was broken: "R" picked Recife over Rio de Janeiro,
-  // "M" picked Macclesfield over Manchester, etc.
   const candidates = selectCandidates(cities, 150);
 
   if (candidates.length === 0) return Response.json([]);
@@ -86,6 +92,6 @@ export async function GET(request: NextRequest) {
     .slice(0, 10);
 
   return Response.json(markers, {
-    headers: { "Cache-Control": "public, s-maxage=86400" },
+    headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600" },
   });
 }

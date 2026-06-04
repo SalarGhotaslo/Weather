@@ -6,6 +6,8 @@ import {
   getDayName,
   getFormattedDate,
   describeUV,
+  getWeatherAnimClass,
+  getWeatherFact,
   type WeatherResponse,
 } from "@/lib/weather";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
@@ -65,7 +67,7 @@ export default async function Home({
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="w-full max-w-lg">
             <div className="text-center mb-8">
-              <div className="text-6xl mb-4">⛅</div>
+              <div className="text-6xl mb-4 weather-sunny-glow inline-block">⛅</div>
               <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
                 Salar Weather
               </h1>
@@ -74,6 +76,14 @@ export default async function Home({
               </p>
             </div>
             <SearchAutocomplete large />
+            <div className="mt-8 flex justify-center gap-6 text-sm text-[#5a7d99]">
+              <Link href="/countries" className="hover:text-[#7ea8c2] transition-colors">
+                🌍 Browse countries
+              </Link>
+              <Link href="/map" className="hover:text-[#7ea8c2] transition-colors">
+                🗺️ World map
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -95,6 +105,12 @@ export default async function Home({
             <p className="text-[#7ea8c2] mb-6">
               No results for &ldquo;{q}&rdquo;. Try a different city name.
             </p>
+            <Link
+              href="/countries"
+              className="inline-flex items-center gap-2 text-[#3b87d6] hover:text-white text-sm transition-colors"
+            >
+              Browse countries →
+            </Link>
           </div>
         </div>
       </div>
@@ -119,6 +135,7 @@ export default async function Home({
 
   const { current, daily } = weather;
   const todayInfo = getWeatherInfo(current.weather_code);
+  const animClass = getWeatherAnimClass(current.weather_code);
   const locationLabel = location.admin1
     ? `${location.name}, ${location.admin1}, ${location.country}`
     : `${location.name}, ${location.country}`;
@@ -129,12 +146,20 @@ export default async function Home({
 
   const todayFormatted = getFormattedDate(daily.time[0]);
   const uvToday = describeUV(daily.uv_index_max[0]);
+  const weatherFact = getWeatherFact(current.weather_code, current.temperature_2m);
 
   return (
     <div className="min-h-screen bg-[#0e1723] flex flex-col">
       <Header defaultSearch={q} />
 
       <main className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-xs text-[#5a7d99] mb-4">
+          <Link href="/" className="hover:text-[#7ea8c2] transition-colors">Home</Link>
+          <span>/</span>
+          <span className="text-[#7ea8c2] truncate max-w-[200px]">{location.name}</span>
+        </nav>
+
         {/* Location */}
         <div className="mb-5">
           <div className="flex items-baseline gap-2">
@@ -161,7 +186,7 @@ export default async function Home({
                 Feels like {Math.round(current.apparent_temperature)}°C
               </div>
             </div>
-            <div className="text-[72px] leading-none">{todayInfo.emoji}</div>
+            <span className={`text-[72px] leading-none ${animClass}`}>{todayInfo.emoji}</span>
           </div>
           <div className="mt-4 pt-4 border-t border-[#1e3347] flex items-center justify-between">
             <span className="text-[#7ea8c2] text-xs">
@@ -182,7 +207,7 @@ export default async function Home({
         </div>
 
         {/* 5-day forecast */}
-        <div>
+        <div className="mb-6">
           <h2 className="text-[#5a7d99] text-xs font-semibold uppercase tracking-widest mb-3">
             5-Day Forecast
           </h2>
@@ -234,9 +259,22 @@ export default async function Home({
           </div>
         </div>
 
-        <footer className="mt-8 text-center text-xs text-[#2a4055]">
+        {/* Fun weather fact */}
+        <div className="bg-[#162535] rounded-xl p-4 mb-6 flex items-start gap-3">
+          <span className="text-2xl shrink-0">💡</span>
+          <div>
+            <p className="text-[#5a7d99] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
+            <p className="text-[#c8dae7] text-sm leading-relaxed">{weatherFact}</p>
+          </div>
+        </div>
+
+        <footer className="mt-4 text-center text-xs text-[#2a4055]">
           Weather data from{" "}
           <span className="text-[#3a5a72]">Open-Meteo</span>
+          {" · "}
+          <Link href="/countries" className="text-[#3a5a72] hover:text-[#5a7d99] transition-colors">Browse countries</Link>
+          {" · "}
+          <Link href="/map" className="text-[#3a5a72] hover:text-[#5a7d99] transition-colors">World map</Link>
         </footer>
       </main>
     </div>

@@ -225,37 +225,62 @@ export default function WorldMap() {
 
             {/* Major city markers — appear after country click + geocoding */}
             {selectedCountry &&
-              cityMarkers.map((marker) => (
-                <Marker
-                  key={marker.name}
-                  coordinates={[marker.lon, marker.lat]}
-                >
-                  <circle
-                    r={5 / position.zoom}
-                    fill="#3b87d6"
-                    stroke="#0e1723"
-                    strokeWidth={0.8 / position.zoom}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      router.push(
-                        // Use panelCountry (normalised) not selectedCountry (raw TopoJSON)
-                        // so geocodeLocation + findBestGeoMatch get the right country hint
-                        `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
-                      )
-                    }
-                  />
-                  <text
-                    textAnchor="middle"
-                    y={-7 / position.zoom}
-                    fontSize={6 / position.zoom}
-                    fill="#ffffff"
-                    fontWeight="600"
-                    style={{ pointerEvents: "none", userSelect: "none" }}
+              cityMarkers.map((marker) => {
+                const labelSize = 8 / position.zoom;
+                const dotR = 6 / position.zoom;
+                const bgPad = 1.5 / position.zoom;
+                const bgH = (labelSize + bgPad * 2);
+                const approxW = marker.name.length * labelSize * 0.62;
+                return (
+                  <Marker
+                    key={marker.name}
+                    coordinates={[marker.lon, marker.lat]}
                   >
-                    {marker.name}
-                  </text>
-                </Marker>
-              ))}
+                    {/* Background rect behind label for readability */}
+                    <rect
+                      x={-approxW / 2}
+                      y={-(dotR + bgH + 2 / position.zoom)}
+                      width={approxW}
+                      height={bgH}
+                      rx={1.5 / position.zoom}
+                      fill="#0e1723"
+                      fillOpacity={0.75}
+                      style={{ pointerEvents: "none" }}
+                    />
+                    <text
+                      textAnchor="middle"
+                      y={-(dotR + bgPad + 1 / position.zoom)}
+                      fontSize={labelSize}
+                      fill="#e2f0fb"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none", userSelect: "none" }}
+                    >
+                      {marker.name}
+                    </text>
+                    <circle
+                      r={dotR}
+                      fill="#3b87d6"
+                      stroke="#0e1723"
+                      strokeWidth={1.2 / position.zoom}
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        router.push(
+                          `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
+                        )
+                      }
+                    />
+                    {/* Outer glow ring */}
+                    <circle
+                      r={dotR * 1.7}
+                      fill="none"
+                      stroke="#3b87d6"
+                      strokeWidth={0.6 / position.zoom}
+                      strokeOpacity={0.35}
+                      style={{ pointerEvents: "none" }}
+                    />
+                  </Marker>
+                );
+              })}
           </ZoomableGroup>
         </ComposableMap>
       </div>
