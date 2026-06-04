@@ -24,6 +24,8 @@ import SearchTracker from "@/app/components/SearchTracker";
 import TimeGradient from "@/app/components/TimeGradient";
 import AppFooter from "@/app/components/AppFooter";
 import GeolocateButton from "@/app/components/GeolocateButton";
+import { getWeatherTheme } from "@/lib/weatherTheme";
+import WeatherBackground from "@/app/components/WeatherBackground";
 
 const POPULAR_CITIES = [
   "London, UK",
@@ -206,6 +208,8 @@ export default async function Home({ searchParams }: Props) {
     current.wind_speed_10m,
   );
 
+  const theme = getWeatherTheme(current.weather_code);
+
   const todayAlert = getWeatherAlert(
     daily.weather_code[0],
     daily.wind_speed_10m_max[0],
@@ -224,7 +228,8 @@ export default async function Home({ searchParams }: Props) {
   ).i;
 
   return (
-    <div className="min-h-screen bg-[#0e1723] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: theme.bgGradient }} data-weather={theme.type}>
+      <WeatherBackground weatherCode={current.weather_code} />
       <Header defaultSearch={q} />
 
       {/* Track this search in localStorage */}

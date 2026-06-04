@@ -33,6 +33,8 @@ import {
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
 import ShareButton from "@/app/components/ShareButton";
+import { getWeatherTheme } from "@/lib/weatherTheme";
+import WeatherBackground from "@/app/components/WeatherBackground";
 
 // ── Server-rendered SVG temperature curve ─────────────────────────────
 
@@ -414,6 +416,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
     daily.temperature_2m_max[dayIndex],
   );
   const uv = describeUV(daily.uv_index_max[dayIndex]);
+  const theme = getWeatherTheme(daily.weather_code[dayIndex]);
   const searchQuery = encodeURIComponent(locationName);
   const weatherFact = getWeatherFact(
     daily.weather_code[dayIndex],
@@ -451,7 +454,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
   const baseParams = `lat=${lat}&lon=${lon}&name=${encodeURIComponent(locationName)}${codeParam}`;
 
   return (
-    <div className="min-h-screen bg-[#0e1723] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: theme.bgGradient }} data-weather={theme.type}>
+      <WeatherBackground weatherCode={daily.weather_code[dayIndex]} />
       <Header defaultSearch={locationName} />
 
       <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-6 flex-1">
@@ -938,7 +942,6 @@ export default async function DayPage({ params, searchParams }: PageProps) {
           </div>
         </div>
       </main>
-
       <AppFooter />
     </div>
   );
