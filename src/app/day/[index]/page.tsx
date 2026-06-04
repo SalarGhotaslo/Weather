@@ -655,7 +655,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                       </span>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-[11px] font-medium ${
+                          className={`relative group text-[11px] font-medium ${
                             entry.precipProb >= 60
                               ? "text-blue-400"
                               : entry.precipProb >= 30
@@ -666,9 +666,9 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                           }`}
                         >
                           💧 {entry.precipProb}%
-                        </span>
-                        <span className={`text-[9px] ${isCurrentHour ? "text-[var(--text-faint)]" : "text-[var(--text-faint)]"}`}>
-                          {entry.precip.toFixed(1)}
+                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1c2f3f] text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
+                            {entry.precip.toFixed(1)}mm
+                          </span>
                         </span>
                       </div>
                       <span className={`text-[10px] ${isCurrentHour ? "text-[var(--text-muted)]" : "text-[var(--text-faint)]"}`}>

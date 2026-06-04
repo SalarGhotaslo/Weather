@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ComposableMap,
@@ -26,6 +27,7 @@ interface Position {
 }
 
 export default function WorldMap() {
+  const router = useRouter();
   const [position, setPosition] = useState<Position>({
     coordinates: [0, 20],
     zoom: 1,
@@ -43,6 +45,8 @@ export default function WorldMap() {
   const [card, setCard] = useState<(CurrentWeather & { country: string }) | null>(null);
   const [cardLoading, setCardLoading] = useState(false);
   const [cardError, setCardError] = useState(false);
+  const clickCountRef = useRef(0);
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const citiesCache = useRef<Record<string, string[]>>({});
   const markersCache = useRef<Record<string, CityMarker[]>>({});
@@ -193,6 +197,25 @@ export default function WorldMap() {
     setCardError(false);
   };
 
+  const handleTripleClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("path") || target.closest("circle")) return;
+    clickCountRef.current++;
+    if (clickCountRef.current >= 3) {
+      clickCountRef.current = 0;
+      clearTimeout(clickTimerRef.current);
+      setPosition((prev) => ({
+        ...prev,
+        zoom: Math.max(1, prev.zoom / 2),
+      }));
+      return;
+    }
+    clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = setTimeout(() => {
+      clickCountRef.current = 0;
+    }, 400);
+  };
+
   const displayedCities = cityFilter.trim()
     ? panelCities.filter((c) =>
         c.toLowerCase().includes(cityFilter.toLowerCase()),
@@ -205,6 +228,7 @@ export default function WorldMap() {
       <div
         className="relative flex-1 bg-[#0d1623] overflow-hidden"
         style={{ minHeight: "55vh" }}
+        onClick={handleTripleClick}
       >
         {selectedCountry && (
           <button
@@ -348,12 +372,7 @@ export default function WorldMap() {
                         aria-label={`View weather in ${marker.name}`}
                         style={{ cursor: "pointer", transition: "r 0.1s, fill 0.1s" }}
                         onClick={() =>
-                          loadWeather({
-                            country: panelCountry ?? "",
-                            lat: marker.lat,
-                            lon: marker.lon,
-                            name: marker.name,
-                          })
+                          router.push(`/day/0?lat=${marker.lat}&lon=${marker.lon}&name=${encodeURIComponent(marker.name)}`)
                         }
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -449,7 +468,7 @@ export default function WorldMap() {
                       href={`/?q=${encodeURIComponent(`${card.name}, ${card.country}`)}`}
                       className="inline-block mt-2 text-[var(--text-accent)] hover:text-white text-xs transition-colors"
                     >
-                      Full 7-day forecast →
+                      Full 5-day forecast →
                     </a>
                   </>
                 ) : null}
@@ -481,11 +500,7 @@ export default function WorldMap() {
                       key={city}
                       type="button"
                       onClick={() =>
-                        loadWeather({
-                          country: panelCountry ?? "",
-                          cityQuery: city,
-                          name: city,
-                        })
+                        router.push(`/?q=${encodeURIComponent(`${city}, ${panelCountry}`)}`)
                       }
                       className="block w-full text-left px-4 py-2 text-[var(--text-muted)] hover:text-white hover:bg-[#162535] text-xs transition-colors border-b border-[#1e3347]/40 last:border-0"
                     >
@@ -531,6 +546,7 @@ export default function WorldMap() {
                 Hover a country to see its cities
               </p>
               <p className="text-[var(--text-muted)] text-xs">Click to zoom in</p>
+              <p className="text-[var(--text-muted)] text-xs mt-0.5">Triple-click to zoom out</p>
               <Link
                 href="/countries"
                 className="mt-4 inline-block text-[var(--text-accent)] hover:text-white text-xs transition-colors"

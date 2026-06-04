@@ -5,7 +5,7 @@ A global city weather app. Users search any city (with autocomplete), browse all
 
 Key features:
 - Search autocomplete (Open-Meteo geocoding, live dropdown, recent searches in localStorage)
-- 7-day forecast with temperature range bars, stats strip, sparkline trend
+- 5-day forecast with temperature range bars, stats strip, sparkline trend
 - Day detail: historical YoY comparison (YoyStat tiles), UV/wind/rain detail, **best times outside** (hourly colour strip + scored windows with chip conditions)
 - Countries browser: all 250 countries A–Z with flag, capital, city list
 - Interactive world map: hover country → cities panel; click → zoom in + city markers; hover marker → label (click-only labels, never permanent)

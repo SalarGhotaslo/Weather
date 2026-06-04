@@ -70,7 +70,7 @@ click country
       click dot → loadWeather({lat,lon,name}) → inline weather card in panel
 
 inline weather card (top of cities panel): location name (+ "capital" badge),
-  emoji + temp + label, feels-like, live LocalTime, "Full 7-day forecast →" link.
+  emoji + temp + label, feels-like, live LocalTime, "Full 5-day forecast →" link.
   Clicking a city in the panel list → loadWeather({city, country}).
   cardReq ref tokens guard against out-of-order responses from rapid clicks.
 

@@ -39,6 +39,11 @@ export default function MapPage() {
           <span className="text-sm">📍</span>
           Hover a city dot to see its name · click for weather
         </span>
+        <span className="text-[var(--text-faint)] shrink-0">·</span>
+        <span className="flex items-center gap-1.5 shrink-0">
+          <span className="text-sm">🔄</span>
+          Triple-click the map to zoom out
+        </span>
       </div>
 
       <main id="main-content" className="flex-1 flex flex-col min-h-0">

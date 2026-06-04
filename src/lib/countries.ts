@@ -2,6 +2,9 @@
 // Add entries whenever a country's name in the TopoJSON differs from what
 // CountriesNow expects.
 const COUNTRY_NAME_MAP: Record<string, string> = {
+  UK: "United Kingdom",
+  US: "United States",
+  USA: "United States",
   "United States of America": "United States",
   "Democratic Republic of the Congo": "DR Congo",
   "Republic of the Congo": "Republic of Congo",
