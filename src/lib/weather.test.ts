@@ -3,6 +3,8 @@ import {
   validateCoord,
   getDaylightInfo,
   getWeatherScore,
+  countryCodeToFlag,
+  getFeelsLikeExplanation,
   getWeatherInfo,
   getDayName,
   getFormattedDate,
@@ -423,6 +425,56 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("countryCodeToFlag", () => {
+  it("converts GB to UK flag emoji", () => {
+    expect(countryCodeToFlag("GB")).toBe("🇬🇧");
+  });
+  it("converts US to US flag emoji", () => {
+    expect(countryCodeToFlag("US")).toBe("🇺🇸");
+  });
+  it("converts FR to French flag", () => {
+    expect(countryCodeToFlag("FR")).toBe("🇫🇷");
+  });
+  it("is case-insensitive (lowercased code)", () => {
+    expect(countryCodeToFlag("gb")).toBe("🇬🇧");
+  });
+  it("returns empty string for empty input", () => {
+    expect(countryCodeToFlag("")).toBe("");
+  });
+  it("returns empty string for non-2-char input", () => {
+    expect(countryCodeToFlag("GBR")).toBe("");
+    expect(countryCodeToFlag("G")).toBe("");
+  });
+  it("converts AU correctly", () => {
+    expect(countryCodeToFlag("AU")).toBe("🇦🇺");
+  });
+});
+
+describe("getFeelsLikeExplanation", () => {
+  it("returns empty/same when diff is < 1°", () => {
+    const r = getFeelsLikeExplanation(20, 20.4, 50, 10);
+    expect(r).toBe("Same as actual temperature");
+  });
+  it("mentions wind chill when cold and windy", () => {
+    const r = getFeelsLikeExplanation(10, 6, 50, 30);
+    expect(r.toLowerCase()).toContain("wind");
+    expect(r.toLowerCase()).toContain("colder");
+  });
+  it("mentions humidity when hot and humid", () => {
+    const r = getFeelsLikeExplanation(25, 29, 80, 5);
+    expect(r.toLowerCase()).toContain("humid");
+    expect(r.toLowerCase()).toContain("warmer");
+  });
+  it("returns cooler explanation without humidity/wind context", () => {
+    const r = getFeelsLikeExplanation(20, 16, 40, 5);
+    expect(r.toLowerCase()).toContain("cooler");
+  });
+  it("returns warmer explanation for moderate diff without high humidity", () => {
+    const r = getFeelsLikeExplanation(20, 23, 40, 5);
+    expect(r.toLowerCase()).toContain("warmer");
   });
 });
 

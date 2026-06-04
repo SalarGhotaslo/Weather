@@ -13,6 +13,8 @@ import {
   getWindArrow,
   getWeatherAlert,
   getWeatherScore,
+  countryCodeToFlag,
+  getFeelsLikeExplanation,
   type WeatherResponse,
 } from "@/lib/weather";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
@@ -42,8 +44,9 @@ async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
   return res.json();
 }
 
-function buildDayHref(index: number, lat: number, lon: number, name: string) {
-  return `/day/${index}?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name)}`;
+function buildDayHref(index: number, lat: number, lon: number, name: string, code?: string) {
+  const c = code ? `&code=${encodeURIComponent(code)}` : "";
+  return `/day/${index}?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name)}${c}`;
 }
 
 function getBarColor(avgTemp: number): string {
@@ -195,6 +198,13 @@ export default async function Home({ searchParams }: Props) {
   const todayFormatted = getFormattedDate(daily.time[0]);
   const uvToday = describeUV(daily.uv_index_max[0]);
   const weatherFact = getWeatherFact(current.weather_code, current.temperature_2m);
+  const countryFlag = countryCodeToFlag(location.countryCode ?? "");
+  const feelsLikeExplanation = getFeelsLikeExplanation(
+    current.temperature_2m,
+    current.apparent_temperature,
+    current.relative_humidity_2m,
+    current.wind_speed_10m,
+  );
 
   const todayAlert = getWeatherAlert(
     daily.weather_code[0],
@@ -231,15 +241,15 @@ export default async function Home({ searchParams }: Props) {
         {/* Location */}
         <div className="mb-5">
           <div className="flex items-baseline gap-2">
-            <span aria-hidden="true" className="text-[#7ea8c2] text-sm">📍</span>
+            {countryFlag && <span className="text-xl" aria-hidden="true">{countryFlag}</span>}
             <h1 className="text-xl font-bold text-white">{locationLabel}</h1>
           </div>
-          <p className="text-[#5a7d99] text-sm mt-0.5 pl-5">{todayFormatted}</p>
+          <p className="text-[#5a7d99] text-sm mt-0.5 pl-1">{todayFormatted}</p>
         </div>
 
         {/* Current weather hero */}
         <Link
-          href={buildDayHref(0, location.latitude, location.longitude, locationLabel)}
+          href={buildDayHref(0, location.latitude, location.longitude, locationLabel, location.countryCode)}
           className="relative block bg-[#162535] hover:bg-[#1c2f3f] rounded-xl p-6 mb-3 transition-colors overflow-hidden"
           aria-label={`Today: ${todayInfo.label}, ${Math.round(current.temperature_2m)}°C. View details.`}
         >
@@ -252,6 +262,9 @@ export default async function Home({ searchParams }: Props) {
               <div className="text-lg text-white mt-2 font-medium">{todayInfo.label}</div>
               <div className="text-[#7ea8c2] text-sm mt-1">
                 Feels like {Math.round(current.apparent_temperature)}°C
+                {feelsLikeExplanation && (
+                  <span className="text-[#5a7d99] text-xs ml-2">· {feelsLikeExplanation}</span>
+                )}
               </div>
             </div>
             <span className={`text-[72px] leading-none ${animClass}`} aria-hidden="true">{todayInfo.emoji}</span>
@@ -333,7 +346,7 @@ export default async function Home({ searchParams }: Props) {
               return (
                 <Link
                   key={dateStr}
-                  href={buildDayHref(i, location.latitude, location.longitude, locationLabel)}
+                  href={buildDayHref(i, location.latitude, location.longitude, locationLabel, location.countryCode)}
                   role="listitem"
                   aria-label={`${getDayName(dateStr)}: ${info.label}, high ${maxTemp}°C, low ${minTemp}°C`}
                   className={`rounded-lg p-3 text-center flex flex-col items-center transition-colors ${

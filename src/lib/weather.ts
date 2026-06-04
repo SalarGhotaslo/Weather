@@ -33,8 +33,34 @@ export interface GeocodingResult {
   latitude: number;
   longitude: number;
   country: string;
+  countryCode?: string;  // ISO 3166-1 alpha-2
   admin1?: string;
   population?: number;
+}
+
+// Convert ISO 3166-1 alpha-2 code to flag emoji (e.g. "GB" → "🇬🇧")
+export function countryCodeToFlag(code: string): string {
+  if (!code || code.length !== 2) return "";
+  const OFFSET = 0x1f1e6 - 65; // 'A' is 65
+  return [...code.toUpperCase()]
+    .map((c) => String.fromCodePoint(c.charCodeAt(0) + OFFSET))
+    .join("");
+}
+
+// Explain why feels-like differs from actual temperature
+export function getFeelsLikeExplanation(
+  actual: number,
+  feelsLike: number,
+  humidity: number,
+  windSpeed: number,
+): string {
+  const diff = Math.round(feelsLike - actual);
+  if (Math.abs(diff) < 1) return "Same as actual temperature";
+  if (diff < -1 && windSpeed >= 20) return `Wind chill makes it feel ${Math.abs(diff)}° colder`;
+  if (diff < -1) return `Feels ${Math.abs(diff)}° cooler than the thermometer`;
+  if (diff > 1 && humidity >= 65) return `Humidity makes it feel ${diff}° warmer`;
+  if (diff > 1) return `Feels ${diff}° warmer than the thermometer`;
+  return "";
 }
 
 export function validateCoord(
@@ -120,6 +146,7 @@ export async function geocodeLocation(
         latitude: number;
         longitude: number;
         country?: string;
+        country_code?: string;
         admin1?: string;
         population?: number;
       }[]
@@ -128,6 +155,7 @@ export async function geocodeLocation(
       latitude: r.latitude,
       longitude: r.longitude,
       country: r.country ?? "",
+      countryCode: r.country_code,
       admin1: r.admin1,
       population: r.population,
     }));

@@ -23,6 +23,8 @@ import {
   getDressCode,
   validateCoord,
   getDaylightInfo,
+  countryCodeToFlag,
+  getFeelsLikeExplanation,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
@@ -30,6 +32,7 @@ import {
 } from "@/lib/weather";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
+import ShareButton from "@/app/components/ShareButton";
 
 // ── Server-rendered SVG temperature curve ─────────────────────────────
 
@@ -118,7 +121,7 @@ const LONDON_LON = -0.1278;
 
 type PageProps = {
   params: Promise<{ index: string }>;
-  searchParams: Promise<{ lat?: string; lon?: string; name?: string }>;
+  searchParams: Promise<{ lat?: string; lon?: string; name?: string; code?: string }>;
 };
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
@@ -337,7 +340,7 @@ function DetailCard({
 }
 
 export default async function DayPage({ params, searchParams }: PageProps) {
-  const [{ index }, { lat: latStr, lon: lonStr, name }] = await Promise.all([
+  const [{ index }, { lat: latStr, lon: lonStr, name, code }] = await Promise.all([
     params,
     searchParams,
   ]);
@@ -345,6 +348,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
   const lat = validateCoord(latStr, -90, 90, LONDON_LAT);
   const lon = validateCoord(lonStr, -180, 180, LONDON_LON);
   const locationName = name ? name.slice(0, 200) : "London"; // cap length
+  const countryFlag = countryCodeToFlag(code ?? "");
 
   if (isNaN(dayIndex) || dayIndex < 0 || dayIndex > 6) notFound();
 
@@ -419,6 +423,15 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
   const daylightInfo = getDaylightInfo(daily.sunrise[dayIndex], daily.sunset[dayIndex]);
 
+  const feelsLikeExplanation = isToday
+    ? getFeelsLikeExplanation(
+        current.temperature_2m,
+        current.apparent_temperature,
+        current.relative_humidity_2m,
+        current.wind_speed_10m,
+      )
+    : "";
+
   const weatherAlert = getWeatherAlert(
     daily.weather_code[dayIndex],
     daily.wind_speed_10m_max[dayIndex],
@@ -429,7 +442,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
   const dayName = getDayName(dateStr);
 
   // Build day-picker links for sibling days
-  const baseParams = `lat=${lat}&lon=${lon}&name=${encodeURIComponent(locationName)}`;
+  const codeParam = code ? `&code=${encodeURIComponent(code)}` : "";
+  const baseParams = `lat=${lat}&lon=${lon}&name=${encodeURIComponent(locationName)}${codeParam}`;
 
   return (
     <div className="min-h-screen bg-[#0e1723] flex flex-col">
@@ -449,11 +463,17 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
         {/* Day header */}
         <div className="mb-5">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[#7ea8c2] text-sm">📍</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {countryFlag && <span className="text-xl" aria-hidden="true">{countryFlag}</span>}
             <h1 className="text-xl font-bold text-white">{locationName}</h1>
+            <div className="ml-auto">
+              <ShareButton
+                url={`/day/${dayIndex}?${baseParams}`}
+                title={`${dayName} weather in ${locationName}`}
+              />
+            </div>
           </div>
-          <p className="text-[#5a7d99] text-sm mt-0.5 pl-5">
+          <p className="text-[#5a7d99] text-sm mt-0.5">
             {getFormattedDate(dateStr)}
           </p>
         </div>
@@ -555,6 +575,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
               icon="🌡️"
               label="Feels Like"
               value={`${Math.round(current.apparent_temperature)}°C`}
+              sub={feelsLikeExplanation || undefined}
             />
           )}
           <DetailCard
