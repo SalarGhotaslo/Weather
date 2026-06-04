@@ -33,6 +33,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["react-simple-maps", "d3-geo", "d3-zoom", "topojson-client"],
   headers: async () => [
     {
       source: "/(.*)",

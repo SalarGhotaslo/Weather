@@ -376,18 +376,18 @@ export function getHourlyAnalysis(
       };
     });
 
-  function findRuns(pred: (s: number) => boolean): { start: number; end: number }[] {
+  function findRuns(pred: (s: number) => boolean, minLen = 2): { start: number; end: number }[] {
     const runs: { start: number; end: number }[] = [];
     let start = -1;
     hours.forEach((h, idx) => {
       if (pred(h.score)) {
         if (start === -1) start = idx;
       } else if (start !== -1) {
-        if (idx - start >= 2) runs.push({ start, end: idx - 1 });
+        if (idx - start >= minLen) runs.push({ start, end: idx - 1 });
         start = -1;
       }
     });
-    if (start !== -1 && hours.length - start >= 2) runs.push({ start, end: hours.length - 1 });
+    if (start !== -1 && hours.length - start >= minLen) runs.push({ start, end: hours.length - 1 });
     return runs;
   }
 
@@ -406,7 +406,9 @@ export function getHourlyAnalysis(
     const slice = hours.slice(run.start, run.end + 1);
     const avgTemp = Math.round(slice.reduce((s, h) => s + h.temp, 0) / slice.length);
     const avgScore = slice.reduce((s, h) => s + h.score, 0) / slice.length;
+    const minPrecip = Math.min(...slice.map((h) => h.precipProb));
     const maxPrecip = Math.max(...slice.map((h) => h.precipProb));
+    const avgPrecip = Math.round(slice.reduce((s, h) => s + h.precipProb, 0) / slice.length);
     const avgWind = Math.round(slice.reduce((s, h) => s + h.windSpeed, 0) / slice.length);
     const minTemp = Math.min(...slice.map((h) => h.temp));
     const maxTemp = Math.max(...slice.map((h) => h.temp));
@@ -424,11 +426,22 @@ export function getHourlyAnalysis(
         : avgScore >= 2.3
           ? "Good"
           : "Fair";
-    const conditions = [
-      `avg ${avgTemp}°C`,
-      maxPrecip < 15 ? "dry" : `${maxPrecip}% rain chance`,
-      avgWind < 15 ? "calm" : avgWind < 28 ? "light breeze" : `${avgWind} km/h wind`,
-    ].join(", ");
+
+    // Use avg precip (not max) so a single heavy-rain hour doesn't inflate the description.
+    // Show a range when there's significant spread across the window.
+    const precipSpread = maxPrecip - minPrecip;
+    const precipDesc =
+      avgPrecip < 15
+        ? "dry"
+        : precipSpread > 30
+          ? `${minPrecip}–${maxPrecip}% rain`
+          : `${avgPrecip}% rain chance`;
+
+    const windDesc =
+      avgWind < 15 ? "calm" : avgWind < 28 ? "light breeze" : `${avgWind} km/h wind`;
+
+    const conditions = [`avg ${avgTemp}°C`, precipDesc, windDesc].join(", ");
+
     return {
       timeLabel: `${hours[run.start]?.label ?? ""} – ${hours[run.end]?.label ?? ""}`,
       rating,
@@ -450,7 +463,9 @@ export function getHourlyAnalysis(
     .sort((a, b) => a.start - b.start)
     .map((r) => runToWindow(r, false));
 
-  const badWindows = findRuns((s) => s === 0)
+  // Require at least 3 consecutive bad hours to surface an "avoid" window,
+  // to filter out brief/isolated poor spells that aren't worth calling out.
+  const badWindows = findRuns((s) => s === 0, 3)
     .sort((a, b) => b.end - b.start - (a.end - a.start))
     .slice(0, 1)
     .map((r) => runToWindow(r, true));

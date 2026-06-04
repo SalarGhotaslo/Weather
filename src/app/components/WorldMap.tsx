@@ -35,6 +35,7 @@ export default function WorldMap() {
   const [panelLoading, setPanelLoading] = useState(false);
   const [cityFilter, setCityFilter] = useState("");
   const [cityMarkers, setCityMarkers] = useState<CityMarker[]>([]);
+  const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
 
   const citiesCache = useRef<Record<string, string[]>>({});
   const markersCache = useRef<Record<string, CityMarker[]>>({});
@@ -227,58 +228,70 @@ export default function WorldMap() {
             {/* Major city markers — appear after country click + geocoding */}
             {selectedCountry &&
               cityMarkers.map((marker) => {
-                const labelSize = 8 / position.zoom;
+                const isHovered = hoveredMarker === marker.name;
                 const dotR = 6 / position.zoom;
-                const bgPad = 1.5 / position.zoom;
-                const bgH = (labelSize + bgPad * 2);
-                const approxW = marker.name.length * labelSize * 0.62;
+                const labelSize = 9 / position.zoom;
+                const bgPad = 2 / position.zoom;
+                const bgH = labelSize + bgPad * 2;
+                const approxW = marker.name.length * labelSize * 0.6 + bgPad * 4;
                 return (
                   <Marker
                     key={marker.name}
                     coordinates={[marker.lon, marker.lat]}
                   >
-                    {/* Background rect behind label for readability */}
-                    <rect
-                      x={-approxW / 2}
-                      y={-(dotR + bgH + 2 / position.zoom)}
-                      width={approxW}
-                      height={bgH}
-                      rx={1.5 / position.zoom}
-                      fill="#0e1723"
-                      fillOpacity={0.75}
-                      style={{ pointerEvents: "none" }}
-                    />
-                    <text
-                      textAnchor="middle"
-                      y={-(dotR + bgPad + 1 / position.zoom)}
-                      fontSize={labelSize}
-                      fill="#e2f0fb"
-                      fontWeight="700"
-                      style={{ pointerEvents: "none", userSelect: "none" }}
+                    {/* Wrapping <g> makes mouseenter/leave fire for the whole group,
+                        so moving from dot into the label doesn't flicker. */}
+                    <g
+                      onMouseEnter={() => setHoveredMarker(marker.name)}
+                      onMouseLeave={() => setHoveredMarker(null)}
                     >
-                      {marker.name}
-                    </text>
-                    <circle
-                      r={dotR}
-                      fill="#3b87d6"
-                      stroke="#0e1723"
-                      strokeWidth={1.2 / position.zoom}
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        router.push(
-                          `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
-                        )
-                      }
-                    />
-                    {/* Outer glow ring */}
-                    <circle
-                      r={dotR * 1.7}
-                      fill="none"
-                      stroke="#3b87d6"
-                      strokeWidth={0.6 / position.zoom}
-                      strokeOpacity={0.35}
-                      style={{ pointerEvents: "none" }}
-                    />
+                      {isHovered && (
+                        <>
+                          <rect
+                            x={-approxW / 2}
+                            y={-(dotR + bgH + 3 / position.zoom)}
+                            width={approxW}
+                            height={bgH}
+                            rx={2 / position.zoom}
+                            fill="#1c2f3f"
+                            stroke="#3b87d6"
+                            strokeWidth={0.6 / position.zoom}
+                            strokeOpacity={0.7}
+                            style={{ pointerEvents: "none" }}
+                          />
+                          <text
+                            textAnchor="middle"
+                            y={-(dotR + bgPad + 2 / position.zoom)}
+                            fontSize={labelSize}
+                            fill="#e2f0fb"
+                            fontWeight="700"
+                            style={{ pointerEvents: "none", userSelect: "none" }}
+                          >
+                            {marker.name}
+                          </text>
+                        </>
+                      )}
+                      <circle
+                        r={isHovered ? dotR * 1.3 : dotR}
+                        fill={isHovered ? "#60a5fa" : "#3b87d6"}
+                        stroke="#0e1723"
+                        strokeWidth={1.2 / position.zoom}
+                        style={{ cursor: "pointer", transition: "r 0.1s, fill 0.1s" }}
+                        onClick={() =>
+                          router.push(
+                            `/?q=${encodeURIComponent(`${marker.name}, ${panelCountry}`)}`,
+                          )
+                        }
+                      />
+                      <circle
+                        r={dotR * 1.8}
+                        fill="none"
+                        stroke="#3b87d6"
+                        strokeWidth={0.6 / position.zoom}
+                        strokeOpacity={isHovered ? 0.6 : 0.3}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    </g>
                   </Marker>
                 );
               })}

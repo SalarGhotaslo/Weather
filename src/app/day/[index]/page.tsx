@@ -232,44 +232,49 @@ function DaylightBar({ risePercent, lightPercent, hours, minutes }: {
   );
 }
 
-// ── Visual compare bar ────────────────────────────────────────────────
+// ── Year-over-year stat tile ──────────────────────────────────────────
 
-function CompareBar({
+function YoyStat({
   label,
+  icon,
   current,
   historical,
-  unit = "",
+  unit,
+  higherWarmer,
 }: {
   label: string;
+  icon: string;
   current: number;
   historical: number;
-  unit?: string;
+  unit: string;
+  higherWarmer: boolean; // true for temp (up=orange), false for rain (up=blue)
 }) {
-  const absMax = Math.max(Math.abs(current), Math.abs(historical), 0.1);
-  const currPct = (Math.abs(current) / absMax) * 100;
-  const histPct = (Math.abs(historical) / absMax) * 100;
+  const diff = +(current - historical).toFixed(1);
+  const isUp = diff > 0.05;
+  const isDown = diff < -0.05;
+  const deltaColor = !isUp && !isDown
+    ? "text-[#5a7d99]"
+    : higherWarmer
+      ? isUp ? "text-orange-400" : "text-sky-400"
+      : isUp ? "text-blue-400" : "text-emerald-400";
+  const arrow = isUp ? "▲" : isDown ? "▼" : "—";
+  const diffStr = isUp ? `+${diff}` : isDown ? `${diff}` : "±0";
+
   return (
-    <div className="mb-4 last:mb-0">
-      <div className="flex justify-between text-xs mb-1.5">
-        <span className="text-[#7ea8c2]">{label}</span>
-        <div>
-          <span className="text-white font-medium">{Math.round(current)}{unit}</span>
-          <span className="text-[#5a7d99] text-xs ml-2">vs {Math.round(historical)}{unit} last year</span>
-        </div>
+    <div className="bg-[#1c2f3f] rounded-xl p-4 flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5 text-[#5a7d99] text-[10px] uppercase tracking-wider">
+        <span>{icon}</span>
+        <span>{label}</span>
       </div>
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[#3b87d6] text-[9px] w-14 shrink-0 text-right">This year</span>
-          <div className="flex-1 h-2 bg-[#1e3347] rounded-full overflow-hidden">
-            <div className="h-full bg-[#3b87d6] rounded-full" style={{ width: `${currPct}%` }} />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[#5a7d99] text-[9px] w-14 shrink-0 text-right">Last year</span>
-          <div className="flex-1 h-2 bg-[#1e3347] rounded-full overflow-hidden">
-            <div className="h-full bg-[#2a4055] rounded-full" style={{ width: `${histPct}%` }} />
-          </div>
-        </div>
+      <div className="text-white font-bold text-2xl leading-none">
+        {current % 1 === 0 ? Math.round(current) : current.toFixed(1)}{unit}
+      </div>
+      <div className={`flex items-center gap-1 text-sm font-semibold ${deltaColor}`}>
+        <span>{arrow}</span>
+        <span>{!isUp && !isDown ? "same" : `${diffStr}${unit}`}</span>
+      </div>
+      <div className="text-[#3a5a72] text-[10px]">
+        {historical % 1 === 0 ? Math.round(historical) : historical.toFixed(1)}{unit} last year
       </div>
     </div>
   );
@@ -756,39 +761,42 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             {outdoorAnalysis.bestWindows.length > 0 && (
               <div className="mb-4">
                 <p className="text-[#3b87d6] text-xs font-semibold uppercase tracking-wider mb-2">
-                  Go outside
+                  Good times to go out
                 </p>
                 {outdoorAnalysis.bestWindows.map((w, i) => (
                   <div
                     key={i}
-                    className="rounded-lg bg-[#0e1f2f] p-3 mb-2 border border-[#1a3347]"
+                    className="rounded-xl bg-[#0e1f2f] p-4 mb-2 border border-[#1a3347]"
                   >
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-green-400 text-base">✓</span>
-                        <div>
-                          <span className="text-white text-sm font-semibold">{w.timeLabel}</span>
-                          {w.peakHour && (
-                            <span className="text-[#5a7d99] text-xs ml-2">peak: {w.peakHour}</span>
-                          )}
-                        </div>
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          w.rating === "Excellent" ? "bg-green-500/20 text-green-400"
+                          : w.rating === "Good" ? "bg-blue-500/20 text-blue-400"
+                          : "bg-amber-500/20 text-amber-400"
+                        }`}>{w.rating}</span>
+                        <span className="text-white font-semibold">{w.timeLabel}</span>
                       </div>
-                      <span className={`text-xs font-semibold shrink-0 px-2 py-0.5 rounded-full ${
-                        w.rating === "Excellent" ? "bg-green-500/20 text-green-400"
-                        : w.rating === "Good" ? "bg-blue-500/20 text-blue-400"
-                        : "bg-amber-500/20 text-amber-400"
-                      }`}>
-                        {w.rating}
-                      </span>
+                      {w.peakHour && (
+                        <span className="text-[#5a7d99] text-xs">peak {w.peakHour}</span>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-2 text-[10px] text-[#7ea8c2] mb-2">
-                      {w.tempRange && <span className="bg-[#162535] px-2 py-0.5 rounded">🌡️ {w.tempRange}</span>}
-                      <span className="bg-[#162535] px-2 py-0.5 rounded">{w.conditions.split(", ").slice(1).join(", ")}</span>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {w.tempRange && (
+                        <span className="text-[10px] bg-[#162535] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
+                          🌡️ {w.tempRange}
+                        </span>
+                      )}
+                      {w.conditions.split(", ").slice(1).map((c, ci) => (
+                        <span key={ci} className="text-[10px] bg-[#162535] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
+                          {c.includes("rain") ? "🌧️ " : c.includes("wind") || c.includes("breeze") ? "💨 " : ""}{c}
+                        </span>
+                      ))}
                     </div>
                     {w.activities && w.activities.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {w.activities.map((act) => (
-                          <span key={act} className="text-[10px] text-[#3b87d6] bg-[#0d1d2e] border border-[#1a3347] px-2 py-0.5 rounded-full">
+                          <span key={act} className="text-[10px] text-[#3b87d6] bg-[#0d1d2e] border border-[#1a3347] px-2.5 py-1 rounded-full font-medium">
                             {act}
                           </span>
                         ))}
@@ -803,30 +811,33 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             {outdoorAnalysis.badWindows.length > 0 && (
               <div>
                 <p className="text-red-400/70 text-xs font-semibold uppercase tracking-wider mb-2">
-                  Avoid going out
+                  Best avoided
                 </p>
                 {outdoorAnalysis.badWindows.map((w, i) => (
                   <div
                     key={i}
-                    className="rounded-lg bg-[#1f0e0e] p-3 mb-2 border border-[#3a1a1a]"
+                    className="rounded-xl bg-[#1f0e0e] p-4 mb-2 border border-[#3a1a1a]"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-red-400">✗</span>
-                        <div>
-                          <span className="text-white text-sm font-semibold">{w.timeLabel}</span>
-                        </div>
+                        <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-500/20 text-red-400">
+                          Avoid
+                        </span>
+                        <span className="text-white font-semibold">{w.timeLabel}</span>
                       </div>
-                      <span className="text-xs font-semibold shrink-0 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
-                        Avoid
-                      </span>
                     </div>
-                    <p className="text-[#7ea8c2] text-xs mt-2 ml-6">{w.conditions}</p>
-                    {w.tempRange && (
-                      <p className="text-[#5a7d99] text-[10px] mt-1 ml-6">
-                        Temperature range: {w.tempRange}
-                      </p>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {w.tempRange && (
+                        <span className="text-[10px] bg-red-950/40 border border-red-900/40 text-red-300/80 px-2.5 py-1 rounded-full">
+                          🌡️ {w.tempRange}
+                        </span>
+                      )}
+                      {w.conditions.split(", ").map((c, ci) => (
+                        <span key={ci} className="text-[10px] bg-red-950/40 border border-red-900/40 text-red-300/80 px-2.5 py-1 rounded-full">
+                          {c.includes("rain") ? "🌧️ " : c.includes("wind") || c.includes("breeze") ? "💨 " : c.includes("°C") ? "🌡️ " : ""}{c}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -846,27 +857,35 @@ export default async function DayPage({ params, searchParams }: PageProps) {
           <p className="text-[#5a7d99] text-xs mb-4">Same date, one year ago</p>
 
           {historical ? (
-            <div>
-              <CompareBar
-                label="Max temperature"
-                current={daily.temperature_2m_max[dayIndex]}
-                historical={historical.temperature_2m_max}
-                unit="°C"
-              />
-              <CompareBar
-                label="Min temperature"
-                current={daily.temperature_2m_min[dayIndex]}
-                historical={historical.temperature_2m_min}
-                unit="°C"
-              />
-              <CompareBar
-                label="Precipitation"
-                current={daily.precipitation_sum[dayIndex]}
-                historical={historical.precipitation_sum}
-                unit=" mm"
-              />
-              <div className="mt-3 pt-3 border-t border-[#1e3347]">
-                <span className="text-[#7ea8c2] text-sm">Verdict: </span>
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <YoyStat
+                  label="Max Temp"
+                  icon="🌡️"
+                  current={daily.temperature_2m_max[dayIndex]}
+                  historical={historical.temperature_2m_max}
+                  unit="°C"
+                  higherWarmer={true}
+                />
+                <YoyStat
+                  label="Min Temp"
+                  icon="❄️"
+                  current={daily.temperature_2m_min[dayIndex]}
+                  historical={historical.temperature_2m_min}
+                  unit="°C"
+                  higherWarmer={true}
+                />
+                <YoyStat
+                  label="Rainfall"
+                  icon="🌧️"
+                  current={daily.precipitation_sum[dayIndex]}
+                  historical={historical.precipitation_sum}
+                  unit="mm"
+                  higherWarmer={false}
+                />
+              </div>
+              <div className="pt-3 border-t border-[#1e3347] flex items-center gap-2">
+                <span className="text-[#7ea8c2] text-sm">Verdict:</span>
                 <span className="text-white text-sm font-medium">
                   {tempDiffDescription(
                     daily.temperature_2m_max[dayIndex],
@@ -874,7 +893,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                   )}
                 </span>
               </div>
-            </div>
+            </>
           ) : (
             <p className="text-[#5a7d99] text-sm">
               Historical data unavailable for this date.
