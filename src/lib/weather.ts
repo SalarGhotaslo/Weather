@@ -50,7 +50,7 @@ export function validateCoord(
 }
 
 export function buildForecastUrl(lat: number, lon: number): string {
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset&timezone=auto`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset&forecast_days=7&timezone=auto`;
 }
 
 export function getWindDirection(degrees: number): string {
@@ -428,6 +428,31 @@ export function getHourlyAnalysis(
     .map((r) => runToWindow(r, true));
 
   return { hours, bestWindows, badWindows };
+}
+
+// ── Daylight info ─────────────────────────────────────────────────────
+
+export interface DaylightInfo {
+  hours: number;
+  minutes: number;
+  risePercent: number;   // 0-100: sunrise position on a 24-h bar
+  lightPercent: number;  // 0-100: width of daylight band on a 24-h bar
+}
+
+export function getDaylightInfo(sunriseISO: string, sunsetISO: string): DaylightInfo {
+  const parseHM = (iso: string) => {
+    const [h, m] = (iso.split("T")[1] ?? "00:00").split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const riseTotal = parseHM(sunriseISO);
+  const setTotal = parseHM(sunsetISO);
+  const duration = Math.max(setTotal - riseTotal, 0);
+  return {
+    hours: Math.floor(duration / 60),
+    minutes: duration % 60,
+    risePercent: (riseTotal / 1440) * 100,
+    lightPercent: (duration / 1440) * 100,
+  };
 }
 
 // ── Outdoor window summary sentence ─────────────────────────────────

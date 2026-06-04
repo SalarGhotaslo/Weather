@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   validateCoord,
+  getDaylightInfo,
   getWeatherInfo,
   getDayName,
   getFormattedDate,
@@ -421,6 +422,45 @@ describe("selectCandidates", () => {
     cities[180] = "Rio de Janeiro";
     const result = selectCandidates(cities, 150);
     expect(result).toContain("Rio de Janeiro");
+  });
+});
+
+describe("getDaylightInfo", () => {
+  it("calculates daylight duration correctly", () => {
+    const info = getDaylightInfo("2026-06-04T06:00", "2026-06-04T21:00");
+    expect(info.hours).toBe(15);
+    expect(info.minutes).toBe(0);
+  });
+
+  it("calculates fractional hours correctly", () => {
+    const info = getDaylightInfo("2026-06-04T06:30", "2026-06-04T20:45");
+    expect(info.hours).toBe(14);
+    expect(info.minutes).toBe(15);
+  });
+
+  it("risePercent is a fraction of 24 hours", () => {
+    // Sunrise at 6:00 = 360 min of 1440 = 25%
+    const info = getDaylightInfo("2026-06-04T06:00", "2026-06-04T21:00");
+    expect(info.risePercent).toBeCloseTo(25);
+  });
+
+  it("lightPercent is a fraction of 24 hours", () => {
+    // 15 h of 24 h = 62.5%
+    const info = getDaylightInfo("2026-06-04T06:00", "2026-06-04T21:00");
+    expect(info.lightPercent).toBeCloseTo(62.5);
+  });
+
+  it("returns zero duration for invalid / same times", () => {
+    const info = getDaylightInfo("2026-06-04T12:00", "2026-06-04T12:00");
+    expect(info.hours).toBe(0);
+    expect(info.minutes).toBe(0);
+    expect(info.lightPercent).toBe(0);
+  });
+
+  it("handles short winter days (4h daylight)", () => {
+    const info = getDaylightInfo("2026-12-21T08:00", "2026-12-21T12:00");
+    expect(info.hours).toBe(4);
+    expect(info.minutes).toBe(0);
   });
 });
 

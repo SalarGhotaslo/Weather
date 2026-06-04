@@ -19,6 +19,7 @@ import RecentSearches from "@/app/components/RecentSearches";
 import SearchTracker from "@/app/components/SearchTracker";
 import TimeGradient from "@/app/components/TimeGradient";
 import AppFooter from "@/app/components/AppFooter";
+import GeolocateButton from "@/app/components/GeolocateButton";
 
 const POPULAR_CITIES = [
   "London, UK",
@@ -98,6 +99,7 @@ export default async function Home({ searchParams }: Props) {
             </div>
 
             <SearchAutocomplete large />
+            <GeolocateButton />
 
             {/* Recent searches (client-side from localStorage) */}
             <RecentSearches />

@@ -22,6 +22,7 @@ import {
   getOutdoorSummary,
   getDressCode,
   validateCoord,
+  getDaylightInfo,
   type WeatherResponse,
   type HistoricalDay,
   type HourlyForecastResponse,
@@ -124,7 +125,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const [{ index }, { name }] = await Promise.all([params, searchParams]);
   const dayIndex = parseInt(index, 10);
   const locationName = name ?? "London";
-  if (isNaN(dayIndex) || dayIndex < 0 || dayIndex > 4) return {};
+  if (isNaN(dayIndex) || dayIndex < 0 || dayIndex > 6) return {};
   const dayLabel = dayIndex === 0 ? "Today" : dayIndex === 1 ? "Tomorrow" : `Day ${dayIndex + 1}`;
   return {
     title: `${dayLabel} — ${locationName}`,
@@ -170,6 +171,105 @@ async function getHistorical(
   } catch {
     return null;
   }
+}
+
+// ── UV index colour meter ─────────────────────────────────────────────
+
+function uvColor(uv: number): string {
+  if (uv <= 2) return "#22c55e";
+  if (uv <= 5) return "#eab308";
+  if (uv <= 7) return "#f97316";
+  if (uv <= 10) return "#ef4444";
+  return "#a855f7";
+}
+
+function UvMeter({ uv }: { uv: number }) {
+  const pct = Math.min((uv / 12) * 100, 100);
+  return (
+    <div className="mt-2" aria-label={`UV index ${uv} of 12`}>
+      <div className="h-1.5 bg-[#1e3347] rounded-full overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: uvColor(uv) }} />
+      </div>
+      <div className="flex justify-between text-[8px] text-[#2a4055] mt-0.5">
+        {["0", "3", "6", "8", "11+"].map((l) => <span key={l}>{l}</span>)}
+      </div>
+    </div>
+  );
+}
+
+// ── Daylight 24-hour bar ──────────────────────────────────────────────
+
+function DaylightBar({ risePercent, lightPercent, hours, minutes }: {
+  risePercent: number;
+  lightPercent: number;
+  hours: number;
+  minutes: number;
+}) {
+  return (
+    <div className="mt-3 pt-3 border-t border-[#1e3347]">
+      <div className="flex justify-between text-xs text-[#7ea8c2] mb-1.5">
+        <span>☀️ Daylight</span>
+        <span>{hours}h {minutes}m</span>
+      </div>
+      <div className="relative h-2.5 bg-[#0e1723] rounded-full overflow-hidden">
+        <div
+          className="absolute h-full rounded-full"
+          style={{
+            left: `${risePercent}%`,
+            width: `${lightPercent}%`,
+            background: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #f97316 100%)",
+          }}
+          aria-hidden="true"
+        />
+      </div>
+      <div className="flex justify-between text-[9px] text-[#2a4055] mt-0.5">
+        {["12am", "6am", "12pm", "6pm", "12am"].map((l) => <span key={l}>{l}</span>)}
+      </div>
+    </div>
+  );
+}
+
+// ── Visual compare bar ────────────────────────────────────────────────
+
+function CompareBar({
+  label,
+  current,
+  historical,
+  unit = "",
+}: {
+  label: string;
+  current: number;
+  historical: number;
+  unit?: string;
+}) {
+  const absMax = Math.max(Math.abs(current), Math.abs(historical), 0.1);
+  const currPct = (Math.abs(current) / absMax) * 100;
+  const histPct = (Math.abs(historical) / absMax) * 100;
+  return (
+    <div className="mb-4 last:mb-0">
+      <div className="flex justify-between text-xs mb-1.5">
+        <span className="text-[#7ea8c2]">{label}</span>
+        <div>
+          <span className="text-white font-medium">{Math.round(current)}{unit}</span>
+          <span className="text-[#5a7d99] text-xs ml-2">vs {Math.round(historical)}{unit} last year</span>
+        </div>
+      </div>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[#3b87d6] text-[9px] w-14 shrink-0 text-right">This year</span>
+          <div className="flex-1 h-2 bg-[#1e3347] rounded-full overflow-hidden">
+            <div className="h-full bg-[#3b87d6] rounded-full" style={{ width: `${currPct}%` }} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[#5a7d99] text-[9px] w-14 shrink-0 text-right">Last year</span>
+          <div className="flex-1 h-2 bg-[#1e3347] rounded-full overflow-hidden">
+            <div className="h-full bg-[#2a4055] rounded-full" style={{ width: `${histPct}%` }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── Server-rendered SVG precipitation probability bars ────────────────
@@ -236,26 +336,6 @@ function DetailCard({
   );
 }
 
-function CompareRow({
-  label,
-  forecast,
-  lastYear,
-}: {
-  label: string;
-  forecast: string;
-  lastYear: string;
-}) {
-  return (
-    <div className="flex items-center justify-between py-2.5 border-b border-[#1e3347] last:border-0">
-      <span className="text-[#7ea8c2] text-sm">{label}</span>
-      <div className="text-right">
-        <span className="text-white text-sm font-medium">{forecast}</span>
-        <span className="text-[#5a7d99] text-xs ml-2">vs {lastYear} last year</span>
-      </div>
-    </div>
-  );
-}
-
 export default async function DayPage({ params, searchParams }: PageProps) {
   const [{ index }, { lat: latStr, lon: lonStr, name }] = await Promise.all([
     params,
@@ -266,7 +346,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
   const lon = validateCoord(lonStr, -180, 180, LONDON_LON);
   const locationName = name ? name.slice(0, 200) : "London"; // cap length
 
-  if (isNaN(dayIndex) || dayIndex < 0 || dayIndex > 4) notFound();
+  if (isNaN(dayIndex) || dayIndex < 0 || dayIndex > 6) notFound();
 
   let weather: WeatherResponse;
   try {
@@ -337,6 +417,8 @@ export default async function DayPage({ params, searchParams }: PageProps) {
     daily.wind_speed_10m_max[dayIndex],
   );
 
+  const daylightInfo = getDaylightInfo(daily.sunrise[dayIndex], daily.sunset[dayIndex]);
+
   const weatherAlert = getWeatherAlert(
     daily.weather_code[dayIndex],
     daily.wind_speed_10m_max[dayIndex],
@@ -378,7 +460,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
         {/* Day picker strip */}
         <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
-          {daily.time.slice(0, 5).map((d, i) => (
+          {daily.time.slice(0, 7).map((d, i) => (
             <Link
               key={d}
               href={`/day/${i}?${baseParams}`}
@@ -469,18 +551,24 @@ export default async function DayPage({ params, searchParams }: PageProps) {
             label="Precipitation"
             value={`${daily.precipitation_sum[dayIndex]} mm`}
           />
-          <DetailCard
-            icon="☀️"
-            label="UV Index"
-            value={`${daily.uv_index_max[dayIndex]} · ${uv.label}`}
-            sub={uv.tip}
-          />
-          <DetailCard
-            icon="🌅"
-            label="Sunrise / Sunset"
-            value={`${daily.sunrise[dayIndex].split("T")[1]}`}
-            sub={`Sunset ${daily.sunset[dayIndex].split("T")[1]}`}
-          />
+          <div className="bg-[#1c2f3f] rounded-lg px-4 py-3">
+            <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
+              <span aria-hidden="true">☀️</span>
+              <span>UV Index</span>
+            </div>
+            <div className="text-white font-semibold text-sm">{daily.uv_index_max[dayIndex]} · {uv.label}</div>
+            <div className="text-[#5a7d99] text-xs mt-0.5">{uv.tip}</div>
+            <UvMeter uv={daily.uv_index_max[dayIndex]} />
+          </div>
+          <div className="bg-[#1c2f3f] rounded-lg px-4 py-3">
+            <div className="text-[#5a7d99] text-xs mb-2 flex items-center gap-1">
+              <span aria-hidden="true">🌅</span>
+              <span>Sunrise / Sunset</span>
+            </div>
+            <div className="text-white font-semibold text-sm">{daily.sunrise[dayIndex].split("T")[1]}</div>
+            <div className="text-[#5a7d99] text-xs mt-0.5">Sunset {daily.sunset[dayIndex].split("T")[1]}</div>
+            <DaylightBar {...daylightInfo} />
+          </div>
           {isToday && (
             <DetailCard
               icon="🔵"
@@ -714,20 +802,23 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
           {historical ? (
             <div>
-              <CompareRow
+              <CompareBar
                 label="Max temperature"
-                forecast={`${Math.round(daily.temperature_2m_max[dayIndex])}°C`}
-                lastYear={`${Math.round(historical.temperature_2m_max)}°C`}
+                current={daily.temperature_2m_max[dayIndex]}
+                historical={historical.temperature_2m_max}
+                unit="°C"
               />
-              <CompareRow
+              <CompareBar
                 label="Min temperature"
-                forecast={`${Math.round(daily.temperature_2m_min[dayIndex])}°C`}
-                lastYear={`${Math.round(historical.temperature_2m_min)}°C`}
+                current={daily.temperature_2m_min[dayIndex]}
+                historical={historical.temperature_2m_min}
+                unit="°C"
               />
-              <CompareRow
+              <CompareBar
                 label="Precipitation"
-                forecast={`${daily.precipitation_sum[dayIndex]} mm`}
-                lastYear={`${historical.precipitation_sum} mm`}
+                current={daily.precipitation_sum[dayIndex]}
+                historical={historical.precipitation_sum}
+                unit=" mm"
               />
               <div className="mt-3 pt-3 border-t border-[#1e3347]">
                 <span className="text-[#7ea8c2] text-sm">Verdict: </span>
