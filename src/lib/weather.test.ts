@@ -112,7 +112,11 @@ describe("getDayName", () => {
   it("returns the weekday name for dates further in the future", () => {
     const future = new Date();
     future.setDate(future.getDate() + 3);
-    const dateStr = future.toISOString().split("T")[0];
+    // Build date string in local timezone to avoid UTC offset mismatch
+    const y = future.getFullYear();
+    const m = String(future.getMonth() + 1).padStart(2, "0");
+    const d = String(future.getDate()).padStart(2, "0");
+    const dateStr = `${y}-${m}-${d}`;
     const expected = future.toLocaleDateString("en-GB", { weekday: "long" });
     expect(getDayName(dateStr)).toBe(expected);
   });

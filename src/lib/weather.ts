@@ -250,13 +250,14 @@ export function getWeatherInfo(code: number): { emoji: string; label: string } {
 }
 
 export function getDayName(dateStr: string): string {
-  const date = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-  const diff = (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Tomorrow";
+  const todayStr = new Date().toISOString().split("T")[0];
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+  if (dateStr === todayStr) return "Today";
+  if (dateStr === tomorrowStr) return "Tomorrow";
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString("en-GB", { weekday: "long" });
 }
 
