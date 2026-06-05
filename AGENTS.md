@@ -13,7 +13,7 @@ Key features:
 ## Commands
 - `npm run dev` — start dev server (http://localhost:3000)
 - `npm run build` — production build (also runs type check)
-- `npm run test` — run Vitest unit tests (163 tests)
+- `npm run test` — run Vitest unit tests (233 tests across `src/lib/*.test.ts`)
 - `npm run test:watch` — run tests in watch mode
 - `npm run lint` — run ESLint
 
@@ -27,7 +27,7 @@ Key features:
 | `/map` | Interactive world map with instruction bar |
 | `/about` | Static page: features, data sources, tech stack, security note |
 | `/api/cities?country=Name` | Server proxy → CountriesNow, validated + cached 24 h |
-| `/api/city-markers?country=Name` | Geocodes up to 10 cities for map markers, validated + cached 24 h |
+| `/api/city-markers?country=Name` | Geocodes major cities for map markers (area-scaled 2–52), concurrency-limited fan-out, validated + cached 24 h |
 | `/api/current?lat=&lon=[&name=]` / `?city=&country=` / `?country=` | Current temp + feels-like + weather code + IANA timezone for the map's inline weather card. 3 modes: direct coords, named city, or country→capital. Validated + cached 30 min |
 
 ## Code conventions
@@ -54,6 +54,7 @@ Key features:
 | `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` | Map TopoJSON |
 
 ## Key lib functions (`src/lib/weather.ts`)
+- `fetchForecast(lat, lon, tz?)` — 7-day + current forecast with 30-min ISR; shared by the home and day server components
 - `buildForecastUrl(lat, lon)` — 7-day + current forecast URL (includes wind_direction, surface_pressure, precip_probability_max)
 - `buildHourlyForecastUrl(lat, lon)` — 6-day hourly URL
 - `validateCoord(value, min, max, fallback)` — validates lat/lon params, rejects NaN/Infinity/out-of-range
@@ -83,6 +84,8 @@ Key features:
 - `getCountryByCode(code)` — single country by ISO alpha-2
 - `getCountriesByRegion(region)` — all countries in a region (for "same region" section)
 - `selectCandidates(cities, max)` — evenly-spaced sample from a large city list
+- `mapWithConcurrency(items, limit, fn)` — order-preserving async map with at most `limit`
+  promises in flight; used to fan out geocoding without tripping upstream rate limits
 - `formatPopulation(n)` → "1.4B" / "67.2M" / "50K" / "500"
 
 ## Security conventions

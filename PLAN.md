@@ -9,7 +9,7 @@ A Next.js 16 weather app with global city search, 7-day forecasts, a countries b
 - **Styling**: Tailwind CSS v4 + custom CSS animations
 - **APIs**: Open-Meteo (weather + geocoding + archive), REST Countries, CountriesNow, world-atlas
 - **Map**: react-simple-maps (SVG world map, d3-geo)
-- **Testing**: Vitest (163 tests)
+- **Testing**: Vitest (233 tests) + Playwright/axe a11y gate
 
 ## Routes
 | Route | Description |
@@ -21,7 +21,7 @@ A Next.js 16 weather app with global city search, 7-day forecasts, a countries b
 | `/map` | Interactive world map with instruction bar |
 | `/about` | Static page: features, data sources, tech stack, security |
 | `/api/cities?country=Name` | Server proxy → CountriesNow, validated + cached 24 h |
-| `/api/city-markers?country=Name` | Geocodes top 10 cities for map markers, cached 24 h |
+| `/api/city-markers?country=Name` | Geocodes major cities for map markers (count scales with country area, 2–52), concurrency-limited, cached 24 h |
 | `/manifest.webmanifest` | PWA manifest (static) |
 
 ## Features
@@ -142,12 +142,14 @@ Each dynamic route has a `loading.tsx` skeleton matching the page layout.
 | `selectCandidates(cities, max)` | Evenly-spaced city sample |
 | `formatPopulation(n)` | "1.4B" / "67.2M" / "50K" / "500" |
 
-## Test Coverage (163 tests in `src/lib/weather.test.ts`)
-- `getWeatherInfo`, `getDayName`, `getFormattedDate`, `getLastYearDate`
-- `getWeatherRating`, `describeUV`, `tempDiffDescription`
-- `formatHour`, `scoreHour`, `getHourlyAnalysis`, `getDayHourlyData`
-- `findBestGeoMatch`, `getWeatherAnimClass`, `getWeatherFact`
-- `getWeatherAlert`, `getWindDirection`, `getWindArrow`
-- `getOutdoorSummary`, `getDressCode`, `validateCoord`
-- `getDaylightInfo`, `getWeatherScore`, `countryCodeToFlag`, `getFeelsLikeExplanation`
-- `formatPopulation`, `normalizeCountryName`, `selectCandidates`
+## Test Coverage (233 tests across `src/lib/*.test.ts`)
+- `weather.test.ts` (200): `getWeatherInfo`, `getDayName`, `getFormattedDate`, `getLastYearDate`,
+  `getWeatherRating`, `describeUV`, `tempDiffDescription`, `formatHour`, `scoreHour`,
+  `getHourlyAnalysis`, `getDayHourlyData`, `findBestGeoMatch`, `getWeatherAnimClass`,
+  `getWeatherFact`, `getWeatherAlert`, `getWindDirection`, `getWindArrow`, `getOutdoorSummary`,
+  `getDressCode`, `validateCoord`, `getDaylightInfo`, `getWeatherScore`, `countryCodeToFlag`,
+  `getFeelsLikeExplanation`, `getCityHour`, `formatCityTime`, `isNightHour`, `getTimeOfDayLabel`
+- `countries.test.ts` (18): `normalizeCountryName`, `selectCandidates`, `formatPopulation`,
+  `mapWithConcurrency`
+- `weatherTheme.test.ts` (15): `getWeatherTheme` (day/night gradient pairs), `getWeatherThemeType`
+- `e2e/a11y.spec.ts`: Playwright + axe gate over 6 routes (fails on serious/critical WCAG A/AA)

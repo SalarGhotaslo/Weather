@@ -99,6 +99,17 @@ export default function WorldMap() {
     [],
   );
 
+  // A city marker (dot) opens that city's full forecast. Shared by mouse click
+  // and keyboard activation so both behave identically.
+  const openMarkerForecast = useCallback(
+    (marker: CityMarker) => {
+      router.push(
+        `/day/0?lat=${marker.lat}&lon=${marker.lon}&name=${encodeURIComponent(marker.name)}`,
+      );
+    },
+    [router],
+  );
+
   const loadCities = useCallback(async (name: string): Promise<string[]> => {
     if (citiesCache.current[name]) return citiesCache.current[name];
     try {
@@ -371,18 +382,17 @@ export default function WorldMap() {
                         role="button"
                         aria-label={`View weather in ${marker.name}`}
                         style={{ cursor: "pointer", transition: "r 0.1s, fill 0.1s" }}
-                        onClick={() =>
-                          router.push(`/day/0?lat=${marker.lat}&lon=${marker.lon}&name=${encodeURIComponent(marker.name)}`)
-                        }
+                        // Reveal the label on keyboard focus too, not just hover,
+                        // so keyboard users can read the city name before activating.
+                        onFocus={() => setHoveredMarker(marker.name)}
+                        onBlur={() => setHoveredMarker(null)}
+                        onClick={() => openMarkerForecast(marker)}
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            loadWeather({
-                              country: panelCountry ?? "",
-                              lat: marker.lat,
-                              lon: marker.lon,
-                              name: marker.name,
-                            });
+                            // Same action as a mouse click — keyboard and pointer
+                            // must stay consistent.
+                            openMarkerForecast(marker);
                           }
                         }}
                       />

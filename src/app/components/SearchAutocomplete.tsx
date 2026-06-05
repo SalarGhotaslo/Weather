@@ -126,6 +126,17 @@ export default function SearchAutocomplete({
             type="search"
             value={value}
             aria-label="Search for a city"
+            role="combobox"
+            aria-expanded={open && suggestions.length > 0}
+            // Only reference the listbox while it is actually rendered — a
+            // dangling aria-controls/activedescendant id is itself an a11y fault.
+            aria-controls={open && suggestions.length > 0 ? "search-suggestions" : undefined}
+            aria-autocomplete="list"
+            aria-activedescendant={
+              open && suggestions.length > 0 && activeIndex >= 0
+                ? `search-option-${activeIndex}`
+                : undefined
+            }
             suppressHydrationWarning
             onChange={(e) => {
               interacted.current = true;
@@ -152,11 +163,17 @@ export default function SearchAutocomplete({
 
       {open && suggestions.length > 0 && (
         <div
+          id="search-suggestions"
+          role="listbox"
+          aria-label="City suggestions"
           className={`absolute z-50 bg-[#162535] border border-[#2a4055] rounded-lg overflow-hidden shadow-xl ${large ? "top-full mt-1 left-0 right-0" : "top-full mt-1 left-0 right-[72px]"}`}
         >
           {suggestions.map((s, i) => (
             <button
               key={i}
+              id={`search-option-${i}`}
+              role="option"
+              aria-selected={i === activeIndex}
               onMouseDown={() => navigate(s)}
               className={`w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 transition-colors ${
                 i === activeIndex

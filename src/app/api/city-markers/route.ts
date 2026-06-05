@@ -1,5 +1,12 @@
 import { type NextRequest } from "next/server";
-import { normalizeCountryName, selectCandidates } from "@/lib/countries";
+import { normalizeCountryName, selectCandidates, mapWithConcurrency } from "@/lib/countries";
+
+// Upstream-request budget. Geocoding is fanned out across the city list, but we
+// must not fire hundreds of simultaneous requests at Open-Meteo (free-tier rate
+// limits + slow cold starts). GEOCODE_CONCURRENCY caps in-flight requests;
+// SAMPLE_CAP bounds how many list cities we geocode beyond the prefix search.
+const GEOCODE_CONCURRENCY = 12;
+const SAMPLE_CAP = 80;
 
 export interface CityMarker {
   name: string;
@@ -128,8 +135,10 @@ const MAJOR_CITY_PREFIXES = [
 async function searchTopCities(
   countryCode: string,
 ): Promise<CityMarker[]> {
-  const results = await Promise.all(
-    MAJOR_CITY_PREFIXES.map(async (prefix) => {
+  const results = await mapWithConcurrency(
+    MAJOR_CITY_PREFIXES,
+    GEOCODE_CONCURRENCY,
+    async (prefix) => {
       try {
         const res = await fetch(
           `https://geocoding-api.open-meteo.com/v1/search?name=${prefix}&count=5&format=json`,
@@ -153,7 +162,7 @@ async function searchTopCities(
       } catch {
         return [];
       }
-    }),
+    },
   );
   const seen = new Set<string>();
   const markers: CityMarker[] = [];
@@ -207,12 +216,15 @@ export async function GET(request: NextRequest) {
   // 1. Direct prefix search — finds major cities by their name starts
   const prefixMarkers = await searchTopCities(meta.code);
 
-  // 2. Even-sampled geocoding from the full city list for broader coverage
+  // 2. Even-sampled geocoding from the full city list for broader coverage.
+  //    Capped at SAMPLE_CAP candidates and concurrency-limited — the prefix
+  //    search + capital already cover the major cities; this only fills gaps.
   const sampled =
     cities.length > 0
-      ? await Promise.all(
-          selectCandidates(cities, Math.min(1000, cities.length))
-            .map((c) => geocodeCity(c, meta.code)),
+      ? await mapWithConcurrency(
+          selectCandidates(cities, Math.min(SAMPLE_CAP, cities.length)),
+          GEOCODE_CONCURRENCY,
+          (c) => geocodeCity(c, meta.code),
         )
       : [];
 
@@ -221,7 +233,8 @@ export async function GET(request: NextRequest) {
     ? await geocodeCity(meta.capital, meta.code)
     : null;
 
-  // Combine, deduplicate, sort by population, top 10
+  // Combine, deduplicate, keep area-scaled limit (capital first, then prefix
+  // relevance order, then sampled fills)
   const seen = new Set<string>();
   const markers: CityMarker[] = [];
 

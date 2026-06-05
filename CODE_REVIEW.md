@@ -4,8 +4,8 @@ Two review-and-improve passes covering: weather-matched backgrounds, accessibili
 current-time-in-city awareness, and live local clock. Each pass ends with a review.
 
 - **Framework**: Next.js 16 App Router + Tailwind CSS v4
-- **Tests**: Vitest — **208 unit tests passing** (was 192) + **6 Playwright/axe a11y
-  checks passing** (new automated accessibility gate)
+- **Tests**: Vitest — **233 unit tests passing** + **6 Playwright/axe a11y
+  checks passing** (automated accessibility gate)
 - **Build**: clean (no TypeScript or ESLint errors)
 
 ---
@@ -138,6 +138,20 @@ inspected the screenshots. Findings, all fixed:
 Confirmed visually after the fixes: clear nights render a moon + stars and a 🌙 hero;
 the warm-amber sunny cards and cool rain/snow cards read correctly; mobile layout holds.
 
+## Review — Pass 5 (production-readiness: fan-out, keyboard parity, combobox a11y)
+
+Focused review of the API fan-out, keyboard/pointer parity, and screen-reader
+semantics. Findings, all fixed:
+
+| # | Area | Finding | Fix |
+|---|------|---------|-----|
+| 20 | **Performance / upstream abuse** | `/api/city-markers` fired **up to ~1,200 simultaneous** geocoding requests per uncached country click (≈200 prefix searches + `Math.min(1000, cities.length)` sampled). Risked tripping Open-Meteo's free-tier rate limit and slow cold starts. | Added `mapWithConcurrency(items, limit, fn)` (order-preserving, in-flight cap) in `countries.ts`; route now caps sampled candidates at `SAMPLE_CAP=80` and runs both prefix and sampled geocoding through `GEOCODE_CONCURRENCY=12`. 6 new unit tests. |
+| 21 | **A11y — keyboard parity** | World-map city-marker dot **navigated on mouse click** (`router.push` → `/day/0`) but **loaded an inline card on keyboard Enter/Space** (`loadWeather`). Keyboard and pointer users got different actions. | Extracted `openMarkerForecast(marker)`; both `onClick` and `onKeyDown` call it. Label now also reveals on keyboard `onFocus`, not just hover. |
+| 22 | **A11y — combobox semantics** | `SearchAutocomplete` was a custom suggestion list with no combobox ARIA, so screen readers didn't announce that suggestions existed or which was active. | Added `role="combobox"` + `aria-expanded` + `aria-controls` + `aria-autocomplete="list"` + `aria-activedescendant` on the input, and `role="listbox"` / `role="option"` + `aria-selected` + stable ids on the suggestions. |
+| 23 | **Docs drift** | README/AGENTS/PLAN said "163 tests"; CODE_REVIEW said 208; CLAUDE/AGENTS/PLAN described the marker route as "up to 150 → top 10 by population", which no longer matched the code. | Updated test counts to 233 and corrected the marker-route description (area-scaled 2–52, concurrency-limited) across all docs. |
+
+**Result:** `npm run test` → 233/233 unit tests pass; `npm run lint` clean; `npm run build` clean.
+
 ---
 
 ## Remaining / future opportunities (not blocking)
@@ -147,12 +161,11 @@ These are pre-existing observations carried forward; none are regressions from t
 1. **`TimeGradient` overlap** (`src/app/components/TimeGradient.tsx`): the per-card
    time-of-day overlay now overlaps conceptually with the page-level day/night theme.
    It still adds a subtle hero tint, but the two could be unified.
-2. **`getAllCountries` / map geocoding** (`src/lib/countries.ts`,
-   `src/app/api/city-markers/route.ts`): country data and up-to-150 parallel geocode
-   calls could be pre-generated / batched. Mitigated by 24 h caching.
-3. **`any` cast for `geoCentroid`** (`src/app/components/WorldMap.tsx`): still uses
-   `geo as any`; a GeoJSON feature type would restore type safety.
-4. **No component-level tests**: the lib layer is well covered (208 tests) and the axe
+2. **Marker route still iterates the full prefix list per country** (`src/app/api/city-markers/route.ts`):
+   the ~200 `MAJOR_CITY_PREFIXES` searches run for every country (even tiny ones) — now
+   concurrency-capped (Pass 5) but still more work than needed for small countries. A
+   pre-generated per-country marker dataset would remove the runtime geocoding entirely.
+3. **No component-level tests**: the lib layer is well covered (233 tests) and the axe
    gate covers rendered pages, but there are no React Testing Library tests for search
    flow, autocomplete keyboard nav, or the `LocalTime` tick behaviour.
 
@@ -168,5 +181,11 @@ colour-contrast failures — are resolved (verified by an automated axe gate in 
 reduced-motion support and `aria-current` semantics on top; and a real-browser review
 caught and fixed the timezone, redundant-copy, and autocomplete-dropdown issues.
 
-All **208 unit tests** and **6 axe accessibility checks** pass, and the production build
+Pass 5 then hardened production-readiness: the world-map marker route no longer
+fires ~1,200 simultaneous upstream requests (concurrency-capped + sampled-candidate
+cap), keyboard and pointer activation of map markers now behave identically, the
+search autocomplete exposes proper combobox/listbox ARIA, and the docs were brought
+back in sync with the code.
+
+All **233 unit tests** and **6 axe accessibility checks** pass, and the production build
 is clean.

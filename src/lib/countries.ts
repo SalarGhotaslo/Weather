@@ -69,6 +69,28 @@ export function selectCandidates(cities: string[], max: number): string[] {
   );
 }
 
+// Runs `fn` over `items` with at most `limit` promises in flight at once,
+// preserving input order in the result. Used to fan out upstream geocoding
+// requests without firing hundreds simultaneously (which trips rate limits and
+// hurts cold-start latency). `limit` is clamped to at least 1.
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  const max = Math.max(1, Math.min(limit, items.length));
+  let cursor = 0;
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await fn(items[index], index);
+    }
+  }
+  await Promise.all(Array.from({ length: max }, worker));
+  return results;
+}
+
 export async function getCountriesByRegion(region: string): Promise<Country[]> {
   try {
     const res = await fetch(

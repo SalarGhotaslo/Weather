@@ -7,13 +7,16 @@ src/app/
 ├── components/
 │   ├── Header.tsx            Server — brand + NavTabs + SearchAutocomplete
 │   ├── NavTabs.tsx           'use client' — usePathname active-tab highlight
-│   ├── SearchAutocomplete.tsx  'use client' — debounced geocoding dropdown
-│   ├── SearchForm.tsx        'use client' — thin search form wrapper
+│   ├── SearchAutocomplete.tsx  'use client' — debounced geocoding combobox (ARIA listbox)
 │   ├── SearchTracker.tsx     'use client' — writes search to localStorage on mount
 │   ├── RecentSearches.tsx    'use client' — reads localStorage, renders recent list
 │   ├── GeolocateButton.tsx   'use client' — navigator.geolocation → /day/0
 │   ├── ShareButton.tsx       'use client' — navigator.share / clipboard fallback
-│   ├── TimeGradient.tsx      'use client' — reads browser hour, fades time-of-day overlay
+│   ├── TimeGradient.tsx      Server — getCityHour() → fades time-of-day overlay
+│   ├── StatTooltip.tsx       Server — shared hover tooltip + STAT_TOOLTIPS dict (home + day)
+│   ├── WeatherFactCard.tsx   Server — shared "Did you know?" fact card (home + day)
+│   ├── WeatherError.tsx      Server — shared forecast-failed fallback (home + day)
+│   ├── LocalTime.tsx         'use client' — live per-second clock for a city timezone
 │   ├── AppFooter.tsx         Server — shared footer (nav links + attribution + year)
 │   ├── WorldMapLoader.tsx    'use client' — dynamic(WorldMap, {ssr:false})
 │   └── WorldMap.tsx          'use client' — react-simple-maps, hover/click/markers
@@ -21,6 +24,11 @@ src/app/
 │                               state: position, hoveredCountry, selectedCountry,
 │                                      panelCountry, panelCities, cityMarkers, hoveredMarker
 ├── map/page.tsx              Server wrapper → WorldMapLoader
+├── day/[index]/
+│   ├── page.tsx              Server — orchestrates fetch + the cards below
+│   ├── HourlyForecast.tsx    Server — horizontal hour strip (night-dimmed, "Now" ring)
+│   ├── OutdoorTimes.tsx      Server — 24h colour strip + best/bad outdoor windows
+│   └── YearComparison.tsx    Server — YoY tiles (incl. YoyStat) + verdict
 ├── countries/
 │   ├── page.tsx              Server — breadcrumb + A–Z country grid
 │   └── [code]/
@@ -28,7 +36,8 @@ src/app/
 │       └── CitiesFilter.tsx  'use client' — live search over city list
 ├── api/
 │   ├── cities/route.ts       GET — validates country param, proxies CountriesNow, 24 h cache
-│   └── city-markers/route.ts GET — validates country param, geocodes up to 10 cities
+│   └── city-markers/route.ts GET — validates country param, geocodes major cities
+│                               (area-scaled 2–52), concurrency-limited fan-out
 └── types/
     └── react-simple-maps.d.ts  TypeScript declarations for react-simple-maps
 ```
@@ -36,7 +45,7 @@ src/app/
 ## Day detail page data flow
 ```
 DayPage (server)
-  ├── getWeather(lat, lon)         → daily + current (30 min ISR)
+  ├── fetchForecast(lat, lon, tz)  → daily + current (30 min ISR; shared with home)
   ├── getHourlyWeather(lat, lon)   → 6-day hourly (30 min ISR)
   └── getHistorical(dateStr, lat, lon) → last-year archive (24 h ISR)
       → getHourlyAnalysis(hourly, dateStr, sunrise, sunset)
@@ -62,16 +71,21 @@ hover country (350 ms debounce)
 click country
   → zoom to centroid (zoom=4)
   → showPanel(name) → cities in panel
-  → fetchCityMarkers: sample up to 150 cities → geocode via Open-Meteo → top 10 by population
+  → fetchCityMarkers: /api/city-markers — prefix search + capital + an area-scaled
+       even-sample of the city list (≤ SAMPLE_CAP), geocoded via Open-Meteo with a
+       concurrency cap (GEOCODE_CONCURRENCY); count scales with country area (2–52)
   → loadWeather({country}) → /api/current resolves capital → inline weather card in panel
   → Marker: dot + glow ring always visible
-      hover dot → <g> onMouseEnter → label appears above dot (styled rect + text)
-                   dot grows (r×1.3) and brightens (#60a5fa) on hover
-      click dot → loadWeather({lat,lon,name}) → inline weather card in panel
+      hover dot (or keyboard-focus it) → <g> onMouseEnter / circle onFocus →
+                   label appears above dot (styled rect + text)
+                   dot grows (r×1.3) and brightens (#60a5fa)
+      click dot / Enter / Space → openMarkerForecast(marker) → router.push /day/0
+                   (mouse and keyboard share one handler — kept consistent)
 
-inline weather card (top of cities panel): location name (+ "capital" badge),
-  emoji + temp + label, feels-like, live LocalTime, "Full 5-day forecast →" link.
-  Clicking a city in the panel list → loadWeather({city, country}).
+inline weather card (top of cities panel): shown for the capital on a country click.
+  location name (+ "capital" badge), emoji + temp + label, feels-like, live LocalTime,
+  "Full 5-day forecast →" link.
+  Clicking a city in the panel list → router.push /?q=City, Country (home forecast).
   cardReq ref tokens guard against out-of-order responses from rapid clicks.
 
 instruction bar hints: hover · click · scroll/pinch to zoom + drag to pan · hover dot for name

@@ -32,8 +32,9 @@ Open [http://localhost:3000](http://localhost:3000).
 |---------|-------------|
 | `npm run dev` | Start dev server with hot reload |
 | `npm run build` | Production build + type check |
-| `npm run test` | Run Vitest unit tests (163 tests) |
+| `npm run test` | Run Vitest unit tests (233 tests) |
 | `npm run test:watch` | Tests in watch mode |
+| `npm run test:a11y` | Run the Playwright + axe accessibility gate (requires a build first) |
 | `npm run lint` | ESLint |
 
 ## Tech stack

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   geocodeLocation,
-  buildForecastUrl,
+  fetchForecast,
   getWeatherInfo,
   getDayName,
   getFormattedDate,
@@ -31,6 +31,9 @@ import AppFooter from "@/app/components/AppFooter";
 import GeolocateButton from "@/app/components/GeolocateButton";
 import { getWeatherTheme } from "@/lib/weatherTheme";
 import WeatherBackground from "@/app/components/WeatherBackground";
+import StatTooltip from "@/app/components/StatTooltip";
+import WeatherFactCard from "@/app/components/WeatherFactCard";
+import WeatherError from "@/app/components/WeatherError";
 
 const POPULAR_CITIES = [
   "London, UK",
@@ -42,14 +45,6 @@ const POPULAR_CITIES = [
   "Barcelona, Spain",
   "Toronto, Canada",
 ];
-
-async function getWeather(lat: number, lon: number, tz?: string): Promise<WeatherResponse> {
-  const res = await fetch(buildForecastUrl(lat, lon, tz), {
-    next: { revalidate: 1800 },
-  });
-  if (!res.ok) throw new Error("Failed to fetch weather data");
-  return res.json();
-}
 
 function buildDayHref(index: number, lat: number, lon: number, name: string, code?: string, tz?: string) {
   const c = code ? `&code=${encodeURIComponent(code)}` : "";
@@ -97,25 +92,10 @@ function TempSparkline({ maxTemps }: { maxTemps: number[] }) {
   );
 }
 
-const STAT_TOOLTIPS: Record<string, string> = {
-  "Humidity": "The amount of water vapour in the air. Higher humidity can make the air feel warmer and more oppressive.",
-  "Wind": "Air movement speed. Stronger wind increases wind chill, making it feel colder than the actual temperature.",
-  "Precipitation": "The total amount of rain or snow expected to fall from the sky over this period.",
-  "UV Index": "A measure of ultraviolet radiation from the sun. Higher values mean greater risk of sunburn.",
-  "Pressure": "Atmospheric pressure — high pressure usually means stable, clear weather, while low pressure brings clouds and rain.",
-  "Sunrise": "The time when the sun appears over the horizon. Sunset is when it disappears for the day.",
-};
-
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
-  const tooltip = STAT_TOOLTIPS[label];
   return (
     <div className="bg-[var(--card-bg)] rounded-lg px-4 py-3 group relative">
-      {tooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#0e1723] border border-[#2a4055] text-[#c8dae7] text-[10px] leading-relaxed px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
-          {tooltip}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#2a4055]" />
-        </div>
-      )}
+      <StatTooltip label={label} />
       <div className="text-[var(--text-muted)] text-xs mb-1">{label}</div>
       <div className="flex items-center gap-1.5">
         <span className="text-base" aria-hidden="true">{icon}</span>
@@ -226,18 +206,9 @@ export default async function Home({ searchParams }: Props) {
 
   let weather: WeatherResponse;
   try {
-    weather = await getWeather(location.latitude, location.longitude, location.timezone);
+    weather = await fetchForecast(location.latitude, location.longitude, location.timezone);
   } catch {
-    return (
-      <div className="min-h-screen bg-[#0e1723] flex flex-col">
-        <Header defaultSearch={q} />
-        <main id="main-content" className="flex-1 flex items-center justify-center">
-          <p className="text-[var(--text-muted)] text-lg">
-            Failed to load weather data. Please try again later.
-          </p>
-        </main>
-      </div>
-    );
+    return <WeatherError defaultSearch={q} />;
   }
 
   const { current, daily } = weather;
@@ -459,13 +430,7 @@ export default async function Home({ searchParams }: Props) {
         </div>
 
         {/* Fun weather fact */}
-        <div className="bg-[var(--card-bg)] rounded-xl p-4 mb-6 flex items-start gap-3" role="note">
-          <span className="text-2xl shrink-0" aria-hidden="true">💡</span>
-          <div>
-            <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-1">Did you know?</p>
-            <p className="text-[#c8dae7] text-sm leading-relaxed">{weatherFact}</p>
-          </div>
-        </div>
+        <WeatherFactCard fact={weatherFact} className="mb-6" />
 
       </main>
       <AppFooter />

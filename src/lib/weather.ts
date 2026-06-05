@@ -136,6 +136,20 @@ export function validateCoord(
   return parsed;
 }
 
+// Fetches the 7-day + current forecast with 30-min ISR. Shared by the home and
+// day detail server components, which previously each defined this identically.
+export async function fetchForecast(
+  lat: number,
+  lon: number,
+  timezone?: string,
+): Promise<WeatherResponse> {
+  const res = await fetch(buildForecastUrl(lat, lon, timezone), {
+    next: { revalidate: 1800 },
+  });
+  if (!res.ok) throw new Error("Failed to fetch weather data");
+  return res.json();
+}
+
 export function buildForecastUrl(lat: number, lon: number, timezone?: string): string {
   const tz = timezone ? `&timezone=${encodeURIComponent(timezone)}` : "&timezone=auto";
   return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset&forecast_days=7${tz}`;

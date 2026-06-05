@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeCountryName, selectCandidates, formatPopulation } from "./countries";
+import { normalizeCountryName, selectCandidates, formatPopulation, mapWithConcurrency } from "./countries";
 
 describe("normalizeCountryName", () => {
   it("maps United States of America to United States", () => {
@@ -68,5 +68,44 @@ describe("formatPopulation", () => {
 
   it("handles zero", () => {
     expect(formatPopulation(0)).toBe("0");
+  });
+});
+
+describe("mapWithConcurrency", () => {
+  it("preserves input order in the result", async () => {
+    const out = await mapWithConcurrency([1, 2, 3, 4, 5], 2, async (n) => n * 2);
+    expect(out).toEqual([2, 4, 6, 8, 10]);
+  });
+
+  it("never exceeds the concurrency limit", async () => {
+    let inFlight = 0;
+    let peak = 0;
+    await mapWithConcurrency(Array.from({ length: 20 }, (_, i) => i), 4, async () => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, 1));
+      inFlight--;
+    });
+    expect(peak).toBeLessThanOrEqual(4);
+  });
+
+  it("processes every item", async () => {
+    const items = Array.from({ length: 50 }, (_, i) => i);
+    const out = await mapWithConcurrency(items, 8, async (n) => n + 1);
+    expect(out).toEqual(items.map((n) => n + 1));
+  });
+
+  it("handles an empty list", async () => {
+    expect(await mapWithConcurrency([], 4, async (n) => n)).toEqual([]);
+  });
+
+  it("clamps a limit below 1 up to 1", async () => {
+    const out = await mapWithConcurrency([1, 2, 3], 0, async (n) => n);
+    expect(out).toEqual([1, 2, 3]);
+  });
+
+  it("passes the index to the callback", async () => {
+    const out = await mapWithConcurrency(["a", "b", "c"], 2, async (item, i) => `${i}:${item}`);
+    expect(out).toEqual(["0:a", "1:b", "2:c"]);
   });
 });

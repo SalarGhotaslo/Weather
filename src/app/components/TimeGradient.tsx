@@ -1,3 +1,5 @@
+import { getCityHour } from "@/lib/weather";
+
 const TIME_GRADIENTS: Record<string, string> = {
   dawn:      "linear-gradient(135deg, rgba(138,43,226,0.08) 0%, rgba(255,140,0,0.06) 50%, transparent 70%)",
   morning:   "linear-gradient(135deg, rgba(135,206,250,0.07) 0%, rgba(255,220,100,0.05) 50%, transparent 70%)",
@@ -16,21 +18,6 @@ function getTimePeriod(hour: number): string {
   return "night";
 }
 
-function getCurrentHourInTimezone(timezone?: string): number {
-  if (!timezone) return new Date().getHours();
-  try {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat("en", {
-      timeZone: timezone,
-      hour: "numeric",
-      hourCycle: "h23",
-    });
-    return parseInt(formatter.format(now), 10);
-  } catch {
-    return new Date().getHours();
-  }
-}
-
 export default function TimeGradient({
   className = "",
   timezone,
@@ -38,7 +25,7 @@ export default function TimeGradient({
   className?: string;
   timezone?: string;
 }) {
-  const hour = getCurrentHourInTimezone(timezone);
+  const hour = getCityHour(timezone);
   const period = getTimePeriod(hour);
   const gradient = TIME_GRADIENTS[period];
   if (!gradient) return null;
