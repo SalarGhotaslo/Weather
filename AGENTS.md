@@ -13,7 +13,7 @@ Key features:
 ## Commands
 - `npm run dev` — start dev server (http://localhost:3000)
 - `npm run build` — production build (also runs type check)
-- `npm run test` — run Vitest unit tests (282 tests across `src/**/*.test.ts`)
+- `npm run test` — run Vitest unit tests (`src/**/*.test.ts`)
 - `npm run test:watch` — run tests in watch mode
 - `npm run test:coverage` — Vitest with v8 coverage + 80% threshold gate (logic layer)
 - `npm run typecheck` — `tsc --noEmit`
@@ -32,7 +32,7 @@ Key features:
 The 80% gate (`vitest.config.ts`) targets the **logic layer** — `src/lib/**` and the
 `*View.ts` view-model builders — where unit tests are meaningful. Presentational
 Server/Client components and pages are verified by TypeScript, the production build,
-and the Playwright axe/e2e suite (6 routes), not line-coverage.
+and the Playwright axe/e2e suite, not line-coverage.
 
 ## Routes
 | Route | Description |
@@ -81,52 +81,70 @@ and the Playwright axe/e2e suite (6 routes), not line-coverage.
 | `https://countriesnow.space/api/v0.1/countries/cities/q` | Cities per country |
 | `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json` | Map TopoJSON |
 
-## Key lib functions (`src/lib/weather.ts`)
+## Key lib functions (`src/lib/forecast.ts`)
 - `fetchForecast(lat, lon, tz?)` — 7-day + current forecast with 30-min ISR; shared by the home and day server components
-- `buildForecastUrl(lat, lon)` — 7-day + current forecast URL (daily now also includes
-  `apparent_temperature_max/min` + `wind_direction_10m_dominant` so future days show the
-  same Feels-Like / Wind-direction cards as today)
-- `buildHourlyForecastUrl(lat, lon)` — **7-day** hourly URL (adds `relative_humidity_2m` +
-  `surface_pressure` for the per-day Humidity/Pressure means)
-- `getDayAverages(hourly, dateStr)` → `{ humidity, pressure }` — daily means from the hourly
-  forecast, so non-today days fill the same stat cards (live `current` is today-only)
-- `describeWind(avgWind)` → shared wind descriptor (calm/light breeze/gentle breeze/breezy/windy);
-  used by both the outdoor-window reason sentence and its condition chip so they always agree
+- `buildForecastUrl(lat, lon)` — 7-day + current forecast URL (daily includes `apparent_temperature_max/min` + `wind_direction_10m_dominant` so future days show the same Feels-Like / Wind-direction cards as today)
+- `buildHourlyForecastUrl(lat, lon)` — **7-day** hourly URL (includes `relative_humidity_2m` + `surface_pressure` for per-day Humidity/Pressure means)
+- `getDayAverages(hourly, dateStr)` → `{ humidity, pressure }` — daily means from hourly forecast; non-today days fill the same stat cards (live `current` is today-only)
+- `getDayHourlyData(hourly, dateStr)` — extracts one day's slice from the 7-day hourly response
 - `validateCoord(value, min, max, fallback)` — validates lat/lon params, rejects NaN/Infinity/out-of-range
-- `countryCodeToFlag(code)` — ISO 3166-1 alpha-2 → flag emoji ("GB" → 🇬🇧)
-- `getFeelsLikeExplanation(actual, feelsLike, humidity, wind)` — human-readable feels-like reason
-- `getWeatherScore(code, tempMax)` — 0–4 score for best-day badge ranking
-- `getDaylightInfo(sunriseISO, sunsetISO)` — `{ hours, minutes, risePercent, lightPercent }`
-- `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` — `{ hours, bestWindows, badWindows }`
-  - Each `HourData` carries `active` (within `ACTIVE_START`–`ACTIVE_END`, i.e. **6am–10pm**). Best/bad windows are detected **only within active hours**; the night score (-1) trims dark hours.
-  - Best windows = runs where every active hour is at least "Good" (score ≥2), so a long comfortable stretch isn't discarded for one slightly-better hour; relaxes to ≥1 only if nothing qualifies. Separate windows appear only when split by genuinely poor hours. Ranked **best-first** by total score, then drier, then calmer, then earlier (a damp 6am loses to a clearing 7pm); max 3; each tags its peak hour.
-  - `rating` is honest about marginal stretches: a window that only ever reaches score 2 is **Fair**, not Good (Excellent ≥3.3, Good ≥2.3, Fair ≥1.3 avg).
-  - Windows use **average** precip (not max); shows range if spread > 30 pp
-  - Bad windows require **≥ 2** consecutive score-0 hours within active hours (worst + also-avoid)
-- `getOutdoorSummary(bestWindows, badWindows)` → natural-language summary; when even the best window is Fair/Poor it frames it as "a rough day to be outside" with the least-bad slot rather than overselling.
-- `scoreHour(temp, precipProb, windSpeed, isNight)` → -1..3
 - `formatHour(hour)` → "9am", "12pm", etc.
-- `getWeatherInfo(code)`, `getDayName(dateStr)`, `getWeatherRating(code, temp)`, `describeUV(uv)`, `tempDiffDescription(forecast, historical)`
+- `getLastYearDate(dateStr)` — returns same calendar date last year for historical comparison
+
+## Key lib functions (`src/lib/weather.ts`)
+- `getWeatherInfo(code)` → `{ label, emoji }` — human-readable label + emoji for a WMO weather code
+- `getDayName(dateStr)` → "Monday" etc.; `getFormattedDate(dateStr)` → "Mon 5 Jun"
+- `getWeatherRating(code, temp)` → qualitative rating string
+- `getWeatherScore(code, tempMax)` — 0–4 score for best-day badge ranking
+- `describeUV(uv)` → `{ label, tip }` — UV index descriptor
+- `tempDiffDescription(forecast, historical)` → year-over-year comparison string
 - `getWeatherAnimClass(code)` → CSS class for animated emoji
+- `getHourWeatherInfo(code)` / `getHourAnimClass(code)` — hourly variants
 - `getWeatherFact(code, temp)` → contextual fun weather fact
 - `getWeatherAlert(code, windMax, uvMax, precipSum)` → `WeatherAlert | null`
 - `getWindDirection(degrees)` → "N"|"NE"|...|"NW"; `getWindArrow(degrees)` → unicode arrow
 - `getDressCode(code, tempMax, windMax)` → `{ summary, items[] }`
+- `getFeelsLikeExplanation(actual, feelsLike, humidity, wind)` — human-readable feels-like reason
+- `getDaylightInfo(sunriseISO, sunsetISO)` → `{ hours, minutes, risePercent, lightPercent }`
+- `getCityHour(timezone)` / `formatCityTime(timezone)` / `isNightHour(timezone)` / `getTimeOfDayLabel(timezone)` — timezone-aware time helpers
+
+## Key lib functions (`src/lib/outdoor.ts`)
+- `getHourlyAnalysis(hourly, dateStr, sunriseISO, sunsetISO)` → `{ hours[24], bestWindows, badWindows }`
+  - Each `HourData` carries `active` (within `ACTIVE_START`–`ACTIVE_END`, i.e. **6am–10pm**). Best/bad windows detected **only within active hours**; night score (-1) trims dark hours.
+  - Best windows = runs where every active hour is at least "Good" (score ≥2); relaxes to ≥1 only if nothing qualifies. Ranked **best-first** by total score, then drier, then calmer, then earlier; max 3; each tags its peak hour.
+  - `rating` is honest about marginal stretches: a window that only reaches score 2 is **Fair** (Excellent ≥3.3, Good ≥2.3, Fair ≥1.3 avg).
+  - Windows use **average** precip (not max); shows range if spread > 30 pp
+  - Bad windows require **≥ 2** consecutive score-0 hours within active hours
+- `getOutdoorSummary(bestWindows, badWindows)` → natural-language summary; frames "rough days" honestly rather than overselling a fair window
+- `scoreHour(temp, precipProb, windSpeed, isNight)` → -1..3
+- `describeWind(avgWind)` → shared wind descriptor (calm/light breeze/gentle breeze/breezy/windy); used by outdoor-window reason sentence and its condition chip so they always agree
+
+## Key lib functions (`src/lib/geocoding.ts`)
+- `geocodeLocation(query)` → `GeocodingResult | null` — extracts city/country, fetches 10 candidates, applies country hint + population ranking
+- `findBestGeoMatch(results, countryHint?)` — population-ranked match with optional country bias
+- `countryCodeToFlag(code)` — ISO 3166-1 alpha-2 → flag emoji ("GB" → 🇬🇧)
+
+## Key lib functions (`src/lib/weatherTheme.ts`)
+- `getWeatherThemeType(code, isNight)` → `WeatherThemeType` — one of 8 variants: clear, partly-cloudy, overcast, foggy, rainy, snowy, thunderstorm (day + night variants)
+- `getWeatherTheme(code, isNight)` → `{ gradient, radial }` — CSS gradient strings for hero backgrounds
+
+## Key lib functions (`src/lib/airQuality.ts`)
 - `buildAirQualityUrl(lat, lon, tz?)` — one Open-Meteo air-quality URL: 6 pollen types + `pm2_5` + `us_aqi`, 7-day
 - `describeUsAqi(value)` → `{ label, tip }` — US AQI (0–500) → Good/Moderate/…/Hazardous (global coverage)
 - `getDayAqi(response, dateStr)` → `AqiInfo | null` — daily-max US AQI + PM2.5 at the peak hour
 - `describePollenLevel(value)` → `{ label, tip }` — grains/m³ → None/Low/Moderate/High/Very High
 - `getDayPollen(response, dateStr)` → `PollenInfo | null` — dominant type + daily-max for a date
   (null outside Europe — pollen is EU-only — or when the date is outside the window)
+  Pollen types: Alder, Birch, Grass, Mugwort, Olive, Ragweed
 
 ## Key lib functions (`src/lib/countries.ts`)
-- `normalizeCountryName(name)` — maps TopoJSON names to CountriesNow names
+- `normalizeCountryName(name)` — maps TopoJSON names to CountriesNow names (21 mappings)
 - `getAllCountries()` — all ~250 countries (name, cca2, flag, capital, region, subregion, population)
 - `getCountryByCode(code)` — single country by ISO alpha-2
 - `getCountriesByRegion(region)` — all countries in a region (for "same region" section)
+- `getCitiesForCountry(country)` — proxied from CountriesNow, cached 24 h
 - `selectCandidates(cities, max)` — evenly-spaced sample from a large city list
-- `mapWithConcurrency(items, limit, fn)` — order-preserving async map with at most `limit`
-  promises in flight; used to fan out geocoding without tripping upstream rate limits
+- `mapWithConcurrency(items, limit, fn)` — order-preserving async map with at most `limit` promises in flight; used to fan out geocoding without tripping upstream rate limits
 - `formatPopulation(n)` → "1.4B" / "67.2M" / "50K" / "500"
 
 ## Key lib functions (`src/lib/rateLimit.ts` + `src/lib/cityMarkers.ts`)
@@ -136,6 +154,7 @@ and the Playwright axe/e2e suite (6 routes), not line-coverage.
 - `getCityMarkers(country)` — full map-marker fan-out orchestration (meta + capital + prefix
   search + sampled geocoding, deduped, area-scaled). `maxMarkers`, `dedupeByName`, `geocodeCity`,
   `resolveCountryMeta` are the testable units behind it.
+- `dedupeByProximity(markers)` — haversine-distance dedup for geocoded results
 
 ## Security conventions
 - All API route `country` params: must match `/^[\p{L}\s\-'.()]+$/u`, max 100 chars
@@ -143,7 +162,7 @@ and the Playwright axe/e2e suite (6 routes), not line-coverage.
   `/cities` + `/current`, 15/min for the heavier `/city-markers` fan-out. Returns 429 +
   `Retry-After`. In-memory (per-instance); swap `rateLimit`'s store for Redis/KV at scale.
 - CSP header in `next.config.ts`: connect-src allowlist for 6 external APIs; frame-ancestors, base-uri, form-action all restricted
-- `validateCoord` used for lat/lon in day detail; `name` param capped at 200 chars
+- `validateCoord` (`lib/forecast.ts`) used for lat/lon in day detail; `name` param capped at 200 chars
 - **Dependency audit:** `npm audit:ci` gates pushes (prod deps, high+). `overrides` pins
   `d3-color@^3.1.0` to patch react-simple-maps' ReDoS (GHSA-36jr-mh4h-2g58). Remaining
   advisories are dev-only (vitest/esbuild) or transitive postcss under Next — not shipped.

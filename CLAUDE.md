@@ -5,17 +5,18 @@
 ```
 src/app/
 ├── components/
-│   ├── Header.tsx            Server — brand + NavTabs + SearchAutocomplete
-│   ├── NavTabs.tsx           'use client' — usePathname active-tab highlight
+│   ├── Header.tsx            Server — brand + NavTabs + SearchAutocomplete (hideSearch prop omits search)
+│   ├── NavTabs.tsx           'use client' — usePathname active-tab highlight (Home/Countries/Map/About)
 │   ├── SearchAutocomplete.tsx  'use client' — debounced geocoding combobox (ARIA listbox)
 │   ├── SearchTracker.tsx     'use client' — writes search to localStorage on mount
 │   ├── RecentSearches.tsx    'use client' — reads localStorage, renders recent list
 │   ├── GeolocateButton.tsx   'use client' — navigator.geolocation → /day/0
 │   ├── ShareButton.tsx       'use client' — navigator.share / clipboard fallback
-│   ├── TimeGradient.tsx      Server — getCityHour() → fades time-of-day overlay
+│   ├── TimeGradient.tsx      'use client' — reads browser hour, fades time-of-day overlay
 │   ├── StatTooltip.tsx       Server — shared hover tooltip + STAT_TOOLTIPS dict (home + day)
 │   ├── WeatherFactCard.tsx   Server — shared "Did you know?" fact card (home + day)
 │   ├── WeatherError.tsx      Server — shared forecast-failed fallback (home + day)
+│   ├── WeatherBackground.tsx 'use client' — dispatches to weather-effects/* per weather type
 │   ├── LocalTime.tsx         'use client' — live per-second clock for a city timezone
 │   ├── AppFooter.tsx         Server — shared footer (nav links + attribution + year)
 │   ├── WorldMapLoader.tsx    'use client' — dynamic(WorldMap, {ssr:false})
@@ -28,35 +29,37 @@ src/app/
 │   │   └── MapWeatherCard.tsx inline capital/city weather card
 │   └── weather-effects/      WeatherBackground.tsx dispatches to these per type
 │       ├── Overlay.tsx        shared full-viewport aria-hidden wrapper
+│       ├── ParticleField.tsx  reusable animated particle base
 │       └── {Sun,Stars,Cloud,Rain,Snow,Thunder,Fog}Effect.tsx
 ├── map/page.tsx              Server wrapper → WorldMapLoader
 ├── page.tsx                  Server — thin: geocode → branch → render (see home/)
 ├── home/                     Home-page pieces extracted from page.tsx
 │   ├── homeView.ts           buildHomeView() view-model + buildDayHref()
-│   ├── HomeLanding.tsx       Server — empty-state landing (search + popular cities)
+│   ├── HomeLanding.tsx       Server — empty-state landing; Header hideSearch=true here
 │   ├── LocationNotFound.tsx  Server — no-geocode-match fallback
 │   ├── ForecastView.tsx      Server — composes the resolved-location forecast
 │   ├── CurrentHero.tsx       Server — clickable "today" hero → /day/0
 │   ├── StatsStrip.tsx        Server — 6-up stat strip (incl. StatCard)
 │   └── FiveDayForecast.tsx   Server — 5-day grid + TrendIndicator + TempSparkline
 ├── day/[index]/              page.tsx = thin fetch + buildDayView() + compose
-│   ├── dayData.ts            Server fetch helpers (getHourlyWeather, getHistorical)
+│   ├── dayData.ts            Server fetch helpers (getHourlyWeather, getHistorical, getAirQuality)
 │   ├── dayView.ts            buildDayView() view-model builder
 │   ├── DayHeader.tsx         Server — breadcrumb + title/share + day-picker strip
 │   ├── CurrentWeatherCard.tsx Server — hero temp + "right now" strip
 │   ├── WeatherAlertBanner.tsx Server — severe-weather banner
 │   ├── DetailGrid.tsx        Server — stat grid (incl. UvMeter, DaylightBar, DetailCard)
 │   ├── WhatToWear.tsx        Server — dress-code chips
-│   ├── HourlyForecast.tsx    Server — horizontal hour strip (night-dimmed, "Now" ring)
+│   ├── HourlyForecast.tsx    Server — SVG temp curve + rain bars + hour strip (night-dimmed)
 │   ├── OutdoorTimes.tsx      Server — 24h colour strip + best/bad outdoor windows
 │   └── YearComparison.tsx    Server — YoY tiles (incl. YoyStat) + verdict
 │   Each home/ + day/ component has a colocated *.module.css.
 │   Pattern: @apply + @reference "globals.css" inside modules; `group`/`peer`
 │   markers + dynamic colour ternaries stay literal global utilities.
 ├── countries/
-│   ├── page.tsx              Server — breadcrumb + A–Z country grid
+│   ├── page.tsx              Server — breadcrumb + A–Z country grid; Header hideSearch=true
+│   ├── CountriesFilter.tsx   'use client' — live search + region filter + alphabet jump nav
 │   └── [code]/
-│       ├── page.tsx          Server — breadcrumb + country hero + CitiesFilter
+│       ├── page.tsx          Server — breadcrumb + country hero + same-region section
 │       └── CitiesFilter.tsx  'use client' — live search over city list
 ├── api/                      All routes guarded by enforceRateLimit (lib/rateLimit.ts)
 │   ├── cities/route.ts       GET — validates country, proxies CountriesNow, 24 h, 60/min
@@ -67,24 +70,30 @@ src/app/
     └── react-simple-maps.d.ts  TypeScript declarations for react-simple-maps
 ```
 
+### hideSearch usage
+`Header` accepts `hideSearch?: boolean`. When true, `SearchAutocomplete` is omitted.
+- `HomeLanding` → `hideSearch=true` (has its own centred search)
+- `/countries/page.tsx` → `hideSearch=true` (has its own `CountriesFilter`)
+- `/map`, `/about`, `/day/[index]`, `/countries/[code]` → search visible (default)
+
 ## Day detail page data flow
 ```
 DayPage (server)
-  ├── fetchForecast(lat, lon, tz)  → daily + current (30 min ISR; shared with home)
-  ├── getHourlyWeather(lat, lon)   → 6-day hourly (30 min ISR)
+  ├── fetchForecast(lat, lon, tz)    → daily + current (30 min ISR; shared with home)
+  ├── getHourlyWeather(lat, lon)     → 7-day hourly (30 min ISR)
   ├── getAirQuality(dateStr, lat, lon) → one air-quality call → { aqi, pollen }:
   │     getDayAqi() (US AQI + PM2.5, global) + getDayPollen() (EU only) → DetailGrid cards
   └── getHistorical(dateStr, lat, lon) → last-year archive (24 h ISR)
-      → getHourlyAnalysis(hourly, dateStr, sunrise, sunset)
+      → getHourlyAnalysis(hourly, dateStr, sunrise, sunset)  [lib/outdoor.ts]
          returns { hours[24], bestWindows, badWindows }
          windows detected only within ACTIVE_START–ACTIVE_END (6am–10pm)
          each OutdoorWindow: timeLabel, rating, conditions (avg precip, range if spread>30),
            isBad, peakHour, tempRange, activities[]
          best windows: runs of score≥2 (relax to ≥1), ranked best-first (score→drier→calmer→earlier)
          bad windows: minimum 2 consecutive score-0 hours within active hours
-  → getWeatherFact(code, temp)     → fun fact string shown in "Did you know?" card
-  → getWeatherAnimClass(code)      → CSS class for animated emoji
-  → YoyStat (server component)    → 3-column year-over-year comparison tiles
+  → getWeatherFact(code, temp)       → fun fact string shown in "Did you know?" card
+  → getWeatherAnimClass(code)        → CSS class for animated emoji
+  → YoyStat (server component)      → 3-column year-over-year comparison tiles
       shows current value + colour-coded delta (▲/▼) + prior-year value
       orange=warmer, sky=cooler (temp); blue=wetter, emerald=drier (rain)
 ```
@@ -127,11 +136,12 @@ Six keyframe animations exposed as CSS classes on emoji wrapper spans:
 - `.weather-thunder` — brightness flash
 - `.weather-foggy` — horizontal drift + opacity
 
-Use `getWeatherAnimClass(code)` from `weather.ts` to get the right class.
+Use `getWeatherAnimClass(code)` from `lib/weather.ts` to get the right class.
 
 ## Shared components
 - `AppFooter.tsx` — server component used as the footer on all pages (nav links + attribution + year)
 - `TimeGradient.tsx` — `'use client'` — reads browser hour, fades in a subtle time-of-day gradient overlay on hero cards
+- `WeatherBackground.tsx` — `'use client'` — full-viewport animated weather effect; dispatches to `weather-effects/*` based on weather code + day/night
 
 ## Key route `loading.tsx` skeletons
 - `src/app/loading.tsx` — home page
@@ -145,7 +155,7 @@ Use `getWeatherAnimClass(code)` from `weather.ts` to get the right class.
 - **Rate limiting** (`lib/rateLimit.ts`): all `/api/*` routes call `enforceRateLimit` →
   429 + `Retry-After`. 60/min for cities + current, 15/min for city-markers. In-memory
   per-instance; swap the store for Redis/KV at multi-instance scale.
-- `validateCoord(value, min, max, fallback)` in weather.ts — used for lat/lon in day detail page
+- `validateCoord(value, min, max, fallback)` in `lib/forecast.ts` — used for lat/lon in day detail page
 - `viewport` export in `layout.tsx` carries `themeColor` (not `metadata` — Next.js 16 requirement)
 - **Dependency overrides** in `package.json`: `d3-color@^3.1.0` patches react-simple-maps'
   transitive ReDoS. `npm run audit:ci` (prod deps, high+) gates pushes via the husky pre-push hook.
