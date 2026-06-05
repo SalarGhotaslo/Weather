@@ -12,7 +12,7 @@ const routes: { name: string; path: string; assertions: (page: import("@playwrig
     path: "/",
     assertions: async (page) => {
       await expect(page.getByRole("heading", { level: 1, name: "Salar Weather" })).toBeVisible();
-      await expect(page.getByLabel("Search for a city")).toBeVisible();
+      await expect(page.getByLabel("Search for a city").first()).toBeVisible();
       await expect(page.getByText("Popular cities")).toBeVisible();
       await expect(page.getByRole("link", { name: "Browse countries" })).toBeVisible();
       await expect(page.getByRole("link", { name: "World map" })).toBeVisible();
@@ -24,9 +24,9 @@ const routes: { name: string; path: string; assertions: (page: import("@playwrig
     assertions: async (page) => {
       await expect(page.getByRole("heading", { level: 1 })).toContainText("London");
       await expect(page.getByText("Feels like")).toBeVisible();
-      await expect(page.getByText("Humidity")).toBeVisible();
-      await expect(page.getByText("Wind")).toBeVisible();
-      await expect(page.getByText("UV Index")).toBeVisible();
+      await expect(page.getByText("Humidity", { exact: true })).toBeVisible();
+      await expect(page.getByText("Wind", { exact: true })).toBeVisible();
+      await expect(page.getByText("UV Index", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { level: 2, name: "5-Day Forecast" })).toBeVisible();
       await expect(page.locator('[role="listitem"]')).toHaveCount(5);
     },
@@ -86,7 +86,7 @@ const routes: { name: string; path: string; assertions: (page: import("@playwrig
     path: "/map",
     assertions: async (page) => {
       await expect(page.getByRole("group", { name: "Map instructions" })).toBeVisible();
-      await expect(page.getByText("Hover a country to see its cities")).toBeVisible();
+      await expect(page.getByText("Hover a country to see its cities").first()).toBeVisible();
     },
   },
 ];
