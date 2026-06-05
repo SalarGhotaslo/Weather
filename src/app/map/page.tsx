@@ -36,6 +36,7 @@ export default function MapPage() {
       </div>
 
       <main id="main-content" className={styles.main}>
+        <h1 className="sr-only">World Map</h1>
         <WorldMapLoader />
       </main>
     </div>
