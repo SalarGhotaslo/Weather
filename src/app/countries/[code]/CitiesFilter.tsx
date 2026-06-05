@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import styles from "./CitiesFilter.module.css";
 
 const PAGE_SIZE = 48;
 
@@ -24,47 +25,44 @@ export default function CitiesFilter({
 
   return (
     <div>
-      {/* Filter input */}
-      <div className="mb-4">
+      <div className={styles.filterBlock}>
         <input
           type="search"
           value={search}
           aria-label={`Search ${countryName} cities`}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={`Search ${cities.length.toLocaleString()} cities…`}
-          className="w-full bg-[#1c2f3f] border border-[#2a4055] rounded-lg px-4 py-2.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors"
+          className={styles.input}
         />
-        {query && (
-          <p className="text-[var(--text-muted)] text-xs mt-2">
+        {query ? (
+          <p className={styles.note}>
             {filtered.length} {filtered.length === 1 ? "city" : "cities"} matching &ldquo;{search.trim()}&rdquo;
           </p>
-        )}
-        {!query && (
-          <p className="text-[var(--text-muted)] text-xs mt-2">
+        ) : (
+          <p className={styles.note}>
             Showing {Math.min(PAGE_SIZE, cities.length)} of {cities.length.toLocaleString()} cities · search to filter
           </p>
         )}
       </div>
 
-      {/* City grid */}
       {visible.length > 0 ? (
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className={styles.grid}>
           {visible.map((city) => (
             <Link
               key={city}
               href={`/?q=${encodeURIComponent(`${city}, ${countryName}`)}`}
-              className="bg-[#162535] hover:bg-[#1c2f3f] rounded-lg px-3 py-2 text-sm text-white hover:text-[var(--text-accent)] transition-colors truncate text-center"
+              className={styles.cityLink}
             >
               {city}
             </Link>
           ))}
         </div>
       ) : (
-        <p className="text-[var(--text-muted)] text-sm">No cities match your search.</p>
+        <p className={styles.empty}>No cities match your search.</p>
       )}
 
       {hasMore && (
-        <p className="text-[var(--text-muted)] text-xs mt-4 text-center">
+        <p className={styles.more}>
           Search above to see all {cities.length.toLocaleString()} cities
         </p>
       )}

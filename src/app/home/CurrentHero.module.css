@@ -1,0 +1,41 @@
+@reference "../globals.css";
+
+.hero {
+  @apply relative block bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-xl p-6 mb-3 transition-colors overflow-hidden;
+}
+
+.top {
+  @apply flex items-start justify-between;
+}
+
+.temp {
+  @apply text-[68px] font-light text-white leading-none tracking-tight;
+}
+
+.label {
+  @apply text-lg text-white mt-2 font-medium;
+}
+
+.feels {
+  @apply text-[var(--text-muted)] text-sm mt-1;
+}
+
+.feelsExtra {
+  @apply text-[var(--text-muted)] text-xs ml-2;
+}
+
+.emoji {
+  @apply text-[72px] leading-none;
+}
+
+.footer {
+  @apply mt-4 pt-4 border-t border-[#1e3347] flex items-center justify-between;
+}
+
+.range {
+  @apply text-[var(--text-muted)] text-xs;
+}
+
+.cta {
+  @apply text-[var(--text-accent)] text-xs font-medium;
+}

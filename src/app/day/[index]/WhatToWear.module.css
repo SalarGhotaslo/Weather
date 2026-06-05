@@ -1,0 +1,21 @@
+@reference "../../globals.css";
+
+.card {
+  @apply bg-[var(--card-bg)] rounded-xl p-5 mb-3;
+}
+
+.title {
+  @apply text-white font-semibold mb-1;
+}
+
+.summary {
+  @apply text-[var(--text-muted)] text-sm mb-3;
+}
+
+.items {
+  @apply flex flex-wrap gap-2;
+}
+
+.item {
+  @apply bg-[var(--card-bg-alt)] border border-[#2a4055] text-[#c8dae7] text-xs px-3 py-1.5 rounded-full;
+}

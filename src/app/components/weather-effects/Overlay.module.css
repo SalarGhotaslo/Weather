@@ -1,0 +1,6 @@
+@reference "../../globals.css";
+
+/* Shared full-viewport, non-interactive container for every weather effect. */
+.overlay {
+  @apply fixed inset-0 pointer-events-none overflow-hidden;
+}

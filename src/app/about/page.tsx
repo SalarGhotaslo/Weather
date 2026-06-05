@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = {
   title: "About",
@@ -62,27 +63,25 @@ const FEATURES = [
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-[#0e1723] flex flex-col">
+    <div className={styles.shell}>
       <Header />
 
-      <main id="main-content" className="mx-auto w-full max-w-4xl px-4 py-8 flex-1">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-6">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
+      <main id="main-content" className={styles.main}>
+        <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+          <Link href="/" className={styles.crumbLink}>Home</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[var(--text-muted)]">About</span>
+          <span className={styles.crumbCurrent}>About</span>
         </nav>
 
-        {/* Hero */}
-        <div className="mb-10">
-          <div className="flex items-center gap-4 mb-4">
-            <span className="text-5xl weather-sunny-glow inline-block" aria-hidden="true">⛅</span>
+        <div className={styles.hero}>
+          <div className={styles.heroRow}>
+            <span className={`${styles.heroEmoji} weather-sunny-glow`} aria-hidden="true">⛅</span>
             <div>
-              <h1 className="text-3xl font-bold text-white">Salar Weather</h1>
-              <p className="text-[var(--text-muted)] mt-1">Global city weather, beautifully presented.</p>
+              <h1 className={styles.title}>Salar Weather</h1>
+              <p className={styles.tagline}>Global city weather, beautifully presented.</p>
             </div>
           </div>
-          <p className="text-[#c8dae7] leading-relaxed max-w-2xl">
+          <p className={styles.lead}>
             A fast, accessible weather app built with Next.js 16. Search any city on earth,
             explore an interactive world map, browse all 250 countries and their cities,
             and get detailed daily forecasts with hourly breakdowns, outdoor activity scores,
@@ -90,49 +89,44 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* Features */}
-        <section className="mb-10">
-          <h2 className="text-white font-semibold text-lg mb-4">Features</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Features</h2>
+          <div className={styles.featureGrid}>
             {FEATURES.map((f) => (
-              <div key={f.title} className="bg-[#162535] rounded-lg p-4 flex gap-3">
-                <span className="text-xl shrink-0" aria-hidden="true">{f.icon}</span>
+              <div key={f.title} className={styles.featureCard}>
+                <span className={styles.featureIcon} aria-hidden="true">{f.icon}</span>
                 <div>
-                  <p className="text-white text-sm font-semibold mb-0.5">{f.title}</p>
-                  <p className="text-[var(--text-muted)] text-xs leading-relaxed">{f.desc}</p>
+                  <p className={styles.featureTitle}>{f.title}</p>
+                  <p className={styles.featureDesc}>{f.desc}</p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Data sources */}
-        <section className="mb-10">
-          <h2 className="text-white font-semibold text-lg mb-4">Data Sources</h2>
-          <div className="space-y-3">
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Data Sources</h2>
+          <div className={styles.sourceList}>
             {DATA_SOURCES.map((src) => (
-              <div key={src.name} className="bg-[#162535] rounded-lg p-4 flex items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-white text-sm font-semibold">{src.name}</span>
-                    <span className="text-[10px] bg-[#1c3450] text-[var(--text-accent)] px-2 py-0.5 rounded-full">
-                      {src.badge}
-                    </span>
+              <div key={src.name} className={styles.sourceCard}>
+                <div className={styles.sourceBody}>
+                  <div className={styles.sourceHead}>
+                    <span className={styles.sourceName}>{src.name}</span>
+                    <span className={styles.sourceBadge}>{src.badge}</span>
                   </div>
-                  <p className="text-[var(--text-muted)] text-xs leading-relaxed">{src.description}</p>
+                  <p className={styles.sourceDesc}>{src.description}</p>
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-[var(--text-muted)] text-xs mt-4">
+          <p className={styles.note}>
             No API keys are required. All data is fetched server-side with ISR caching (weather: 30 min, country/city data: 24 h).
           </p>
         </section>
 
-        {/* Tech stack */}
-        <section className="mb-10">
-          <h2 className="text-white font-semibold text-lg mb-4">Built with</h2>
-          <div className="flex flex-wrap gap-2">
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Built with</h2>
+          <div className={styles.techRow}>
             {[
               "Next.js 16 App Router",
               "TypeScript",
@@ -142,32 +136,22 @@ export default function AboutPage() {
               "Vitest",
               "Geist Font",
             ].map((tech) => (
-              <span key={tech} className="bg-[#162535] border border-[#2a4055] text-[#c8dae7] text-xs px-3 py-1.5 rounded-full">
-                {tech}
-              </span>
+              <span key={tech} className={styles.techChip}>{tech}</span>
             ))}
           </div>
         </section>
 
-        {/* Security note */}
-        <section className="mb-10">
-          <h2 className="text-white font-semibold text-lg mb-3">Security</h2>
-          <div className="bg-[#162535] rounded-lg p-4 text-[var(--text-muted)] text-sm leading-relaxed">
-            <p>All API route inputs are validated and sanitised. HTTP security headers are set on every response (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy). Recent city searches are stored only in your browser&apos;s <code className="bg-[#1c2f3f] px-1 rounded text-xs">localStorage</code> — no data leaves your device.</p>
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitleTight}>Security</h2>
+          <div className={styles.securityBox}>
+            <p>All API route inputs are validated and sanitised. HTTP security headers are set on every response (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy). Recent city searches are stored only in your browser&apos;s <code className={styles.code}>localStorage</code> — no data leaves your device.</p>
           </div>
         </section>
 
-        {/* Navigation */}
-        <div className="flex flex-wrap gap-3 justify-center pt-4 border-t border-[#1e3347]">
-          <Link href="/" className="bg-[#2f6fb5] hover:bg-[#2d6fb8] text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">
-            Search weather
-          </Link>
-          <Link href="/countries" className="bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
-            Browse countries
-          </Link>
-          <Link href="/map" className="bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
-            World map
-          </Link>
+        <div className={styles.nav}>
+          <Link href="/" className={styles.navPrimary}>Search weather</Link>
+          <Link href="/countries" className={styles.navSecondary}>Browse countries</Link>
+          <Link href="/map" className={styles.navSecondary}>World map</Link>
         </div>
       </main>
 

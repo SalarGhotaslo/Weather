@@ -1,0 +1,41 @@
+@reference "../globals.css";
+
+.footer {
+  @apply bg-[#0c1520] border-t border-[#1e3347] mt-auto;
+}
+
+.inner {
+  @apply mx-auto max-w-5xl px-4 py-6;
+}
+
+.cols {
+  @apply grid grid-cols-2 gap-6 sm:grid-cols-4 mb-6 text-xs;
+}
+
+.colTitle {
+  @apply text-[var(--text-accent)] font-semibold mb-2 uppercase tracking-wider;
+}
+
+.list {
+  @apply space-y-1.5 text-[var(--text-muted)];
+}
+
+.listFaint {
+  @apply space-y-1.5 text-[var(--text-faint)];
+}
+
+.link {
+  @apply hover:text-white transition-colors;
+}
+
+.faint {
+  @apply text-[var(--text-faint)];
+}
+
+.bottom {
+  @apply border-t border-[#1e3347] pt-4 flex items-center justify-between flex-wrap gap-2;
+}
+
+.copyright {
+  @apply text-[var(--text-faint)] text-xs;
+}

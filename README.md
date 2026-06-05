@@ -32,10 +32,21 @@ Open [http://localhost:3000](http://localhost:3000).
 |---------|-------------|
 | `npm run dev` | Start dev server with hot reload |
 | `npm run build` | Production build + type check |
-| `npm run test` | Run Vitest unit tests (233 tests) |
+| `npm run test` | Run Vitest unit tests (282 tests) |
 | `npm run test:watch` | Tests in watch mode |
+| `npm run test:coverage` | Vitest with v8 coverage + 80% gate (logic layer) |
+| `npm run typecheck` | `tsc --noEmit` |
 | `npm run test:a11y` | Run the Playwright + axe accessibility gate (requires a build first) |
 | `npm run lint` | ESLint |
+| `npm run audit:ci` | `npm audit` (prod deps, fails on high+ severity) |
+| `npm run verify` | lint + typecheck + tests/coverage + audit (the pre-push gate) |
+| `npm run verify:a11y` | build + axe accessibility scan |
+
+### Pre-push gate (husky)
+
+`git push` runs `verify` (lint, typecheck, tests + 80% coverage, dependency audit) and
+then a production build + axe accessibility scan across 6 routes. Skip the slow a11y step
+with `SKIP_A11Y=1 git push`. A lighter `pre-commit` hook runs lint only.
 
 ## Tech stack
 
@@ -43,9 +54,11 @@ Open [http://localhost:3000](http://localhost:3000).
 |-------|-----------|
 | Framework | Next.js 16 (App Router, Server Components, ISR) |
 | Language | TypeScript |
-| Styling | Tailwind CSS v4 + custom CSS keyframe animations |
+| Styling | Tailwind CSS v4 + CSS Modules (`@apply`) + custom keyframe animations |
+| i18n | next-intl (phase 1 — single-locale scaffold) |
 | Map | react-simple-maps + d3-geo + topojson-client |
-| Testing | Vitest |
+| Testing | Vitest (+ v8 coverage) · Playwright + axe (a11y) |
+| Quality gates | husky pre-commit (lint) + pre-push (verify + a11y) |
 | Fonts | Geist (via `next/font`) |
 
 ## Data sources
@@ -77,16 +90,21 @@ src/
 │   │   ├── AppFooter.tsx         Shared footer
 │   │   ├── ShareButton.tsx       navigator.share / clipboard
 │   │   └── TimeGradient.tsx      Time-of-day gradient overlay
-│   ├── day/[index]/page.tsx      Day detail page
+│   ├── home/                     Home page pieces + homeView view-model
+│   ├── day/[index]/              Day detail page + dayView view-model + cards
 │   ├── countries/                Countries browser + country detail
 │   ├── map/page.tsx              World map page
 │   ├── about/page.tsx            About page
-│   └── api/                      API routes (cities, city-markers)
+│   └── api/                      Rate-limited API routes (cities, current, city-markers)
 ├── lib/
 │   ├── weather.ts                All weather utilities + types
-│   ├── weather.test.ts           163 Vitest tests
-│   └── countries.ts              Country data utilities
-next.config.ts                    CSP headers + transpilePackages
+│   ├── cityMarkers.ts            Map-marker fan-out orchestration
+│   ├── rateLimit.ts              In-memory fixed-window rate limiter
+│   ├── countries.ts              Country data utilities
+│   └── *.test.ts                 Vitest unit tests (282 total, 80%+ logic coverage)
+├── i18n/request.ts               next-intl request config (single locale)
+messages/en.json                  UI string catalogue
+next.config.ts                    CSP headers + transpilePackages + next-intl plugin
 ```
 
 ## Security
@@ -94,4 +112,6 @@ next.config.ts                    CSP headers + transpilePackages
 - **Content-Security-Policy** restricts `connect-src` to the six data APIs; `frame-ancestors`, `base-uri`, and `form-action` all locked to `'self'`
 - **Coordinate validation** — `validateCoord()` rejects NaN, Infinity, and out-of-range values before any API call
 - **API param validation** — `country` query param must match `^[\p{L}\s\-'.()]+$`, max 100 chars
+- **Rate limiting** — every `/api/*` route is rate-limited per client (60/min, or 15/min for the heavier map fan-out) returning `429` + `Retry-After`
+- **Dependency audit** — `npm run audit:ci` gates pushes; an `overrides` pin patches a transitive react-simple-maps advisory
 - Server Components by default — no secrets exposed to the client

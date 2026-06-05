@@ -1,0 +1,91 @@
+@reference "../../globals.css";
+
+.panel {
+  @apply bg-[#121f2f] border-t lg:border-t-0 lg:border-l border-[#1e3347] flex flex-col lg:w-72 xl:w-80;
+  height: 45vh;
+}
+
+.header {
+  @apply p-4 border-b border-[#1e3347] shrink-0;
+}
+
+.title {
+  @apply text-white font-semibold text-sm;
+}
+
+.count {
+  @apply text-[var(--text-muted)] text-xs mt-0.5;
+}
+
+.filterWrap {
+  @apply p-3 border-b border-[#1e3347] shrink-0;
+}
+
+.input {
+  @apply w-full bg-[#1c2f3f] border border-[#2a4055] rounded px-3 py-1.5 text-white placeholder-[#5a7d99] text-xs focus:outline-none focus:border-[#3b87d6] transition-colors;
+}
+
+.list {
+  @apply flex-1 overflow-y-auto;
+}
+
+.skeletonWrap {
+  @apply p-4 space-y-2;
+}
+
+.skelItem {
+  @apply h-7 bg-[#162535] rounded animate-pulse;
+}
+
+.cityBtn {
+  @apply block w-full text-left px-4 py-2 text-[var(--text-muted)] hover:text-white hover:bg-[#162535] text-xs transition-colors border-b border-[#1e3347]/40 last:border-0;
+}
+
+.note {
+  @apply text-[var(--text-muted)] text-xs text-center py-3 px-4;
+}
+
+.message {
+  @apply p-4 text-[var(--text-muted)] text-xs;
+}
+
+.footer {
+  @apply shrink-0 border-t border-[#1e3347] p-3;
+}
+
+.footerLink {
+  @apply block text-center text-[var(--text-accent)] hover:text-white text-xs py-1.5 transition-colors;
+}
+
+/* Empty state */
+.emptyWrap {
+  @apply flex-1 flex items-center justify-center p-6;
+}
+
+.emptyInner {
+  @apply text-center;
+}
+
+.emptyEmoji {
+  @apply text-3xl mb-3;
+}
+
+.emptyTitle {
+  @apply text-[var(--text-muted)] text-sm font-medium;
+}
+
+.emptyLine {
+  @apply text-[var(--text-muted)] text-xs;
+}
+
+.emptyLineTight {
+  @apply text-[var(--text-muted)] text-xs mt-1;
+}
+
+.emptyLineTighter {
+  @apply text-[var(--text-muted)] text-xs mt-0.5;
+}
+
+.emptyLink {
+  @apply mt-4 inline-block text-[var(--text-accent)] hover:text-white text-xs transition-colors;
+}

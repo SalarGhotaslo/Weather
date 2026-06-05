@@ -1,0 +1,66 @@
+@reference "../../globals.css";
+
+.card {
+  @apply bg-[var(--card-bg)] rounded-xl p-6 mb-3;
+}
+
+.top {
+  @apply flex items-start justify-between;
+}
+
+.temp {
+  @apply text-[68px] font-light text-white leading-none tracking-tight;
+}
+
+.labelRow {
+  @apply flex items-baseline gap-3 mt-2;
+}
+
+.label {
+  @apply text-lg text-white font-medium;
+}
+
+.range {
+  @apply text-[var(--text-muted)] text-sm mt-1;
+}
+
+.rangeHigh {
+  @apply text-white font-semibold;
+}
+
+.emoji {
+  @apply text-[72px] leading-none;
+}
+
+/* Right now */
+.now {
+  @apply mt-4 pt-4 border-t border-[#1e3347];
+}
+
+.nowHead {
+  @apply flex items-center gap-2 mb-2;
+}
+
+.nowTitle {
+  @apply text-white text-sm font-medium;
+}
+
+.nowMeta {
+  @apply text-[var(--text-muted)] text-xs;
+}
+
+.nowStats {
+  @apply flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm;
+}
+
+.nowTemp {
+  @apply text-white font-semibold text-lg;
+}
+
+.nowMuted {
+  @apply text-[var(--text-muted)];
+}
+
+.nowStrong {
+  @apply text-white;
+}

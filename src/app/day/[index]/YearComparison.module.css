@@ -1,0 +1,42 @@
+@reference "../../globals.css";
+
+.card {
+  @apply bg-[var(--card-bg)] rounded-xl p-5 mb-3;
+}
+
+.title {
+  @apply text-white font-semibold mb-1;
+}
+
+.subtitle {
+  @apply text-[var(--text-muted)] text-xs mb-4;
+}
+
+.grid {
+  @apply grid grid-cols-3 gap-3;
+}
+
+.empty {
+  @apply text-[var(--text-muted)] text-sm;
+}
+
+/* YoY tile */
+.tile {
+  @apply bg-[var(--card-bg-alt)] rounded-xl p-4 flex flex-col gap-1.5;
+}
+
+.tileHead {
+  @apply flex items-center gap-1.5 text-[var(--text-muted)] text-[10px] uppercase tracking-wider;
+}
+
+.tileValue {
+  @apply text-white font-bold text-2xl leading-none;
+}
+
+.tileDelta {
+  @apply flex items-center gap-1 text-sm font-semibold;
+}
+
+.tilePrior {
+  @apply text-[var(--text-faint)] text-[10px];
+}

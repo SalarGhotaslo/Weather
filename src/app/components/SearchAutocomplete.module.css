@@ -1,0 +1,73 @@
+@reference "../globals.css";
+
+.wrapper {
+  @apply relative;
+}
+
+.wrapperSmall {
+  @apply flex-1 flex gap-2;
+}
+
+.formLarge {
+  @apply flex gap-3;
+}
+
+.formSmall {
+  @apply contents;
+}
+
+.innerLarge {
+  @apply flex gap-3 flex-1;
+}
+
+.innerSmall {
+  @apply contents;
+}
+
+.inputLarge {
+  @apply flex-1 bg-[#1c2f3f] border border-[#2a4055] rounded-lg px-5 py-4 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-lg transition-colors;
+}
+
+.inputSmall {
+  @apply flex-1 min-w-0 bg-[#1c2f3f] border border-[#2a4055] rounded px-3 py-1.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors;
+}
+
+.buttonLarge {
+  @apply bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-7 py-4 rounded-lg font-semibold transition-colors text-lg whitespace-nowrap;
+}
+
+.buttonSmall {
+  @apply bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap;
+}
+
+.dropdown {
+  @apply absolute z-50 bg-[#162535] border border-[#2a4055] rounded-lg overflow-hidden shadow-xl;
+}
+
+.dropdownLarge {
+  @apply top-full mt-1 left-0 right-0;
+}
+
+.dropdownSmall {
+  @apply top-full mt-1 left-0 right-[72px];
+}
+
+.option {
+  @apply w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 transition-colors;
+}
+
+.optionActive {
+  @apply bg-[#1c3d6b] text-white;
+}
+
+.optionIdle {
+  @apply hover:bg-[#1c2f3f] text-white;
+}
+
+.optionName {
+  @apply text-sm truncate;
+}
+
+.optionCountry {
+  @apply text-[var(--text-muted)] text-xs shrink-0;
+}

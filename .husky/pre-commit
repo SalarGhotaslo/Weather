@@ -1,0 +1,3 @@
+# Fast feedback on commit — lint only. The heavyweight gate runs on pre-push.
+echo "▶ pre-commit: lint"
+npm run lint

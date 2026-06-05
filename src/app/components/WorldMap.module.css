@@ -1,0 +1,18 @@
+@reference "../globals.css";
+
+.layout {
+  @apply flex flex-col lg:flex-row flex-1 min-h-0;
+}
+
+.mapArea {
+  @apply relative flex-1 bg-[#0d1623] overflow-hidden;
+  min-height: 55vh;
+}
+
+.resetBtn {
+  @apply absolute top-3 left-3 z-10 bg-[#162535]/90 backdrop-blur-sm hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white text-xs px-3 py-1.5 rounded-lg transition-colors;
+}
+
+.hoverLabel {
+  @apply absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-[#162535]/90 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap;
+}

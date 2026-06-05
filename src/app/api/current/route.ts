@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 import { normalizeCountryName } from "@/lib/countries";
+import { enforceRateLimit, rateLimitHeaders } from "@/lib/rateLimit";
 
 // Current conditions + local timezone for a single location, used by the world
 // map's inline weather card. Three input modes (checked in order):
@@ -109,7 +110,14 @@ async function fetchWeather(
   }
 }
 
+// 60 requests / minute per client. Each call can trigger geocode + forecast
+// fan-out upstream, so the cap protects those free APIs.
+const RATE_LIMIT = { limit: 60, windowMs: 60_000 };
+
 export async function GET(request: NextRequest) {
+  const { limited, result } = enforceRateLimit(request, RATE_LIMIT, "current");
+  if (limited) return limited;
+
   const sp = request.nextUrl.searchParams;
   const lat = validCoord(sp.get("lat"), 90);
   const lon = validCoord(sp.get("lon"), 180);
@@ -156,6 +164,7 @@ export async function GET(request: NextRequest) {
   return Response.json(payload, {
     headers: {
       "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600",
+      ...rateLimitHeaders(result),
     },
   });
 }

@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
+  describePollenLevel,
+  getDayPollen,
+  describeUsAqi,
+  getDayAqi,
+  buildAirQualityUrl,
+  describeWind,
+  getDayAverages,
+  type AirQualityResponse,
   validateCoord,
   getDaylightInfo,
   getWeatherScore,
@@ -1229,5 +1237,128 @@ describe("getTimeOfDayLabel", () => {
     expect(getTimeOfDayLabel(15)).toBe("Afternoon");
     expect(getTimeOfDayLabel(19)).toBe("Evening");
     expect(getTimeOfDayLabel(23)).toBe("Night");
+  });
+});
+
+describe("describeWind", () => {
+  it("gives one consistent descriptor across the speed bands", () => {
+    expect(describeWind(5)).toBe("calm");
+    expect(describeWind(14)).toBe("light breeze");
+    expect(describeWind(20)).toBe("gentle breeze");
+    expect(describeWind(30)).toBe("breezy");
+    expect(describeWind(50)).toBe("windy");
+  });
+});
+
+describe("getDayAverages", () => {
+  const hourly = {
+    time: ["2026-06-05T00:00", "2026-06-05T12:00", "2026-06-06T00:00"],
+    relative_humidity_2m: [60, 80, 30],
+    surface_pressure: [1010, 1014, 990],
+  } as unknown as HourlyForecastResponse["hourly"];
+
+  it("means humidity + pressure over the matching date's hours", () => {
+    expect(getDayAverages(hourly, "2026-06-05")).toEqual({ humidity: 70, pressure: 1012 });
+  });
+
+  it("returns nulls when the series is missing", () => {
+    const empty = { time: ["2026-06-05T00:00"] } as unknown as HourlyForecastResponse["hourly"];
+    expect(getDayAverages(empty, "2026-06-05")).toEqual({ humidity: null, pressure: null });
+  });
+});
+
+describe("describePollenLevel", () => {
+  it("bands grains/m³ into risk levels", () => {
+    expect(describePollenLevel(0).label).toBe("None");
+    expect(describePollenLevel(10).label).toBe("Low");
+    expect(describePollenLevel(30).label).toBe("Moderate");
+    expect(describePollenLevel(80).label).toBe("High");
+    expect(describePollenLevel(300).label).toBe("Very High");
+  });
+
+  it("treats the band edges correctly", () => {
+    expect(describePollenLevel(20).label).toBe("Moderate");
+    expect(describePollenLevel(50).label).toBe("High");
+    expect(describePollenLevel(150).label).toBe("Very High");
+  });
+});
+
+describe("buildAirQualityUrl", () => {
+  it("targets the air-quality API with pollen + aqi + pm2.5 vars", () => {
+    const url = buildAirQualityUrl(51.5, -0.1, "Europe/London");
+    expect(url).toContain("air-quality-api.open-meteo.com");
+    expect(url).toContain("grass_pollen");
+    expect(url).toContain("us_aqi");
+    expect(url).toContain("pm2_5");
+    expect(url).toContain("timezone=Europe%2FLondon");
+  });
+});
+
+describe("describeUsAqi", () => {
+  it("bands the US AQI into EPA categories", () => {
+    expect(describeUsAqi(20).label).toBe("Good");
+    expect(describeUsAqi(75).label).toBe("Moderate");
+    expect(describeUsAqi(120).label).toBe("Unhealthy for sensitive");
+    expect(describeUsAqi(180).label).toBe("Unhealthy");
+    expect(describeUsAqi(250).label).toBe("Very unhealthy");
+    expect(describeUsAqi(400).label).toBe("Hazardous");
+  });
+});
+
+describe("getDayAqi", () => {
+  const data: AirQualityResponse = {
+    hourly: {
+      time: ["2026-06-05T00:00", "2026-06-05T12:00", "2026-06-06T12:00"],
+      us_aqi: [30, 72, 110],
+      pm2_5: [5, 14, 40],
+    },
+  };
+
+  it("returns the daily-max AQI + PM2.5 at the peak hour", () => {
+    expect(getDayAqi(data, "2026-06-05")).toEqual({
+      aqi: 72, pm25: 14, label: "Moderate", tip: expect.any(String),
+    });
+  });
+
+  it("returns null when the date is outside the window", () => {
+    expect(getDayAqi(data, "2030-01-01")).toBeNull();
+  });
+
+  it("returns null when there is no us_aqi series", () => {
+    expect(getDayAqi({ hourly: { time: ["2026-06-05T00:00"] } }, "2026-06-05")).toBeNull();
+  });
+});
+
+describe("getDayPollen", () => {
+  const data: AirQualityResponse = {
+    hourly: {
+      time: ["2026-06-05T00:00", "2026-06-05T12:00", "2026-06-06T12:00"],
+      grass_pollen: [10, 60, 5],
+      birch_pollen: [2, 3, 1],
+      alder_pollen: [null, null, null],
+      mugwort_pollen: [0, 0, 0],
+      olive_pollen: [0, 0, 0],
+      ragweed_pollen: [0, 0, 0],
+    },
+  };
+
+  it("returns the dominant type + daily-max reading for the date", () => {
+    const info = getDayPollen(data, "2026-06-05");
+    expect(info).toEqual({ dominant: "Grass", value: 60, label: "High", tip: expect.any(String) });
+  });
+
+  it("returns null when the date is outside the forecast window", () => {
+    expect(getDayPollen(data, "2026-12-25")).toBeNull();
+  });
+
+  it("returns null when there is no pollen coverage (all null)", () => {
+    const noData: AirQualityResponse = {
+      hourly: { time: ["2026-06-05T00:00"], grass_pollen: [null], birch_pollen: [null] },
+    };
+    expect(getDayPollen(noData, "2026-06-05")).toBeNull();
+  });
+
+  it("returns null when the response has no hourly data", () => {
+    expect(getDayPollen({}, "2026-06-05")).toBeNull();
   });
 });

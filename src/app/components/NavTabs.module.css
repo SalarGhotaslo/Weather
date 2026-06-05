@@ -1,0 +1,17 @@
+@reference "../globals.css";
+
+.nav {
+  @apply flex items-center;
+}
+
+.tab {
+  @apply px-4 py-3 text-sm font-medium transition-colors border-b-2;
+}
+
+.tabActive {
+  @apply text-white border-[#3b87d6];
+}
+
+.tabInactive {
+  @apply text-[var(--text-muted)] border-transparent hover:text-white hover:border-[#2a4055];
+}

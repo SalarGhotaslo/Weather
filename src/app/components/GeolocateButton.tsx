@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./GeolocateButton.module.css";
 
 export default function GeolocateButton() {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
@@ -27,22 +28,18 @@ export default function GeolocateButton() {
   };
 
   if (state === "error") {
-    return (
-      <p className="text-[var(--text-muted)] text-xs mt-3 text-center">
-        Location access denied or unavailable.
-      </p>
-    );
+    return <p className={styles.error}>Location access denied or unavailable.</p>;
   }
 
   return (
     <button
       onClick={handleClick}
       disabled={state === "loading"}
-      className="mt-3 w-full text-center text-[var(--text-muted)] hover:text-white text-sm py-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+      className={styles.button}
       aria-label="Get weather for my current location"
     >
       {state === "loading" ? (
-        <span className="animate-pulse">Detecting location…</span>
+        <span className={styles.loading}>Detecting location…</span>
       ) : (
         <>
           <span aria-hidden="true">📍</span>

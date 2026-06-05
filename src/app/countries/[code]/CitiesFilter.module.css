@@ -1,0 +1,29 @@
+@reference "../../globals.css";
+
+.filterBlock {
+  @apply mb-4;
+}
+
+.input {
+  @apply w-full bg-[#1c2f3f] border border-[#2a4055] rounded-lg px-4 py-2.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors;
+}
+
+.note {
+  @apply text-[var(--text-muted)] text-xs mt-2;
+}
+
+.grid {
+  @apply grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6;
+}
+
+.cityLink {
+  @apply bg-[#162535] hover:bg-[#1c2f3f] rounded-lg px-3 py-2 text-sm text-white hover:text-[var(--text-accent)] transition-colors truncate text-center;
+}
+
+.empty {
+  @apply text-[var(--text-muted)] text-sm;
+}
+
+.more {
+  @apply text-[var(--text-muted)] text-xs mt-4 text-center;
+}

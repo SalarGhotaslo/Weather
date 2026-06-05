@@ -1,0 +1,22 @@
+@reference "../globals.css";
+
+/* Fades in when the parent stat card (a literal global `.group`) is hovered.
+   The relationship is written explicitly because `group-hover:` inside @apply
+   does not reliably emit the ancestor-hover combinator. */
+.bubble {
+  @apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#0e1723] border border-[#2a4055] text-[#c8dae7] text-[10px] leading-relaxed px-3 py-2 rounded-lg opacity-0 transition-opacity pointer-events-none z-20 shadow-lg;
+}
+
+/* Separate single-selector rules — a comma-joined :global() list compiles to a
+   malformed selector under Next's CSS-modules transform. */
+:global(.group):hover .bubble {
+  @apply opacity-100;
+}
+
+:global(.group):focus-within .bubble {
+  @apply opacity-100;
+}
+
+.arrow {
+  @apply absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#2a4055];
+}

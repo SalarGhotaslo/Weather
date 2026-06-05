@@ -1,0 +1,25 @@
+# Pre-push gate — runs the full quality + security scan before code leaves the
+# machine. Fails the push (non-zero exit) if anything fails.
+#
+#   1. lint        — ESLint
+#   2. typecheck   — tsc --noEmit
+#   3. test        — Vitest unit tests + 80% coverage threshold
+#   4. audit       — npm audit (production deps, high+ severity)
+#   5. a11y        — production build + axe accessibility scan (6 routes)
+#
+# The a11y step builds + boots the app, so it's the slow one. Skip it for quick
+# iteration with:  SKIP_A11Y=1 git push
+
+set -e
+
+echo "▶ pre-push: lint · typecheck · tests+coverage · audit"
+npm run verify
+
+if [ "$SKIP_A11Y" = "1" ]; then
+  echo "⚠ pre-push: skipping accessibility scan (SKIP_A11Y=1)"
+else
+  echo "▶ pre-push: accessibility scan (build + axe) — set SKIP_A11Y=1 to skip"
+  npm run verify:a11y
+fi
+
+echo "✓ pre-push: all checks passed"

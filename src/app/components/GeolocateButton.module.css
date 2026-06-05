@@ -1,0 +1,13 @@
+@reference "../globals.css";
+
+.error {
+  @apply text-[var(--text-muted)] text-xs mt-3 text-center;
+}
+
+.button {
+  @apply mt-3 w-full text-center text-[var(--text-muted)] hover:text-white text-sm py-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-60;
+}
+
+.loading {
+  @apply animate-pulse;
+}

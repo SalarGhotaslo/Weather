@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./ShareButton.module.css";
 
 export default function ShareButton({ url, title }: { url: string; title: string }) {
   const [state, setState] = useState<"idle" | "copied" | "error">("idle");
@@ -20,16 +21,12 @@ export default function ShareButton({ url, title }: { url: string; title: string
     }
   };
 
+  const tone = state === "copied" ? styles.copied : state === "error" ? styles.error : styles.idle;
+
   return (
     <button
       onClick={handleShare}
-      className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
-        state === "copied"
-          ? "bg-green-500/20 border-green-500/40 text-green-400"
-          : state === "error"
-            ? "bg-red-500/10 border-red-500/30 text-red-400"
-            : "bg-[#162535] border-[#2a4055] text-[var(--text-muted)] hover:text-white hover:border-[#3b87d6]"
-      }`}
+      className={`${styles.button} ${tone}`}
       aria-label="Share or copy forecast link"
     >
       <span aria-hidden="true">{state === "copied" ? "✓" : "🔗"}</span>

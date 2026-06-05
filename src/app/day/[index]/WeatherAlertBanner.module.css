@@ -1,0 +1,33 @@
+@reference "../../globals.css";
+
+.banner {
+  @apply rounded-xl p-4 mb-3 flex items-start gap-3;
+}
+
+.warning {
+  @apply bg-red-900/30 border border-red-500/40;
+}
+
+.advisory {
+  @apply bg-amber-900/20 border border-amber-500/30;
+}
+
+.icon {
+  @apply text-2xl shrink-0;
+}
+
+.title {
+  @apply text-sm font-semibold mb-0.5;
+}
+
+.titleWarning {
+  @apply text-red-300;
+}
+
+.titleAdvisory {
+  @apply text-amber-300;
+}
+
+.message {
+  @apply text-[#c8dae7] text-xs leading-relaxed;
+}

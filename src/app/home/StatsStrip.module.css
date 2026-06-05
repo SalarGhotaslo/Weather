@@ -1,0 +1,30 @@
+@reference "../globals.css";
+
+.grid {
+  @apply grid grid-cols-2 gap-2 mb-6 sm:grid-cols-3 lg:grid-cols-6;
+}
+
+/* `group` added literally in JSX for the StatTooltip group-hover. */
+.card {
+  @apply bg-[var(--card-bg)] rounded-lg px-4 py-3 relative;
+}
+
+.label {
+  @apply text-[var(--text-muted)] text-xs mb-1;
+}
+
+.valueRow {
+  @apply flex items-center gap-1.5;
+}
+
+.icon {
+  @apply text-base;
+}
+
+.value {
+  @apply text-white font-semibold text-sm;
+}
+
+.sub {
+  @apply text-[var(--text-muted)] text-[10px] mt-0.5;
+}

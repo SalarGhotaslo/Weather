@@ -1,0 +1,61 @@
+@reference "../../globals.css";
+
+.grid {
+  @apply grid grid-cols-2 gap-2 mb-6 sm:grid-cols-3;
+}
+
+/* `group` is added as a literal class in JSX — it's a Tailwind variant marker
+   for the StatTooltip's group-hover and can't be @applied or module-scoped. */
+.card {
+  @apply bg-[var(--card-bg-alt)] rounded-lg px-4 py-3 relative;
+}
+
+.cardLabel {
+  @apply text-[var(--text-muted)] text-xs mb-2 flex items-center gap-1;
+}
+
+.cardValue {
+  @apply text-white font-semibold text-sm;
+}
+
+.cardSub {
+  @apply text-[var(--text-muted)] text-xs mt-0.5;
+}
+
+/* UV meter */
+.uvMeter {
+  @apply mt-2;
+}
+
+.uvTrack {
+  @apply h-1.5 bg-[#1e3347] rounded-full overflow-hidden;
+}
+
+.uvFill {
+  @apply h-full rounded-full;
+}
+
+.uvScale {
+  @apply flex justify-between text-[8px] text-[var(--text-faint)] mt-0.5;
+}
+
+/* Daylight bar */
+.daylight {
+  @apply mt-3 pt-3 border-t border-[#1e3347];
+}
+
+.daylightHead {
+  @apply flex justify-between text-xs text-[var(--text-muted)] mb-1.5;
+}
+
+.daylightTrack {
+  @apply relative h-2.5 bg-[#0e1723] rounded-full overflow-hidden;
+}
+
+.daylightFill {
+  @apply absolute h-full rounded-full;
+}
+
+.daylightScale {
+  @apply flex justify-between text-[9px] text-[var(--text-faint)] mt-0.5;
+}

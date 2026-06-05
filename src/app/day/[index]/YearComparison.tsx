@@ -1,4 +1,5 @@
-import { tempDiffDescription, type HistoricalDay } from "@/lib/weather";
+import { type HistoricalDay } from "@/lib/weather";
+import styles from "./YearComparison.module.css";
 
 // One year-over-year tile: current value + colour-coded delta + prior-year value.
 function YoyStat({
@@ -19,6 +20,7 @@ function YoyStat({
   const diff = +(current - historical).toFixed(1);
   const isUp = diff > 0.05;
   const isDown = diff < -0.05;
+  // Dynamic colour stays a literal Tailwind utility appended to the module class.
   const deltaColor = !isUp && !isDown
     ? "text-[var(--text-muted)]"
     : higherWarmer
@@ -28,19 +30,19 @@ function YoyStat({
   const diffStr = isUp ? `+${diff}` : isDown ? `${diff}` : "±0";
 
   return (
-    <div className="bg-[var(--card-bg-alt)] rounded-xl p-4 flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+    <div className={styles.tile}>
+      <div className={styles.tileHead}>
         <span>{icon}</span>
         <span>{label}</span>
       </div>
-      <div className="text-white font-bold text-2xl leading-none">
+      <div className={styles.tileValue}>
         {current % 1 === 0 ? Math.round(current) : current.toFixed(1)}{unit}
       </div>
-      <div className={`flex items-center gap-1 text-sm font-semibold ${deltaColor}`}>
+      <div className={`${styles.tileDelta} ${deltaColor}`}>
         <span>{arrow}</span>
         <span>{!isUp && !isDown ? "same" : `${diffStr}${unit}`}</span>
       </div>
-      <div className="text-[var(--text-faint)] text-[10px]">
+      <div className={styles.tilePrior}>
         {historical % 1 === 0 ? Math.round(historical) : historical.toFixed(1)}{unit} last year
       </div>
     </div>
@@ -61,28 +63,18 @@ export default function YearComparison({
   historical: HistoricalDay | null;
 }) {
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
-      <h2 className="text-white font-semibold mb-1">Compared to Last Year</h2>
-      <p className="text-[var(--text-muted)] text-xs mb-4">Same date, one year ago</p>
+    <div className={styles.card}>
+      <h2 className={styles.title}>Compared to Last Year</h2>
+      <p className={styles.subtitle}>Same date, one year ago</p>
 
       {historical ? (
-        <>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <YoyStat label="Max Temp" icon="🌡️" current={maxTemp} historical={historical.temperature_2m_max} unit="°C" higherWarmer />
-            <YoyStat label="Min Temp" icon="❄️" current={minTemp} historical={historical.temperature_2m_min} unit="°C" higherWarmer />
-            <YoyStat label="Rainfall" icon="🌧️" current={precip} historical={historical.precipitation_sum} unit="mm" higherWarmer={false} />
-          </div>
-          <div className="pt-3 border-t border-[#1e3347] flex items-center gap-2">
-            <span className="text-[var(--text-muted)] text-sm">Verdict:</span>
-            <span className="text-white text-sm font-medium">
-              {tempDiffDescription(maxTemp, historical.temperature_2m_max)}
-            </span>
-          </div>
-        </>
+        <div className={styles.grid}>
+          <YoyStat label="Max Temp" icon="🌡️" current={maxTemp} historical={historical.temperature_2m_max} unit="°C" higherWarmer />
+          <YoyStat label="Min Temp" icon="❄️" current={minTemp} historical={historical.temperature_2m_min} unit="°C" higherWarmer />
+          <YoyStat label="Rainfall" icon="🌧️" current={precip} historical={historical.precipitation_sum} unit="mm" higherWarmer={false} />
+        </div>
       ) : (
-        <p className="text-[var(--text-muted)] text-sm">
-          Historical data unavailable for this date.
-        </p>
+        <p className={styles.empty}>Historical data unavailable for this date.</p>
       )}
     </div>
   );

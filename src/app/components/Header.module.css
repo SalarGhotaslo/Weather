@@ -1,0 +1,21 @@
+@reference "../globals.css";
+
+.header {
+  @apply bg-[#121f2f] border-b border-[#1e3347];
+}
+
+.inner {
+  @apply mx-auto max-w-5xl px-4 flex items-center gap-4;
+}
+
+.brand {
+  @apply shrink-0 py-3;
+}
+
+.brandText {
+  @apply text-white font-semibold text-sm tracking-wide transition-colors;
+}
+
+.searchWrap {
+  @apply flex-1 py-2 flex;
+}

@@ -1,4 +1,5 @@
 import { getCityHour } from "@/lib/weather";
+import styles from "./TimeGradient.module.css";
 
 const TIME_GRADIENTS: Record<string, string> = {
   dawn:      "linear-gradient(135deg, rgba(138,43,226,0.08) 0%, rgba(255,140,0,0.06) 50%, transparent 70%)",
@@ -32,7 +33,7 @@ export default function TimeGradient({
 
   return (
     <div
-      className={`pointer-events-none absolute inset-0 rounded-xl ${className}`}
+      className={`${styles.overlay} ${className}`}
       style={{ background: gradient }}
       aria-hidden="true"
     />

@@ -9,28 +9,41 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
     "test:a11y": "playwright test",
-    "test:a11y:install": "playwright install --with-deps chromium"
+    "test:a11y:install": "playwright install --with-deps chromium",
+    "audit:ci": "npm audit --omit=dev --audit-level=high",
+    "verify": "npm run lint && npm run typecheck && npm run test:coverage && npm run audit:ci",
+    "verify:a11y": "npm run build && npm run test:a11y",
+    "prepare": "husky"
   },
   "dependencies": {
     "next": "16.2.7",
+    "next-intl": "^4.13.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-simple-maps": "^3.0.0"
+  },
+  "overrides": {
+    "d3-color": "^3.1.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.60.0",
     "@rolldown/binding-darwin-arm64": "^1.0.3",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/d3-geo": "^3.1.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^3.2.6",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",

@@ -1,0 +1,93 @@
+@reference "../../globals.css";
+
+.card {
+  @apply bg-[var(--card-bg)] rounded-xl p-5 mb-3;
+}
+
+.title {
+  @apply text-white font-semibold mb-4 text-lg;
+}
+
+/* `scroll-fade-right` (custom global utility) is appended literally in JSX. */
+.scroll {
+  @apply overflow-x-auto -mx-1 px-1;
+}
+
+.track {
+  @apply flex gap-2 min-w-max;
+}
+
+.cellBase {
+  @apply flex flex-col items-center gap-2.5 py-4 px-3 rounded-xl min-w-[72px];
+}
+
+.cellNow {
+  @apply bg-[var(--card-bg-secondary)] ring-2 ring-[var(--accent-color)];
+}
+
+.cellNight {
+  @apply bg-[#0e1723]/70;
+}
+
+.cellDay {
+  @apply bg-[var(--card-bg-alt)];
+}
+
+.labelBase {
+  @apply text-[11px] font-semibold whitespace-nowrap;
+}
+
+.labelNow {
+  @apply text-[var(--text-accent)];
+}
+
+.labelNight {
+  @apply text-[var(--text-faint)];
+}
+
+.labelDay {
+  @apply text-[var(--text-muted)];
+}
+
+.emoji {
+  @apply text-2xl leading-none;
+}
+
+.tempBright {
+  @apply text-base font-bold text-white;
+}
+
+.tempDim {
+  @apply text-base font-bold text-[var(--text-faint)];
+}
+
+.precipRow {
+  @apply flex items-center gap-2;
+}
+
+/* `group` added literally in JSX for the rain tooltip's group-hover. */
+.precipBase {
+  @apply relative text-[11px] font-medium;
+}
+
+.tooltip {
+  @apply absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1c2f3f] text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap opacity-0 transition-opacity pointer-events-none z-10 shadow-lg;
+}
+
+/* Reveal on hover of the precip group (written explicitly — `group-hover:`
+   inside @apply doesn't reliably emit the ancestor-hover combinator). */
+:global(.group):hover .tooltip {
+  @apply opacity-100;
+}
+
+.windNow {
+  @apply text-[10px] text-[var(--text-muted)];
+}
+
+.windDim {
+  @apply text-[10px] text-[var(--text-faint)];
+}
+
+.legend {
+  @apply flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[var(--text-muted)] text-[10px];
+}

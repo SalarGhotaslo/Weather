@@ -1,0 +1,41 @@
+@reference "../globals.css";
+
+.shell {
+  @apply min-h-screen bg-[#0e1723] flex flex-col;
+}
+
+.errorMain {
+  @apply flex-1 flex items-center justify-center;
+}
+
+.errorText {
+  @apply text-[var(--text-muted)];
+}
+
+.main {
+  @apply mx-auto w-full max-w-5xl px-4 py-6 flex-1;
+}
+
+.breadcrumb {
+  @apply flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-4;
+}
+
+.crumbLink {
+  @apply hover:text-white transition-colors;
+}
+
+.crumbCurrent {
+  @apply text-[var(--text-muted)];
+}
+
+.headerBlock {
+  @apply mb-6;
+}
+
+.title {
+  @apply text-2xl font-bold text-white;
+}
+
+.subtitle {
+  @apply text-[var(--text-muted)] text-sm mt-1;
+}

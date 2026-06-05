@@ -1,0 +1,82 @@
+@reference "../globals.css";
+
+.bar {
+  @apply flex flex-col sm:flex-row gap-2 mb-6;
+}
+
+.input {
+  @apply flex-1 bg-[#162535] border border-[#2a4055] rounded-lg px-4 py-2.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors;
+}
+
+.select {
+  @apply bg-[#162535] border border-[#2a4055] rounded-lg px-3 py-2.5 text-[var(--text-muted)] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors;
+}
+
+.alphabet {
+  @apply flex flex-wrap gap-1 mb-5;
+}
+
+.alphaBtn {
+  @apply w-7 h-7 text-xs font-semibold rounded bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white transition-colors;
+}
+
+.resultCount {
+  @apply text-[var(--text-muted)] text-xs mb-4;
+}
+
+.empty {
+  @apply bg-[#162535] rounded-xl p-8 text-center;
+}
+
+.emptyEmoji {
+  @apply text-3xl mb-3;
+}
+
+.emptyText {
+  @apply text-[var(--text-muted)];
+}
+
+.clearBtn {
+  @apply mt-3 text-[var(--text-accent)] text-sm hover:text-white transition-colors;
+}
+
+.section {
+  @apply mb-8;
+}
+
+.sectionHead {
+  @apply flex items-center gap-3 mb-3;
+}
+
+.letter {
+  @apply text-[var(--text-accent)] font-bold text-lg w-6;
+}
+
+.rule {
+  @apply flex-1 h-px bg-[#1e3347];
+}
+
+.grid {
+  @apply grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4;
+}
+
+/* `group` added literally in JSX for the country-name group-hover. */
+.countryLink {
+  @apply flex items-center gap-2.5 bg-[#162535] hover:bg-[#1c2f3f] rounded-lg px-3 py-2.5 transition-colors;
+}
+
+.flag {
+  @apply text-xl shrink-0;
+}
+
+.countryName {
+  @apply text-white text-sm font-medium truncate transition-colors;
+}
+
+:global(.group):hover .countryName {
+  @apply text-[var(--text-accent)];
+}
+
+.capital {
+  @apply text-[var(--text-muted)] text-xs truncate;
+}

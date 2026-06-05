@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import styles from "./WorldMapLoader.module.css";
 
 const WorldMap = dynamic(() => import("./WorldMap"), { ssr: false });
 
 export default function WorldMapLoader() {
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className={styles.wrap}>
       <WorldMap />
     </div>
   );

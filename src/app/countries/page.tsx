@@ -4,6 +4,7 @@ import { getAllCountries, type Country } from "@/lib/countries";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
 import CountriesFilter from "./CountriesFilter";
+import styles from "./page.module.css";
 
 export const revalidate = 86400;
 
@@ -18,10 +19,10 @@ export default async function CountriesPage() {
     countries = await getAllCountries();
   } catch {
     return (
-      <div className="min-h-screen bg-[#0e1723] flex flex-col">
+      <div className={styles.shell}>
         <Header />
-        <main id="main-content" className="flex-1 flex items-center justify-center">
-          <p className="text-[var(--text-muted)]">Failed to load countries. Please try again later.</p>
+        <main id="main-content" className={styles.errorMain}>
+          <p className={styles.errorText}>Failed to load countries. Please try again later.</p>
         </main>
       </div>
     );
@@ -37,20 +38,19 @@ export default async function CountriesPage() {
   const letters = Object.keys(grouped).sort();
 
   return (
-    <div className="min-h-screen bg-[#0e1723] flex flex-col">
+    <div className={styles.shell}>
       <Header />
 
-      <main id="main-content" className="mx-auto w-full max-w-5xl px-4 py-6 flex-1">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-4">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
+      <main id="main-content" className={styles.main}>
+        <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+          <Link href="/" className={styles.crumbLink}>Home</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[var(--text-muted)]">Countries</span>
+          <span className={styles.crumbCurrent}>Countries</span>
         </nav>
 
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">All Countries</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+        <div className={styles.headerBlock}>
+          <h1 className={styles.title}>All Countries</h1>
+          <p className={styles.subtitle}>
             {countries.length} countries · search, filter by region, or click to browse cities
           </p>
         </div>

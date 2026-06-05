@@ -1,0 +1,19 @@
+/* @reference lets @apply resolve Tailwind utilities + theme tokens from the
+   global stylesheet (required for Tailwind v4 CSS Modules). */
+@reference "../globals.css";
+
+.card {
+  @apply bg-[var(--card-bg)] rounded-xl p-4 flex items-start gap-3;
+}
+
+.icon {
+  @apply text-2xl shrink-0;
+}
+
+.label {
+  @apply text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-1;
+}
+
+.fact {
+  @apply text-[#c8dae7] text-sm leading-relaxed;
+}

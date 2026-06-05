@@ -1,0 +1,90 @@
+@reference "../globals.css";
+
+.section {
+  @apply mb-6;
+}
+
+.head {
+  @apply flex items-center justify-between mb-3;
+}
+
+.heading {
+  @apply text-[var(--text-muted)] text-xs font-semibold uppercase tracking-widest;
+}
+
+.trendWarm {
+  @apply text-[10px] text-orange-400;
+}
+
+.trendCool {
+  @apply text-[10px] text-blue-400;
+}
+
+.trendSteady {
+  @apply text-[10px] text-[var(--text-muted)];
+}
+
+.grid {
+  @apply grid grid-cols-5 gap-2;
+}
+
+.dayToday {
+  @apply rounded-lg p-3 text-center flex flex-col items-center transition-colors bg-[var(--card-bg-secondary)] hover:bg-[#22405f];
+}
+
+.day {
+  @apply rounded-lg p-3 text-center flex flex-col items-center transition-colors bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)];
+}
+
+.dayNameToday {
+  @apply text-xs font-semibold mb-1 text-[var(--text-accent)];
+}
+
+.dayName {
+  @apply text-xs font-semibold mb-1 text-[var(--text-muted)];
+}
+
+.best {
+  @apply text-[9px] text-amber-400 mb-1;
+}
+
+.dayEmoji {
+  @apply text-2xl mb-2;
+}
+
+.max {
+  @apply text-white text-sm font-semibold;
+}
+
+.bar {
+  @apply relative h-1 bg-[#1e3347] rounded-full w-full my-2;
+}
+
+.barFill {
+  @apply absolute h-full rounded-full;
+}
+
+.min {
+  @apply text-[var(--text-muted)] text-xs mb-1.5;
+}
+
+.precipHigh {
+  @apply text-[10px] font-medium text-blue-400;
+}
+
+.precipLow {
+  @apply text-[10px] font-medium text-sky-500;
+}
+
+/* Sparkline */
+.spark {
+  @apply mt-3 bg-[var(--card-bg)] rounded-lg px-3 py-2 flex items-center gap-3;
+}
+
+.sparkLabel {
+  @apply text-[var(--text-muted)] text-[10px] shrink-0;
+}
+
+.sparkSvg {
+  @apply flex-1 h-5;
+}

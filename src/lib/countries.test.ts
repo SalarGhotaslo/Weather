@@ -1,5 +1,84 @@
-import { describe, it, expect } from "vitest";
-import { normalizeCountryName, selectCandidates, formatPopulation, mapWithConcurrency } from "./countries";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import {
+  normalizeCountryName,
+  selectCandidates,
+  formatPopulation,
+  mapWithConcurrency,
+  getAllCountries,
+  getCountryByCode,
+  getCountriesByRegion,
+  getCitiesForCountry,
+} from "./countries";
+
+function mockFetch(payload: unknown, ok = true) {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok, json: async () => payload }));
+}
+
+const country = (common: string) => ({
+  name: { common }, cca2: common.slice(0, 2).toUpperCase(), flag: "🏳️",
+  capital: ["Cap"], region: "R", subregion: "S", population: 1,
+});
+
+afterEach(() => vi.restoreAllMocks());
+
+describe("getAllCountries", () => {
+  it("returns countries sorted by common name", async () => {
+    mockFetch([country("Brazil"), country("Argentina")]);
+    const out = await getAllCountries();
+    expect(out.map((c) => c.name.common)).toEqual(["Argentina", "Brazil"]);
+  });
+
+  it("throws when the response is not ok", async () => {
+    mockFetch(null, false);
+    await expect(getAllCountries()).rejects.toThrow(/failed/i);
+  });
+});
+
+describe("getCountryByCode", () => {
+  it("returns the country payload on success", async () => {
+    mockFetch(country("France"));
+    expect((await getCountryByCode("fr"))?.name.common).toBe("France");
+  });
+
+  it("returns null on a non-ok response", async () => {
+    mockFetch(null, false);
+    expect(await getCountryByCode("zz")).toBeNull();
+  });
+
+  it("returns null when fetch throws", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+    expect(await getCountryByCode("fr")).toBeNull();
+  });
+});
+
+describe("getCountriesByRegion", () => {
+  it("returns sorted countries for a region", async () => {
+    mockFetch([country("Spain"), country("France")]);
+    expect((await getCountriesByRegion("Europe")).map((c) => c.name.common)).toEqual(["France", "Spain"]);
+  });
+
+  it("returns [] on failure", async () => {
+    mockFetch(null, false);
+    expect(await getCountriesByRegion("Europe")).toEqual([]);
+  });
+});
+
+describe("getCitiesForCountry", () => {
+  it("returns sorted city names", async () => {
+    mockFetch({ error: false, data: ["Lyon", "Paris", "Cannes"] });
+    expect(await getCitiesForCountry("France")).toEqual(["Cannes", "Lyon", "Paris"]);
+  });
+
+  it("returns [] when the payload signals an error", async () => {
+    mockFetch({ error: true, msg: "nope" });
+    expect(await getCitiesForCountry("France")).toEqual([]);
+  });
+
+  it("returns [] when fetch rejects", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+    expect(await getCitiesForCountry("France")).toEqual([]);
+  });
+});
 
 describe("normalizeCountryName", () => {
   it("maps United States of America to United States", () => {

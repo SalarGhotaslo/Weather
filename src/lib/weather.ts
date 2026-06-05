@@ -12,10 +12,13 @@ export interface WeatherResponse {
     time: string[];
     temperature_2m_max: number[];
     temperature_2m_min: number[];
+    apparent_temperature_max: number[];
+    apparent_temperature_min: number[];
     weather_code: number[];
     precipitation_sum: number[];
     precipitation_probability_max: number[];
     wind_speed_10m_max: number[];
+    wind_direction_10m_dominant: number[];
     uv_index_max: number[];
     sunrise: string[];
     sunset: string[];
@@ -152,7 +155,7 @@ export async function fetchForecast(
 
 export function buildForecastUrl(lat: number, lon: number, timezone?: string): string {
   const tz = timezone ? `&timezone=${encodeURIComponent(timezone)}` : "&timezone=auto";
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset&forecast_days=7${tz}`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,uv_index_max,sunrise,sunset&forecast_days=7${tz}`;
 }
 
 export function getWindDirection(degrees: number): string {
@@ -165,6 +168,16 @@ export function getWindArrow(degrees: number): string {
     N: "↑", NE: "↗", E: "→", SE: "↘", S: "↓", SW: "↙", W: "←", NW: "↖",
   };
   return arrows[getWindDirection(degrees)] ?? "→";
+}
+
+// Single source of truth for the outdoor-window wind descriptor — used by both
+// the reason sentence and the condition chip so they never disagree.
+export function describeWind(avgWind: number): string {
+  if (avgWind < 10) return "calm";
+  if (avgWind < 18) return "light breeze";
+  if (avgWind < 25) return "gentle breeze";
+  if (avgWind < 35) return "breezy";
+  return "windy";
 }
 
 // Pure function — picks the best result from a geocoding response given an
@@ -381,7 +394,7 @@ export function getDayHourlyData(
 
 export function buildHourlyForecastUrl(lat: number, lon: number, timezone?: string): string {
   const tz = timezone ? `&timezone=${encodeURIComponent(timezone)}` : "&timezone=auto";
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,uv_index,weather_code${tz}&forecast_days=6`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,surface_pressure,uv_index,weather_code${tz}&forecast_days=7`;
 }
 
 export interface HourlyForecastResponse {
@@ -393,7 +406,156 @@ export interface HourlyForecastResponse {
     wind_speed_10m: number[];
     uv_index: number[];
     weather_code: number[];
+    // Only consumed by getDayAverages (Humidity/Pressure cards); optional so the
+    // hourly-analysis fixtures/callers that don't need them still type-check.
+    relative_humidity_2m?: number[];
+    surface_pressure?: number[];
   };
+}
+
+// Daily-mean humidity + pressure for a date, derived from the hourly forecast.
+// Lets future days show the same Humidity/Pressure cards as "today" (which uses
+// live current conditions). Returns null fields when the series is absent.
+export function getDayAverages(
+  hourly: HourlyForecastResponse["hourly"],
+  dateStr: string,
+): { humidity: number | null; pressure: number | null } {
+  const times = hourly?.time;
+  if (!Array.isArray(times)) return { humidity: null, pressure: null };
+  const idxs = times.reduce<number[]>((acc, t, i) => {
+    if (typeof t === "string" && t.startsWith(dateStr)) acc.push(i);
+    return acc;
+  }, []);
+
+  const mean = (arr: number[] | undefined): number | null => {
+    if (!Array.isArray(arr)) return null;
+    const vals = idxs.map((i) => arr[i]).filter((v): v is number => typeof v === "number");
+    if (vals.length === 0) return null;
+    return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+  };
+
+  return { humidity: mean(hourly.relative_humidity_2m), pressure: mean(hourly.surface_pressure) };
+}
+
+// ── Air quality (Open-Meteo Air Quality API) ────────────────────────────────
+// One request powers two cards: US AQI + PM2.5 (CAMS global — worldwide) and
+// pollen (CAMS Europe — EU only).
+const POLLEN_TYPES = [
+  { key: "alder_pollen", label: "Alder" },
+  { key: "birch_pollen", label: "Birch" },
+  { key: "grass_pollen", label: "Grass" },
+  { key: "mugwort_pollen", label: "Mugwort" },
+  { key: "olive_pollen", label: "Olive" },
+  { key: "ragweed_pollen", label: "Ragweed" },
+] as const;
+
+export type PollenKey = (typeof POLLEN_TYPES)[number]["key"];
+
+export interface AirQualityResponse {
+  hourly?: { time: string[] }
+    & Partial<Record<PollenKey, (number | null)[]>>
+    & { pm2_5?: (number | null)[]; us_aqi?: (number | null)[] };
+}
+
+export interface PollenInfo {
+  dominant: string; // e.g. "Grass" — the type driving the reading
+  value: number;    // grains/m³ (daily max of the dominant type)
+  label: string;    // None | Low | Moderate | High | Very High
+  tip: string;
+}
+
+export interface AqiInfo {
+  aqi: number;          // US AQI (daily max for the date)
+  pm25: number | null;  // PM2.5 µg/m³ at the peak-AQI hour
+  label: string;        // Good | Moderate | …
+  tip: string;
+}
+
+export function buildAirQualityUrl(lat: number, lon: number, timezone?: string): string {
+  const tz = timezone ? `&timezone=${encodeURIComponent(timezone)}` : "&timezone=auto";
+  const vars = [...POLLEN_TYPES.map((p) => p.key), "pm2_5", "us_aqi"].join(",");
+  return `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=${vars}${tz}&forecast_days=7`;
+}
+
+// Indices of the hourly samples that fall on `dateStr`.
+function dayIndices(times: unknown, dateStr: string): number[] {
+  if (!Array.isArray(times)) return [];
+  return times.reduce<number[]>((acc, t, i) => {
+    if (typeof t === "string" && t.startsWith(dateStr)) acc.push(i);
+    return acc;
+  }, []);
+}
+
+// US EPA AQI bands (0–500).
+export function describeUsAqi(aqi: number): { label: string; tip: string } {
+  if (aqi <= 50) return { label: "Good", tip: "Air quality is satisfactory" };
+  if (aqi <= 100) return { label: "Moderate", tip: "Acceptable; unusually sensitive people take care" };
+  if (aqi <= 150) return { label: "Unhealthy for sensitive", tip: "Sensitive groups may feel effects" };
+  if (aqi <= 200) return { label: "Unhealthy", tip: "Everyone may feel effects — limit exertion" };
+  if (aqi <= 300) return { label: "Very unhealthy", tip: "Health warnings — avoid outdoor exertion" };
+  return { label: "Hazardous", tip: "Serious health risk — stay indoors" };
+}
+
+// Daily-max US AQI for a date (+ PM2.5 at that hour). Global coverage; null only
+// when the date is outside the forecast window or the API returns no AQI.
+export function getDayAqi(data: AirQualityResponse, dateStr: string): AqiInfo | null {
+  const idxs = dayIndices(data.hourly?.time, dateStr);
+  const aqiArr = data.hourly?.us_aqi;
+  if (idxs.length === 0 || !Array.isArray(aqiArr)) return null;
+
+  const pmArr = data.hourly?.pm2_5;
+  let maxAqi = -1;
+  let pm25AtPeak: number | null = null;
+  for (const i of idxs) {
+    const v = aqiArr[i];
+    if (typeof v === "number" && v > maxAqi) {
+      maxAqi = v;
+      pm25AtPeak = Array.isArray(pmArr) && typeof pmArr[i] === "number" ? (pmArr[i] as number) : null;
+    }
+  }
+  if (maxAqi < 0) return null;
+
+  const { label, tip } = describeUsAqi(maxAqi);
+  return {
+    aqi: Math.round(maxAqi),
+    pm25: pm25AtPeak !== null ? Math.round(pm25AtPeak) : null,
+    label,
+    tip,
+  };
+}
+
+// Map a grains/m³ reading to an approximate risk band. Species thresholds vary;
+// this is a pragmatic general scale aligned with common EU bandings.
+export function describePollenLevel(value: number): { label: string; tip: string } {
+  if (value <= 0) return { label: "None", tip: "No pollen detected" };
+  if (value < 20) return { label: "Low", tip: "Comfortable for most people" };
+  if (value < 50) return { label: "Moderate", tip: "Sensitive people may react" };
+  if (value < 150) return { label: "High", tip: "Allergy symptoms likely — take precautions" };
+  return { label: "Very High", tip: "Severe symptoms likely — limit time outside" };
+}
+
+// Reduce the hourly pollen forecast to the dominant type + daily-max reading for
+// a given date. Returns null when the location has no pollen coverage (the API
+// only models pollen across Europe) or the date is outside the forecast window.
+export function getDayPollen(data: AirQualityResponse, dateStr: string): PollenInfo | null {
+  const idxs = dayIndices(data.hourly?.time, dateStr);
+  if (idxs.length === 0) return null;
+
+  let best: { label: string; value: number } | null = null;
+  for (const { key, label } of POLLEN_TYPES) {
+    const arr = data.hourly?.[key];
+    if (!Array.isArray(arr)) continue;
+    let max = -1;
+    for (const i of idxs) {
+      const v = arr[i];
+      if (typeof v === "number" && v > max) max = v;
+    }
+    if (max > (best?.value ?? -1)) best = { label, value: max };
+  }
+  if (!best || best.value < 0) return null;
+
+  const { label, tip } = describePollenLevel(best.value);
+  return { dominant: best.label, value: Math.round(best.value), label, tip };
 }
 
 export interface HourData {
@@ -588,11 +750,7 @@ export function getHourlyAnalysis(
       bits.push(`~${fmtAmount(avgPrecipAmount)} expected`);
     }
 
-    if (avgWind < 10) bits.push("calm");
-    else if (avgWind < 18) bits.push("light breeze");
-    else if (avgWind < 25) bits.push("gentle breeze");
-    else if (avgWind < 35) bits.push("breezy");
-    else bits.push(`windy (${avgWind} km/h)`);
+    bits.push(avgWind >= 35 ? `windy (${avgWind} km/h)` : describeWind(avgWind));
 
     if (bits.length === 0) return "Conditions are acceptable for outdoor time";
     const joined = bits.join(", ");
@@ -666,10 +824,7 @@ export function getHourlyAnalysis(
           ? `${minPrecip}–${maxPrecip}% rain${amountDesc}`
           : `${avgPrecip}% rain chance${amountDesc}`;
 
-    const windDesc =
-      avgWind < 12 ? "calm" : avgWind < 22 ? "light breeze" : avgWind < 35 ? "moderate wind" : `${avgWind} km/h wind`;
-
-    const conditions = [`avg ${avgTemp}°C`, precipDesc, windDesc].join(", ");
+    const conditions = [`avg ${avgTemp}°C`, precipDesc, describeWind(avgWind)].join(", ");
 
     const precipTrend = computePrecipTrend(slice);
     const reason = buildReason(avgTemp, avgPrecip, maxPrecip, avgPrecipAmount, maxPrecipAmount, avgWind, maxWind, minTemp, maxTemp, isBad, rating, precipTrend);

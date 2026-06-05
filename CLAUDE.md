@@ -19,25 +19,50 @@ src/app/
 │   ├── LocalTime.tsx         'use client' — live per-second clock for a city timezone
 │   ├── AppFooter.tsx         Server — shared footer (nav links + attribution + year)
 │   ├── WorldMapLoader.tsx    'use client' — dynamic(WorldMap, {ssr:false})
-│   └── WorldMap.tsx          'use client' — react-simple-maps, hover/click/markers
-│                               city markers: dot always shown, label appears on hover
-│                               state: position, hoveredCountry, selectedCountry,
-│                                      panelCountry, panelCities, cityMarkers, hoveredMarker
+│   ├── WorldMap.tsx          'use client' — thin: useWorldMap() + composes world-map/*
+│   ├── world-map/            Map pieces extracted from WorldMap
+│   │   ├── useWorldMap.ts     hook: all state, caches, data-loading + handlers
+│   │   ├── MapGeographies.tsx country polygons + hover/click/keyboard
+│   │   ├── CityMarkers.tsx    SVG city dots (hover/focus label, click → forecast)
+│   │   ├── CitiesPanel.tsx    right panel (header, filter, list, footer, empty state)
+│   │   └── MapWeatherCard.tsx inline capital/city weather card
+│   └── weather-effects/      WeatherBackground.tsx dispatches to these per type
+│       ├── Overlay.tsx        shared full-viewport aria-hidden wrapper
+│       └── {Sun,Stars,Cloud,Rain,Snow,Thunder,Fog}Effect.tsx
 ├── map/page.tsx              Server wrapper → WorldMapLoader
-├── day/[index]/
-│   ├── page.tsx              Server — orchestrates fetch + the cards below
+├── page.tsx                  Server — thin: geocode → branch → render (see home/)
+├── home/                     Home-page pieces extracted from page.tsx
+│   ├── homeView.ts           buildHomeView() view-model + buildDayHref()
+│   ├── HomeLanding.tsx       Server — empty-state landing (search + popular cities)
+│   ├── LocationNotFound.tsx  Server — no-geocode-match fallback
+│   ├── ForecastView.tsx      Server — composes the resolved-location forecast
+│   ├── CurrentHero.tsx       Server — clickable "today" hero → /day/0
+│   ├── StatsStrip.tsx        Server — 6-up stat strip (incl. StatCard)
+│   └── FiveDayForecast.tsx   Server — 5-day grid + TrendIndicator + TempSparkline
+├── day/[index]/              page.tsx = thin fetch + buildDayView() + compose
+│   ├── dayData.ts            Server fetch helpers (getHourlyWeather, getHistorical)
+│   ├── dayView.ts            buildDayView() view-model builder
+│   ├── DayHeader.tsx         Server — breadcrumb + title/share + day-picker strip
+│   ├── CurrentWeatherCard.tsx Server — hero temp + "right now" strip
+│   ├── WeatherAlertBanner.tsx Server — severe-weather banner
+│   ├── DetailGrid.tsx        Server — stat grid (incl. UvMeter, DaylightBar, DetailCard)
+│   ├── WhatToWear.tsx        Server — dress-code chips
 │   ├── HourlyForecast.tsx    Server — horizontal hour strip (night-dimmed, "Now" ring)
 │   ├── OutdoorTimes.tsx      Server — 24h colour strip + best/bad outdoor windows
 │   └── YearComparison.tsx    Server — YoY tiles (incl. YoyStat) + verdict
+│   Each home/ + day/ component has a colocated *.module.css.
+│   Pattern: @apply + @reference "globals.css" inside modules; `group`/`peer`
+│   markers + dynamic colour ternaries stay literal global utilities.
 ├── countries/
 │   ├── page.tsx              Server — breadcrumb + A–Z country grid
 │   └── [code]/
 │       ├── page.tsx          Server — breadcrumb + country hero + CitiesFilter
 │       └── CitiesFilter.tsx  'use client' — live search over city list
-├── api/
-│   ├── cities/route.ts       GET — validates country param, proxies CountriesNow, 24 h cache
-│   └── city-markers/route.ts GET — validates country param, geocodes major cities
-│                               (area-scaled 2–52), concurrency-limited fan-out
+├── api/                      All routes guarded by enforceRateLimit (lib/rateLimit.ts)
+│   ├── cities/route.ts       GET — validates country, proxies CountriesNow, 24 h, 60/min
+│   ├── current/route.ts      GET — current conditions for the map card, 30 min, 60/min
+│   └── city-markers/route.ts GET — thin handler → getCityMarkers (lib/cityMarkers.ts),
+│                               area-scaled fan-out, 24 h, 15/min
 └── types/
     └── react-simple-maps.d.ts  TypeScript declarations for react-simple-maps
 ```
@@ -47,6 +72,8 @@ src/app/
 DayPage (server)
   ├── fetchForecast(lat, lon, tz)  → daily + current (30 min ISR; shared with home)
   ├── getHourlyWeather(lat, lon)   → 6-day hourly (30 min ISR)
+  ├── getAirQuality(dateStr, lat, lon) → one air-quality call → { aqi, pollen }:
+  │     getDayAqi() (US AQI + PM2.5, global) + getDayPollen() (EU only) → DetailGrid cards
   └── getHistorical(dateStr, lat, lon) → last-year archive (24 h ISR)
       → getHourlyAnalysis(hourly, dateStr, sunrise, sunset)
          returns { hours[24], bestWindows, badWindows }
@@ -115,8 +142,20 @@ Use `getWeatherAnimClass(code)` from `weather.ts` to get the right class.
 - `next.config.ts`: Content-Security-Policy (connect-src allowlist for 6 external APIs), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-DNS-Prefetch-Control
 - `next.config.ts` also sets `transpilePackages: ["react-simple-maps", "d3-geo", "d3-zoom", "topojson-client"]` — required because these ship CJS builds that break in Turbopack's ESM context
 - API routes validate `country` param: `/^[\p{L}\s\-'.()]+$/u`, max 100 chars, empty → `[]`
+- **Rate limiting** (`lib/rateLimit.ts`): all `/api/*` routes call `enforceRateLimit` →
+  429 + `Retry-After`. 60/min for cities + current, 15/min for city-markers. In-memory
+  per-instance; swap the store for Redis/KV at multi-instance scale.
 - `validateCoord(value, min, max, fallback)` in weather.ts — used for lat/lon in day detail page
 - `viewport` export in `layout.tsx` carries `themeColor` (not `metadata` — Next.js 16 requirement)
+- **Dependency overrides** in `package.json`: `d3-color@^3.1.0` patches react-simple-maps'
+  transitive ReDoS. `npm run audit:ci` (prod deps, high+) gates pushes via the husky pre-push hook.
+
+## i18n (next-intl, phase 1)
+- `src/i18n/request.ts` — single-locale `getRequestConfig` (no URL routing yet); see its
+  header for the phased roadmap. `next.config.ts` wraps the config via `createNextIntlPlugin`.
+- `messages/en.json` — string catalogue. `NextIntlClientProvider` in `layout.tsx` feeds
+  client components; server components use `getTranslations`. NavTabs + AppFooter are the
+  proof-of-wiring; the rest of the UI prose is a later phase.
 
 ## `globals.css` utilities
 - `:focus-visible` rule — blue outline for keyboard navigation

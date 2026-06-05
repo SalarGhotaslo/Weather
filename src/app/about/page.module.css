@@ -1,0 +1,45 @@
+@reference "../globals.css";
+
+.shell { @apply min-h-screen bg-[#0e1723] flex flex-col; }
+.main { @apply mx-auto w-full max-w-4xl px-4 py-8 flex-1; }
+
+.breadcrumb { @apply flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-6; }
+.crumbLink { @apply hover:text-white transition-colors; }
+.crumbCurrent { @apply text-[var(--text-muted)]; }
+
+.hero { @apply mb-10; }
+.heroRow { @apply flex items-center gap-4 mb-4; }
+/* `weather-sunny-glow` (global animation) added literally in JSX. */
+.heroEmoji { @apply text-5xl inline-block; }
+.title { @apply text-3xl font-bold text-white; }
+.tagline { @apply text-[var(--text-muted)] mt-1; }
+.lead { @apply text-[#c8dae7] leading-relaxed max-w-2xl; }
+
+.section { @apply mb-10; }
+.sectionTitle { @apply text-white font-semibold text-lg mb-4; }
+.sectionTitleTight { @apply text-white font-semibold text-lg mb-3; }
+
+.featureGrid { @apply grid grid-cols-1 gap-3 sm:grid-cols-2; }
+.featureCard { @apply bg-[#162535] rounded-lg p-4 flex gap-3; }
+.featureIcon { @apply text-xl shrink-0; }
+.featureTitle { @apply text-white text-sm font-semibold mb-0.5; }
+.featureDesc { @apply text-[var(--text-muted)] text-xs leading-relaxed; }
+
+.sourceList { @apply space-y-3; }
+.sourceCard { @apply bg-[#162535] rounded-lg p-4 flex items-start gap-4; }
+.sourceBody { @apply flex-1 min-w-0; }
+.sourceHead { @apply flex items-center gap-2 mb-1 flex-wrap; }
+.sourceName { @apply text-white text-sm font-semibold; }
+.sourceBadge { @apply text-[10px] bg-[#1c3450] text-[var(--text-accent)] px-2 py-0.5 rounded-full; }
+.sourceDesc { @apply text-[var(--text-muted)] text-xs leading-relaxed; }
+.note { @apply text-[var(--text-muted)] text-xs mt-4; }
+
+.techRow { @apply flex flex-wrap gap-2; }
+.techChip { @apply bg-[#162535] border border-[#2a4055] text-[#c8dae7] text-xs px-3 py-1.5 rounded-full; }
+
+.securityBox { @apply bg-[#162535] rounded-lg p-4 text-[var(--text-muted)] text-sm leading-relaxed; }
+.code { @apply bg-[#1c2f3f] px-1 rounded text-xs; }
+
+.nav { @apply flex flex-wrap gap-3 justify-center pt-4 border-t border-[#1e3347]; }
+.navPrimary { @apply bg-[#2f6fb5] hover:bg-[#2d6fb8] text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors; }
+.navSecondary { @apply bg-[#162535] hover:bg-[#1c2f3f] text-[var(--text-muted)] hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors; }

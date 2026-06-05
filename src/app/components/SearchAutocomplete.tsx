@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./SearchAutocomplete.module.css";
 
 interface GeoResult {
   name: string;
@@ -106,22 +107,17 @@ export default function SearchAutocomplete({
     }
   };
 
-  const inputClass = large
-    ? "flex-1 bg-[#1c2f3f] border border-[#2a4055] rounded-lg px-5 py-4 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-lg transition-colors"
-    : "flex-1 min-w-0 bg-[#1c2f3f] border border-[#2a4055] rounded px-3 py-1.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors";
-
-  const buttonClass = large
-    ? "bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-7 py-4 rounded-lg font-semibold transition-colors text-lg whitespace-nowrap"
-    : "bg-[#2f6fb5] hover:bg-[#2d6fb8] active:bg-[#2560a0] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap";
+  const inputClass = large ? styles.inputLarge : styles.inputSmall;
+  const buttonClass = large ? styles.buttonLarge : styles.buttonSmall;
 
   return (
-    <div className={`relative ${large ? "" : "flex-1 flex gap-2"}`}>
+    <div className={`${styles.wrapper} ${large ? "" : styles.wrapperSmall}`}>
       <form
         onSubmit={handleSubmit}
-        className={large ? "flex gap-3" : "contents"}
+        className={large ? styles.formLarge : styles.formSmall}
         suppressHydrationWarning
       >
-        <div className={large ? "flex gap-3 flex-1" : "contents"}>
+        <div className={large ? styles.innerLarge : styles.innerSmall}>
           <input
             type="search"
             value={value}
@@ -166,7 +162,7 @@ export default function SearchAutocomplete({
           id="search-suggestions"
           role="listbox"
           aria-label="City suggestions"
-          className={`absolute z-50 bg-[#162535] border border-[#2a4055] rounded-lg overflow-hidden shadow-xl ${large ? "top-full mt-1 left-0 right-0" : "top-full mt-1 left-0 right-[72px]"}`}
+          className={`${styles.dropdown} ${large ? styles.dropdownLarge : styles.dropdownSmall}`}
         >
           {suggestions.map((s, i) => (
             <button
@@ -175,16 +171,10 @@ export default function SearchAutocomplete({
               role="option"
               aria-selected={i === activeIndex}
               onMouseDown={() => navigate(s)}
-              className={`w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 transition-colors ${
-                i === activeIndex
-                  ? "bg-[#1c3d6b] text-white"
-                  : "hover:bg-[#1c2f3f] text-white"
-              }`}
+              className={`${styles.option} ${i === activeIndex ? styles.optionActive : styles.optionIdle}`}
             >
-              <span className="text-sm truncate">{s.name}</span>
-              <span className="text-[var(--text-muted)] text-xs shrink-0">
-                {s.country}
-              </span>
+              <span className={styles.optionName}>{s.name}</span>
+              <span className={styles.optionCountry}>{s.country}</span>
             </button>
           ))}
         </div>

@@ -1,0 +1,49 @@
+@reference "../../globals.css";
+
+.card {
+  @apply p-4 border-b border-[#1e3347] shrink-0 bg-[#0f1b29];
+}
+
+.skeleton {
+  @apply space-y-2 animate-pulse;
+}
+
+.skelLine1 { @apply h-4 w-32 bg-[#1c2f3f] rounded; }
+.skelLine2 { @apply h-7 w-24 bg-[#1c2f3f] rounded; }
+.skelLine3 { @apply h-3 w-40 bg-[#1c2f3f] rounded; }
+
+.error {
+  @apply text-[var(--text-muted)] text-xs;
+}
+
+.name {
+  @apply text-white text-sm font-semibold truncate;
+}
+
+.capital {
+  @apply ml-1.5 text-[10px] uppercase tracking-wide text-[var(--text-accent)] font-medium;
+}
+
+.row {
+  @apply flex items-center gap-2 mt-1;
+}
+
+.emoji {
+  @apply text-2xl;
+}
+
+.temp {
+  @apply text-white text-2xl font-bold;
+}
+
+.label {
+  @apply text-[var(--text-muted)] text-xs;
+}
+
+.feels {
+  @apply text-[var(--text-muted)] text-xs mt-1;
+}
+
+.link {
+  @apply inline-block mt-2 text-[var(--text-accent)] hover:text-white text-xs transition-colors;
+}

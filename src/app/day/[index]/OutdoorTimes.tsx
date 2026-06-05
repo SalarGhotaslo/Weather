@@ -4,6 +4,7 @@ import {
   type HourData,
   type OutdoorWindow,
 } from "@/lib/weather";
+import styles from "./OutdoorTimes.module.css";
 
 interface OutdoorAnalysis {
   hours: HourData[];
@@ -14,10 +15,33 @@ interface OutdoorAnalysis {
 // Chip emoji prefix shared by best/bad condition chips.
 function chipPrefix(c: string): string {
   if (c.includes("rain")) return "🌧️ ";
-  if (c.includes("wind") || c.includes("breeze")) return "💨 ";
+  if (/wind|breez|calm/.test(c)) return "💨 "; // wind, breeze, breezy, windy, calm
   if (c.includes("°C")) return "🌡️ ";
   return "";
 }
+
+// Dynamic colour utilities stay literal Tailwind (they vary per score/rating).
+function scoreColor(score: number): string {
+  if (score === -1) return "bg-[#1a2d3e] border border-[#1e3347]";
+  if (score === 0) return "bg-red-500/60";
+  if (score === 1) return "bg-amber-500/60";
+  if (score === 2) return "bg-blue-500/60";
+  return "bg-green-500/70";
+}
+
+function ratingColor(rating: string): string {
+  if (rating === "Excellent") return "bg-green-500/20 text-green-400";
+  if (rating === "Good") return "bg-blue-500/20 text-blue-400";
+  return "bg-amber-500/20 text-amber-400";
+}
+
+const LEGEND = [
+  { cls: "bg-green-500/70", label: "Excellent" },
+  { cls: "bg-blue-500/60", label: "Good" },
+  { cls: "bg-amber-500/60", label: "Fair" },
+  { cls: "bg-red-500/60", label: "Bad" },
+  { cls: "bg-[#1a2d3e] border border-[#1e3347]", label: "Night" },
+];
 
 // "Best Times Outside" — a colour strip (decorative, mirrored textually below)
 // plus scored best/worst window cards. Strip + legend are aria-hidden because
@@ -32,20 +56,19 @@ export default function OutdoorTimes({
   cityHour: number;
 }) {
   const { hours, bestWindows, badWindows } = analysis;
+  const cols = { gridTemplateColumns: "repeat(24, 1fr)" };
 
   return (
-    <div className="bg-[var(--card-bg)] rounded-xl p-5 mb-3">
-      <h2 className="text-white font-semibold mb-1">Best Times Outside</h2>
-      <p className="text-[#c8dae7] text-sm mb-3 leading-relaxed">
-        {getOutdoorSummary(bestWindows, badWindows)}
-      </p>
-      <p className="text-[var(--text-muted)] text-xs mb-4">
+    <div className={styles.card}>
+      <h2 className={styles.title}>Best Times Outside</h2>
+      <p className={styles.summary}>{getOutdoorSummary(bestWindows, badWindows)}</p>
+      <p className={styles.note}>
         Best options scored within typical hours out (6am–10pm) by temperature,
         rain chance, expected amount and wind
       </p>
 
       {/* 24-hour colour strip — decorative; the windows below convey it textually. */}
-      <div aria-hidden="true" className="grid gap-px mb-1" style={{ gridTemplateColumns: "repeat(24, 1fr)" }}>
+      <div aria-hidden="true" className={styles.strip} style={cols}>
         {hours.map((h) => {
           const isCurrentHour = isToday && h.hour === cityHour;
           return (
@@ -53,42 +76,26 @@ export default function OutdoorTimes({
               key={h.hour}
               aria-current={isCurrentHour ? "time" : undefined}
               title={`${h.label}${isCurrentHour ? " (now)" : ""}: ${h.temp}°C · ${h.precipProb}% rain · ${h.windSpeed} km/h wind`}
-              className={`h-8 rounded-sm ${isCurrentHour ? "ring-2 ring-white relative z-10" : ""} ${
-                h.score === -1
-                  ? "bg-[#1a2d3e] border border-[#1e3347]"
-                  : h.score === 0
-                    ? "bg-red-500/60"
-                    : h.score === 1
-                      ? "bg-amber-500/60"
-                      : h.score === 2
-                        ? "bg-blue-500/60"
-                        : "bg-green-500/70"
-              }`}
+              className={`${styles.cell} ${isCurrentHour ? styles.cellNow : ""} ${scoreColor(h.score)}`}
             />
           );
         })}
       </div>
 
       {/* Hour labels every 6 h */}
-      <div aria-hidden="true" className="grid mb-4" style={{ gridTemplateColumns: "repeat(24, 1fr)" }}>
+      <div aria-hidden="true" className={styles.labels} style={cols}>
         {hours.map((h) => (
-          <div key={h.hour} className="text-[9px] text-[var(--text-muted)] overflow-hidden whitespace-nowrap">
+          <div key={h.hour} className={styles.label}>
             {h.hour % 6 === 0 ? formatHour(h.hour) : ""}
           </div>
         ))}
       </div>
 
       {/* Legend */}
-      <div aria-hidden="true" className="flex flex-wrap gap-x-4 gap-y-1 mb-5 text-xs text-[var(--text-muted)]">
-        {[
-          { cls: "bg-green-500/70", label: "Excellent" },
-          { cls: "bg-blue-500/60", label: "Good" },
-          { cls: "bg-amber-500/60", label: "Fair" },
-          { cls: "bg-red-500/60", label: "Bad" },
-          { cls: "bg-[#1a2d3e] border border-[#1e3347]", label: "Night" },
-        ].map(({ cls, label }) => (
-          <span key={label} className="flex items-center gap-1.5">
-            <span className={`w-3 h-3 rounded-sm inline-block ${cls}`} />
+      <div aria-hidden="true" className={styles.legend}>
+        {LEGEND.map(({ cls, label }) => (
+          <span key={label} className={styles.legendItem}>
+            <span className={`${styles.legendSwatch} ${cls}`} />
             {label}
           </span>
         ))}
@@ -96,44 +103,30 @@ export default function OutdoorTimes({
 
       {/* Best windows */}
       {bestWindows.length > 0 && (
-        <div className="mb-4">
-          <p className="text-[var(--text-accent)] text-xs font-semibold uppercase tracking-wider mb-2">
+        <div className={styles.bestSection}>
+          <p className={styles.bestHeading}>
             Best times to go out{bestWindows.length > 1 ? ` · ${bestWindows.length} options` : ""}
           </p>
           {bestWindows.map((w, i) => (
-            <div key={i} className="rounded-xl bg-[#0e1f2f] p-4 mb-2 border border-[#1a3347]">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                    w.rating === "Excellent" ? "bg-green-500/20 text-green-400"
-                    : w.rating === "Good" ? "bg-blue-500/20 text-blue-400"
-                    : "bg-amber-500/20 text-amber-400"
-                  }`}>{w.rating}</span>
-                  <span className="text-white font-semibold">{w.timeLabel}</span>
+            <div key={i} className={styles.bestCard}>
+              <div className={styles.cardHead}>
+                <div className={styles.cardHeadLeft}>
+                  <span className={`${styles.badge} ${ratingColor(w.rating)}`}>{w.rating}</span>
+                  <span className={styles.timeLabel}>{w.timeLabel}</span>
                 </div>
-                {w.peakHour && (
-                  <span className="text-[var(--text-muted)] text-xs">peak {w.peakHour}</span>
-                )}
+                {w.peakHour && <span className={styles.peak}>peak {w.peakHour}</span>}
               </div>
-              <p className="text-[#c8dae7] text-sm mb-3 leading-snug">{w.reason}</p>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {w.tempRange && (
-                  <span className="text-[10px] bg-[var(--card-bg)] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
-                    🌡️ {w.tempRange}
-                  </span>
-                )}
+              <p className={styles.reason}>{w.reason}</p>
+              <div className={styles.chips}>
+                {w.tempRange && <span className={styles.chip}>🌡️ {w.tempRange}</span>}
                 {w.conditions.split(", ").slice(1).map((c, ci) => (
-                  <span key={ci} className="text-[10px] bg-[var(--card-bg)] border border-[#2a4055] text-[#c8dae7] px-2.5 py-1 rounded-full">
-                    {chipPrefix(c)}{c}
-                  </span>
+                  <span key={ci} className={styles.chip}>{chipPrefix(c)}{c}</span>
                 ))}
               </div>
               {w.activities && w.activities.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className={styles.activities}>
                   {w.activities.map((act) => (
-                    <span key={act} className="text-[10px] text-[var(--text-accent)] bg-[#0d1d2e] border border-[#1a3347] px-2.5 py-1 rounded-full font-medium">
-                      {act}
-                    </span>
+                    <span key={act} className={styles.activity}>{act}</span>
                   ))}
                 </div>
               )}
@@ -145,52 +138,37 @@ export default function OutdoorTimes({
       {/* Bad windows */}
       {badWindows.length > 0 && (
         <div>
-          <p className="text-red-400 text-xs font-semibold uppercase tracking-wider mb-2">
-            Times to avoid
-          </p>
-          {badWindows.map((w, i) => (
-            <div
-              key={i}
-              className={`rounded-xl p-4 mb-2 border ${
-                w.severity === "worst"
-                  ? "bg-[#2a0a0a] border-[#5a1a1a]"
-                  : "bg-[#1f0e0e] border-[#3a1a1a]"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                    w.severity === "worst"
-                      ? "bg-red-600/30 text-red-300"
-                      : "bg-red-500/20 text-red-400"
-                  }`}>
-                    {w.severity === "worst" ? "Worst period" : "Also avoid"}
-                  </span>
-                  <span className="text-white font-semibold">{w.timeLabel}</span>
+          <p className={styles.badHeading}>Times to avoid</p>
+          {badWindows.map((w, i) => {
+            const isWorst = w.severity === "worst";
+            return (
+              <div
+                key={i}
+                className={`${styles.badCard} ${isWorst ? "bg-[#2a0a0a] border-[#5a1a1a]" : "bg-[#1f0e0e] border-[#3a1a1a]"}`}
+              >
+                <div className={styles.cardHead}>
+                  <div className={styles.cardHeadLeft}>
+                    <span className={`${styles.badge} ${isWorst ? "bg-red-600/30 text-red-300" : "bg-red-500/20 text-red-400"}`}>
+                      {isWorst ? "Worst period" : "Also avoid"}
+                    </span>
+                    <span className={styles.timeLabel}>{w.timeLabel}</span>
+                  </div>
+                </div>
+                <p className={`text-sm mb-3 leading-snug ${isWorst ? "text-red-200" : "text-red-300"}`}>{w.reason}</p>
+                <div className={styles.badChips}>
+                  {w.tempRange && <span className={styles.badChip}>🌡️ {w.tempRange}</span>}
+                  {w.conditions.split(", ").map((c, ci) => (
+                    <span key={ci} className={styles.badChip}>{chipPrefix(c)}{c}</span>
+                  ))}
                 </div>
               </div>
-              <p className={`text-sm mb-3 leading-snug ${w.severity === "worst" ? "text-red-200" : "text-red-300"}`}>{w.reason}</p>
-              <div className="flex flex-wrap gap-2">
-                {w.tempRange && (
-                  <span className="text-[10px] bg-red-950/40 border border-red-900/40 text-red-300 px-2.5 py-1 rounded-full">
-                    🌡️ {w.tempRange}
-                  </span>
-                )}
-                {w.conditions.split(", ").map((c, ci) => (
-                  <span key={ci} className="text-[10px] bg-red-950/40 border border-red-900/40 text-red-300 px-2.5 py-1 rounded-full">
-                    {chipPrefix(c)}{c}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {bestWindows.length === 0 && badWindows.length === 0 && (
-        <p className="text-[var(--text-muted)] text-sm border-t border-[#1e3347] pt-3">
-          No significant outdoor windows identified today.
-        </p>
+        <p className={styles.empty}>No significant outdoor windows identified today.</p>
       )}
     </div>
   );

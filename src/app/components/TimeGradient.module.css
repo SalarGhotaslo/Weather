@@ -1,0 +1,5 @@
+@reference "../globals.css";
+
+.overlay {
+  @apply pointer-events-none absolute inset-0 rounded-xl;
+}

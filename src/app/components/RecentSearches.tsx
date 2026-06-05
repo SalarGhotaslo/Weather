@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import styles from "./RecentSearches.module.css";
 
 const LS_KEY = "salar_weather_recent";
 const MAX_RECENT = 5;
@@ -43,26 +44,16 @@ export default function RecentSearches() {
   };
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider">
-          Recent searches
-        </p>
-        <button
-          onClick={handleClear}
-          className="text-[var(--text-faint)] hover:text-white text-[10px] transition-colors"
-          aria-label="Clear recent searches"
-        >
+    <div className={styles.wrap}>
+      <div className={styles.head}>
+        <p className={styles.label}>Recent searches</p>
+        <button onClick={handleClear} className={styles.clear} aria-label="Clear recent searches">
           Clear
         </button>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className={styles.chips}>
         {searches.map((city) => (
-          <Link
-            key={city}
-            href={`/?q=${encodeURIComponent(city)}`}
-            className="bg-[#162535] hover:bg-[#1c2f3f] border border-[#2a4055] text-[var(--text-muted)] hover:text-white text-xs px-3 py-1.5 rounded-full transition-colors"
-          >
+          <Link key={city} href={`/?q=${encodeURIComponent(city)}`} className={styles.chip}>
             🕐 {city}
           </Link>
         ))}
