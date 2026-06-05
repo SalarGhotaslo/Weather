@@ -2,19 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
 import styles from "./NavTabs.module.css";
 
 const tabs = [
-  { href: "/", key: "home" },
-  { href: "/countries", key: "countries" },
-  { href: "/map", key: "map" },
-  { href: "/about", key: "about" },
+  { href: "/", label: "Home" },
+  { href: "/countries", label: "Countries" },
+  { href: "/map", label: "Map" },
+  { href: "/about", label: "About" },
 ] as const;
 
 export default function NavTabs() {
   const pathname = usePathname();
-  const t = useTranslations("nav");
 
   return (
     <nav className={styles.nav}>
@@ -30,7 +28,7 @@ export default function NavTabs() {
             href={tab.href}
             className={`${styles.tab} ${isActive ? styles.tabActive : styles.tabInactive}`}
           >
-            {t(tab.key)}
+            {tab.label}
           </Link>
         );
       })}

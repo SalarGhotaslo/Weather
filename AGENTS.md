@@ -58,10 +58,6 @@ and the Playwright axe/e2e suite (6 routes), not line-coverage.
   markers like `group` / `peer` can't be `@apply`'d (they'd be module-scoped) —
   add them as literal global classes in JSX alongside `styles.x`. Dynamic
   per-state colour ternaries also stay literal Tailwind utilities.
-- **i18n (next-intl, phase 1):** UI strings come from `messages/en.json` via
-  `useTranslations` (client) / `getTranslations` (server). Config in
-  `src/i18n/request.ts` (single locale, no URL routing yet). See its header for the
-  phased roadmap. Don't hardcode new user-facing strings — add them to the catalogue.
 - Server Components by default; only add `'use client'` for state/effects/browser APIs
 - Fetch in Server Components with `next: { revalidate: N }`:
   - Weather: `1800` (30 min)

@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
 import styles from "./AppFooter.module.css";
 
-export default async function AppFooter({ note }: { note?: string }) {
-  const t = await getTranslations("footer");
+export default function AppFooter({ note }: { note?: string }) {
   const year = new Date().getFullYear();
 
   return (
@@ -11,30 +9,30 @@ export default async function AppFooter({ note }: { note?: string }) {
       <div className={styles.inner}>
         <div className={styles.cols}>
           <div>
-            <p className={styles.colTitle}>{t("weather")}</p>
+            <p className={styles.colTitle}>Weather</p>
             <ul className={styles.list}>
-              <li><Link href="/" className={styles.link}>{t("searchCity")}</Link></li>
-              <li className={styles.faint}>{t("fiveDay")}</li>
-              <li className={styles.faint}>{t("hourly")}</li>
+              <li><Link href="/" className={styles.link}>Search a city</Link></li>
+              <li className={styles.faint}>5-day forecast</li>
+              <li className={styles.faint}>Hourly detail</li>
             </ul>
           </div>
           <div>
-            <p className={styles.colTitle}>{t("explore")}</p>
+            <p className={styles.colTitle}>Explore</p>
             <ul className={styles.list}>
-              <li><Link href="/countries" className={styles.link}>{t("allCountries")}</Link></li>
-              <li><Link href="/map" className={styles.link}>{t("worldMap")}</Link></li>
+              <li><Link href="/countries" className={styles.link}>All countries</Link></li>
+              <li><Link href="/map" className={styles.link}>World map</Link></li>
             </ul>
           </div>
           <div>
-            <p className={styles.colTitle}>{t("app")}</p>
+            <p className={styles.colTitle}>App</p>
             <ul className={styles.list}>
-              <li><Link href="/about" className={styles.link}>{t("about")}</Link></li>
-              <li className={styles.faint}>{t("noAccount")}</li>
-              <li className={styles.faint}>{t("freeData")}</li>
+              <li><Link href="/about" className={styles.link}>About</Link></li>
+              <li className={styles.faint}>No account needed</li>
+              <li className={styles.faint}>Free & open data</li>
             </ul>
           </div>
           <div>
-            <p className={styles.colTitle}>{t("data")}</p>
+            <p className={styles.colTitle}>Data</p>
             <ul className={styles.listFaint}>
               <li>Open-Meteo</li>
               <li>REST Countries</li>
@@ -43,7 +41,7 @@ export default async function AppFooter({ note }: { note?: string }) {
           </div>
         </div>
         <div className={styles.bottom}>
-          <p className={styles.copyright}>{t("copyright", { year: String(year) })}</p>
+          <p className={styles.copyright}>© {year} Salar Weather · No API keys · No tracking</p>
           {note && <p className={styles.copyright}>{note}</p>}
         </div>
       </div>

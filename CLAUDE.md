@@ -150,13 +150,6 @@ Use `getWeatherAnimClass(code)` from `weather.ts` to get the right class.
 - **Dependency overrides** in `package.json`: `d3-color@^3.1.0` patches react-simple-maps'
   transitive ReDoS. `npm run audit:ci` (prod deps, high+) gates pushes via the husky pre-push hook.
 
-## i18n (next-intl, phase 1)
-- `src/i18n/request.ts` — single-locale `getRequestConfig` (no URL routing yet); see its
-  header for the phased roadmap. `next.config.ts` wraps the config via `createNextIntlPlugin`.
-- `messages/en.json` — string catalogue. `NextIntlClientProvider` in `layout.tsx` feeds
-  client components; server components use `getTranslations`. NavTabs + AppFooter are the
-  proof-of-wiring; the rest of the UI prose is a later phase.
-
 ## `globals.css` utilities
 - `:focus-visible` rule — blue outline for keyboard navigation
 - Custom webkit scrollbar (dark themed)
