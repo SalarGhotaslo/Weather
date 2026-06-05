@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 };
 
 const HINTS = [
-  { icon: "👆", text: "Hover a country to see its cities" },
-  { icon: "🖱️", text: "Click a country to zoom in & drop city markers" },
+  { icon: "👆", text: "Hover/tap a country to see its cities" },
+  { icon: "🖱️", text: "Click/tap a country to zoom in & drop city markers" },
   { icon: "🔍", text: "Scroll or pinch to zoom · drag to pan" },
-  { icon: "📍", text: "Hover a city dot to see its name · click for weather" },
-  { icon: "🔄", text: "Triple-click the map to zoom out" },
+  { icon: "📍", text: "Tap a city dot to see its name · tap again for weather" },
+  { icon: "🔄", text: "Triple-click/tap the map to zoom out" },
 ];
 
 export default function MapPage() {

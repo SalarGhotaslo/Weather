@@ -9,7 +9,15 @@
 
 /* Separate single-selector rules — a comma-joined :global() list compiles to a
    malformed selector under Next's CSS-modules transform. */
+/* On desktop, the bubble shows on hover.  On mobile (touch), hover never fires,
+   so we also reveal on :focus (tabIndex'd card tapped) and :focus-within
+   (keyboard-tab through a child).  The selectors are kept separate because a
+   comma-joined list compiles to a malformed selector under CSS modules. */
 :global(.group):hover .bubble {
+  @apply opacity-100;
+}
+
+:global(.group):focus .bubble {
   @apply opacity-100;
 }
 

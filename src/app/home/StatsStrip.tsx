@@ -3,7 +3,7 @@ import styles from "./StatsStrip.module.css";
 
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
-    <div className={`${styles.card} group`}>
+    <div className={`${styles.card} group`} tabIndex={0}>
       <StatTooltip label={label} />
       <div className={styles.label}>{label}</div>
       <div className={styles.valueRow}>

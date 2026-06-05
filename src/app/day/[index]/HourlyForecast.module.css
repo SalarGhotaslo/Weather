@@ -67,16 +67,19 @@
 
 /* `group` added literally in JSX for the rain tooltip's group-hover. */
 .precipBase {
-  @apply relative text-[11px] font-medium;
+  @apply relative text-[11px] font-medium outline-none;
 }
 
 .tooltip {
   @apply absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1c2f3f] text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap opacity-0 transition-opacity pointer-events-none z-10 shadow-lg;
 }
 
-/* Reveal on hover of the precip group (written explicitly — `group-hover:`
-   inside @apply doesn't reliably emit the ancestor-hover combinator). */
-:global(.group):hover .tooltip {
+/* Reveal on hover/focus of the precip group (written explicitly — `group-hover:`
+   inside @apply doesn't reliably emit the ancestor-hover combinator).  :focus
+   makes the tooltip work on mobile (touch taps a tabIndex'd span). */
+:global(.group):hover .tooltip,
+:global(.group):focus .tooltip,
+:global(.group):focus-within .tooltip {
   @apply opacity-100;
 }
 

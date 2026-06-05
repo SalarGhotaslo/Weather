@@ -77,7 +77,7 @@ export default function HourlyForecast({
                   {entry.temp}°
                 </span>
                 <div className={styles.precipRow}>
-                  <span className={`${styles.precipBase} group ${precipColor}`}>
+                  <span className={`${styles.precipBase} group ${precipColor}`} tabIndex={0}>
                     💧 {entry.precipProb}%
                     <span className={styles.tooltip}>{entry.precip.toFixed(1)}mm</span>
                   </span>

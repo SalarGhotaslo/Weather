@@ -189,6 +189,7 @@ export function useWorldMap() {
   const handleTripleClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest("path") || target.closest("circle")) return;
+    setHoveredMarker(null); // Clear any tapped marker label on background click
     clickCountRef.current++;
     if (clickCountRef.current >= 3) {
       clickCountRef.current = 0;

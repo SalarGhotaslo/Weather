@@ -63,7 +63,7 @@ function DetailCard({ icon, label, value, sub }: {
   sub?: string;
 }) {
   return (
-    <div className={`${styles.card} group`}>
+    <div className={`${styles.card} group`} tabIndex={0}>
       <StatTooltip label={label} />
       <div className={styles.cardLabel}>
         <span>{icon}</span>
@@ -120,7 +120,7 @@ export default function DetailGrid(props: DetailGridProps) {
       />
       <DetailCard icon="🌧️" label="Precipitation" value={`${precip} mm`} />
 
-      <div className={`${styles.card} group`}>
+      <div className={`${styles.card} group`} tabIndex={0}>
         <StatTooltip label="UV Index" />
         <div className={styles.cardLabel}>
           <span aria-hidden="true">☀️</span>
@@ -131,7 +131,7 @@ export default function DetailGrid(props: DetailGridProps) {
         <UvMeter uv={uvIndex} />
       </div>
 
-      <div className={`${styles.card} group`}>
+      <div className={`${styles.card} group`} tabIndex={0}>
         <StatTooltip text="The times when the sun appears and disappears over the horizon. Daylight length changes throughout the year based on your latitude." />
         <div className={styles.cardLabel}>
           <span aria-hidden="true">🌅</span>

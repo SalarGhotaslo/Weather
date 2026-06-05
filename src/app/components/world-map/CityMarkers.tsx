@@ -68,10 +68,20 @@ export default function CityMarkers({
                 role="button"
                 aria-label={`View weather in ${marker.name}`}
                 style={{ cursor: "pointer", transition: "r 0.1s, fill 0.1s" }}
-                // Reveal the label on keyboard focus too, not just hover.
+                // First tap (non-hovered) shows the label; second tap navigates.
+                // Desktop hover already sets hoveredMarker via onMouseEnter, so
+                // on desktop a single click always navigates — only mobile needs
+                // the two-tap workflow since touch never fires mouseenter.
+                onClick={() => {
+                  if (!isHovered) {
+                    setHoveredMarker(marker.name);
+                  } else {
+                    onActivate(marker);
+                  }
+                }}
+                // Reveal the label on keyboard focus too.
                 onFocus={() => setHoveredMarker(marker.name)}
                 onBlur={() => setHoveredMarker(null)}
-                onClick={() => onActivate(marker)}
                 onKeyDown={(e: React.KeyboardEvent) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
