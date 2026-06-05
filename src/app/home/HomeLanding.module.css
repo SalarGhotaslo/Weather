@@ -1,11 +1,24 @@
 @reference "../globals.css";
 
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes heroGlow {
+  0%, 100% { filter: drop-shadow(0 0 30px rgba(100, 180, 255, 0.15)) brightness(1); }
+  50% { filter: drop-shadow(0 0 50px rgba(100, 180, 255, 0.25)) brightness(1.05); }
+}
+
 .shell {
-  @apply min-h-screen bg-[#0e1723] flex flex-col;
+  @apply min-h-screen flex flex-col relative;
+  background: linear-gradient(135deg, #0e1723 0%, #152233 30%, #1a2a3f 60%, #0e1723 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 20s ease infinite;
 }
 
 .main {
-  @apply flex-1 flex items-center justify-center px-4 py-8;
+  @apply flex-1 flex items-center justify-center px-4 py-8 relative z-10;
 }
 
 .inner {
@@ -13,19 +26,24 @@
 }
 
 .hero {
-  @apply text-center mb-8;
+  @apply text-center mb-10 relative;
 }
 
-.heroEmoji {
-  @apply text-6xl mb-4 inline-block;
+.heroGlow {
+  @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(59, 135, 214, 0.07) 0%, transparent 70%);
+  border-radius: 50%;
 }
 
 .title {
-  @apply text-3xl font-bold text-white mb-2 tracking-tight;
+  @apply text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight relative;
+  letter-spacing: -0.03em;
 }
 
 .subtitle {
-  @apply text-[var(--text-muted)];
+  @apply text-[var(--text-muted)] text-sm relative;
 }
 
 .popular {
@@ -41,7 +59,7 @@
 }
 
 .cityLink {
-  @apply bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] rounded-lg px-3 py-2 text-center text-[var(--text-muted)] hover:text-white text-xs transition-colors;
+  @apply bg-[var(--card-bg)]/70 hover:bg-[var(--card-bg-alt)]/80 rounded-lg px-3 py-2 text-center text-[var(--text-muted)] hover:text-white text-xs transition-colors backdrop-blur-sm;
 }
 
 .links {

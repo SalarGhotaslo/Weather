@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
+import ParticleField from "@/app/components/weather-effects/ParticleField";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -64,6 +65,7 @@ const FEATURES = [
 export default function AboutPage() {
   return (
     <div className={styles.shell}>
+      <ParticleField />
       <Header />
 
       <main id="main-content" className={styles.main}>
@@ -134,7 +136,7 @@ export default function AboutPage() {
               "react-simple-maps",
               "d3-geo",
               "Vitest",
-              "Geist Font",
+              "Bricolage Grotesque",
             ].map((tech) => (
               <span key={tech} className={styles.techChip}>{tech}</span>
             ))}

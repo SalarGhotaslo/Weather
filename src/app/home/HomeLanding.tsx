@@ -3,6 +3,7 @@ import SearchAutocomplete from "@/app/components/SearchAutocomplete";
 import Header from "@/app/components/Header";
 import RecentSearches from "@/app/components/RecentSearches";
 import GeolocateButton from "@/app/components/GeolocateButton";
+import ParticleField from "@/app/components/weather-effects/ParticleField";
 import styles from "./HomeLanding.module.css";
 
 const POPULAR_CITIES = [
@@ -16,16 +17,15 @@ const POPULAR_CITIES = [
   "Toronto, Canada",
 ];
 
-// Empty-state landing shown at "/" with no ?q — search box, geolocation,
-// recent searches and popular-city shortcuts.
 export default function HomeLanding() {
   return (
     <div className={styles.shell}>
+      <ParticleField />
       <Header />
       <main id="main-content" className={styles.main}>
         <div className={styles.inner}>
           <div className={styles.hero}>
-            <div className={`${styles.heroEmoji} weather-sunny-glow`}>⛅</div>
+            <div className={styles.heroGlow} aria-hidden="true" />
             <h1 className={styles.title}>Salar Weather</h1>
             <p className={styles.subtitle}>Search for a city, town or postcode</p>
           </div>

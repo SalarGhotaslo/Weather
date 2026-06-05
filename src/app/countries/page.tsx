@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAllCountries, type Country } from "@/lib/countries";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
+import ParticleField from "@/app/components/weather-effects/ParticleField";
 import CountriesFilter from "./CountriesFilter";
 import styles from "./page.module.css";
 
@@ -39,6 +40,7 @@ export default async function CountriesPage() {
 
   return (
     <div className={styles.shell}>
+      <ParticleField />
       <Header />
 
       <main id="main-content" className={styles.main}>

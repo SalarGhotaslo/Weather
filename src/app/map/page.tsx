@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fragment } from "react";
 import Header from "@/app/components/Header";
 import WorldMapLoader from "@/app/components/WorldMapLoader";
+import ParticleField from "@/app/components/weather-effects/ParticleField";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ const HINTS = [
 export default function MapPage() {
   return (
     <div className={styles.shell}>
+      <ParticleField />
       <Header />
 
       <div tabIndex={0} role="group" aria-label="Map instructions" className={styles.bar}>

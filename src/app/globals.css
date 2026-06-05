@@ -3,8 +3,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 :root {
@@ -179,6 +177,26 @@ body {
   --text-faint: #7693ac;
 }
 
+/* Partly cloudy — bright daylight through the clouds, so cards are much
+ * lighter.  Lighter backgrounds need lighter faint/muted text to keep WCAG
+ * AA contrast (≥4.5:1). */
+[data-weather="partly-cloudy"] {
+  --card-bg: #293f53;
+  --card-bg-alt: #334b60;
+  --card-bg-secondary: #3d5770;
+  --text-accent: #7bb8e8;
+  --text-muted: #9ec4db;
+  --text-faint: #aac0d4;
+}
+
+/* Overcast — flat grey light, still distinctly daytime. */
+[data-weather="overcast"] {
+  --card-bg: #2e4357;
+  --card-bg-alt: #30475a;
+  --text-muted: #9aabba;
+  --text-faint: #aac0d4;
+}
+
 [data-weather="thunderstorm"] {
   --card-bg: #141630;
   --card-bg-alt: #191c34;
@@ -225,7 +243,6 @@ body {
   --text-faint: #6e93ad;
 }
 
-[data-weather="overcast"],
 [data-weather="foggy"] {
   --text-muted: #9aabba;
   --text-faint: #8497a6;
