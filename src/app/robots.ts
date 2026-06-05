@@ -1,5 +1,9 @@
 import type { MetadataRoute } from "next";
 
+const BASE = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "https://salarweather.com";
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
@@ -7,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: "/api/",
     },
-    sitemap: "https://salarweather.com/sitemap.xml",
+    sitemap: `${BASE}/sitemap.xml`,
   };
 }
