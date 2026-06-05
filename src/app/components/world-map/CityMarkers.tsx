@@ -3,6 +3,9 @@ import type { CityMarker } from "@/lib/cityMarkers";
 
 // Major-city dots rendered inside the map's ZoomableGroup. The label appears on
 // hover or keyboard focus; the dot opens that city's forecast on click/Enter.
+// On mobile the two-tap workflow (first tap → label, second tap → navigate)
+// works because pointerEnter skips touch, so the first click always shows the
+// label rather than navigating immediately.
 export default function CityMarkers({
   markers,
   zoom,
@@ -27,11 +30,16 @@ export default function CityMarkers({
         const approxW = marker.name.length * labelSize * 0.6 + bgPad * 4;
         return (
           <Marker key={marker.name} coordinates={[marker.lon, marker.lat]}>
-            {/* Wrapping <g> makes mouseenter/leave fire for the whole group,
-                so moving from dot into the label doesn't flicker. */}
+            {/* Wrapping <g> unifies hover/touch area so moving from dot into
+                the label doesn't flicker.  pointerEnter/Leave skip touch so
+                mobile taps don't get a premature hover state. */}
             <g
-              onMouseEnter={() => setHoveredMarker(marker.name)}
-              onMouseLeave={() => setHoveredMarker(null)}
+              onPointerEnter={(e) => {
+                if (e.pointerType !== "touch") setHoveredMarker(marker.name);
+              }}
+              onPointerLeave={(e) => {
+                if (e.pointerType !== "touch") setHoveredMarker(null);
+              }}
             >
               {isHovered && (
                 <>
@@ -68,10 +76,9 @@ export default function CityMarkers({
                 role="button"
                 aria-label={`View weather in ${marker.name}`}
                 style={{ cursor: "pointer", transition: "r 0.1s, fill 0.1s" }}
-                // First tap (non-hovered) shows the label; second tap navigates.
-                // Desktop hover already sets hoveredMarker via onMouseEnter, so
-                // on desktop a single click always navigates — only mobile needs
-                // the two-tap workflow since touch never fires mouseenter.
+                // Desktop: hover (pointerEnter non-touch) sets isHovered, so
+                // a single click navigates.  Mobile: pointerEnter skips touch,
+                // so first tap shows the label, second tap navigates.
                 onClick={() => {
                   if (!isHovered) {
                     setHoveredMarker(marker.name);
@@ -85,7 +92,7 @@ export default function CityMarkers({
                 onKeyDown={(e: React.KeyboardEvent) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onActivate(marker); // keyboard + pointer stay consistent
+                    onActivate(marker);
                   }
                 }}
               />

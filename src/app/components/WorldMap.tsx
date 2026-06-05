@@ -28,6 +28,8 @@ export default function WorldMap() {
           <ZoomableGroup
             zoom={map.position.zoom}
             center={map.position.coordinates}
+            minZoom={1}
+            maxZoom={16}
             onMoveEnd={({ zoom, coordinates }) =>
               map.setPosition({ zoom, coordinates: coordinates as [number, number] })
             }
@@ -65,6 +67,7 @@ export default function WorldMap() {
         cardError={map.cardError}
         card={map.card}
         onCityClick={map.openCityForecast}
+        majorCities={map.cityMarkers.map((m) => m.name)}
       />
     </div>
   );

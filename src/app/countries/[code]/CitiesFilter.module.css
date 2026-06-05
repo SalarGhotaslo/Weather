@@ -4,6 +4,14 @@
   @apply mb-4;
 }
 
+.popularBlock {
+  @apply mb-6;
+}
+
+.popularTitle {
+  @apply text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider mb-3;
+}
+
 .input {
   @apply w-full bg-[#1c2f3f] border border-[#2a4055] rounded-lg px-4 py-2.5 text-white placeholder-[#5a7d99] focus:outline-none focus:border-[#3b87d6] text-sm transition-colors;
 }

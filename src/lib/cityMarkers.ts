@@ -69,7 +69,7 @@ export async function resolveCountryMeta(name: string): Promise<CountryMeta | nu
 export async function geocodeCity(cityName: string, countryCode: string): Promise<CityMarker | null> {
   try {
     const res = await fetch(
-      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=5&language=en&format=json`,
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=10&language=en&format=json`,
       { next: { revalidate: 86400 } },
     );
     if (!res.ok) return null;
@@ -86,8 +86,7 @@ export async function geocodeCity(cityName: string, countryCode: string): Promis
 }
 
 // Targeted prefixes that start the names of the world's most populous /
-// well-known cities. Searching these without a country_code filter returns
-// results sorted by relevance (population); we then filter by country.
+// well-known cities. We use count=10 and filter by country_code client-side.
 // Multi-word names need longer prefixes (e.g. "los ang" for Los Angeles).
 const MAJOR_CITY_PREFIXES = [
   "aba", "abu", "acc", "ada", "ade", "ale", "alg", "ama", "amr", "ams",
@@ -114,20 +113,26 @@ const MAJOR_CITY_PREFIXES = [
   "new yor", "los ang", "san fr", "san jo", "san an", "las ve",
   "kuala ", "buen ", "mexic", "ho ch", "cape ", "hong ", "rio d",
   "sao p", "port ", "kuwa", "sri ",
+  // city-with-preposition prefixes (e.g. "La Paz")
+  "la p",
 ];
 
 async function searchTopCities(countryCode: string): Promise<CityMarker[]> {
   const results = await mapWithConcurrency(MAJOR_CITY_PREFIXES, GEOCODE_CONCURRENCY, async (prefix) => {
     try {
       const res = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${prefix}&count=5&format=json`,
+        `https://geocoding-api.open-meteo.com/v1/search?name=${prefix}&count=10&format=json`,
         { next: { revalidate: 86400 } },
       );
       if (!res.ok) return [];
       const data = await res.json();
       if (!data.results?.length) return [];
       return (data.results as GeoRow[])
-        .filter((r) => r.country_code?.toLowerCase() === countryCode && (r.population ?? 0) >= MIN_CITY_POPULATION)
+        .filter(
+          (r) =>
+            r.country_code?.toLowerCase() === countryCode &&
+            (r.population ?? 0) >= MIN_CITY_POPULATION,
+        )
         .map((r) => ({ name: r.name, lat: r.latitude, lon: r.longitude, population: r.population ?? 0 }));
     } catch {
       return [];
@@ -159,6 +164,27 @@ export function dedupeByName(markers: CityMarker[]): CityMarker[] {
     }
   }
   return out;
+}
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Removes markers that are within `minKm` of a more populous (earlier) marker.
+// Input should be sorted by descending population for best results.
+export function dedupeByProximity(markers: CityMarker[], minKm = 100): CityMarker[] {
+  const kept: CityMarker[] = [];
+  for (const m of markers) {
+    const tooClose = kept.some((k) => haversineKm(k.lat, k.lon, m.lat, m.lon) < minKm);
+    if (!tooClose) kept.push(m);
+  }
+  return kept;
 }
 
 async function fetchCityList(country: string): Promise<string[]> {
@@ -203,10 +229,15 @@ export async function getCityMarkers(rawCountry: string): Promise<CityMarker[]> 
     ...(capitalMarker ? [capitalMarker] : []),
     ...prefixMarkers,
     ...sampled.filter((m): m is CityMarker => m !== null),
-  ]).slice(0, maxMarkers(meta.area));
+  ]);
+
+  // Sort by population descending so proximity dedup keeps the largest cities.
+  combined.sort((a, b) => b.population - a.population);
+
+  const trimmed = dedupeByProximity(combined, 100).slice(0, maxMarkers(meta.area));
 
   // Drop any result whose name is basically the country name itself
   // (e.g. Open-Meteo returns "Mexico" for the country, not a city).
   const countryLower = country.toLowerCase();
-  return combined.filter((m) => m.name.toLowerCase() !== countryLower);
+  return trimmed.filter((m) => m.name.toLowerCase() !== countryLower);
 }

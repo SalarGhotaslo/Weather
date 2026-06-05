@@ -21,7 +21,7 @@ export default async function CountriesPage() {
   } catch {
     return (
       <div className={styles.shell}>
-        <Header />
+        <Header hideSearch />
         <main id="main-content" className={styles.errorMain}>
           <p className={styles.errorText}>Failed to load countries. Please try again later.</p>
         </main>
@@ -41,7 +41,7 @@ export default async function CountriesPage() {
   return (
     <div className={styles.shell}>
       <ParticleField />
-      <Header />
+      <Header hideSearch />
 
       <main id="main-content" className={styles.main}>
         <nav aria-label="Breadcrumb" className={styles.breadcrumb}>

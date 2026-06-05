@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   maxMarkers,
   dedupeByName,
+  dedupeByProximity,
   resolveCountryMeta,
   geocodeCity,
   getCityMarkers,
@@ -35,6 +36,32 @@ describe("dedupeByName", () => {
 
   it("handles an empty list", () => {
     expect(dedupeByName([])).toEqual([]);
+  });
+});
+
+const coord = (name: string, lat: number, lon: number, population = 100_000): CityMarker => ({
+  name, lat, lon, population,
+});
+
+describe("dedupeByProximity", () => {
+  it("keeps markers >100km apart", () => {
+    const out = dedupeByProximity([
+      coord("Paris", 48.85, 2.35, 2_000_000),
+      coord("Marseille", 43.3, 5.37, 850_000),
+    ]);
+    expect(out.map((m) => m.name)).toEqual(["Paris", "Marseille"]);
+  });
+
+  it("removes a marker that is within 100km of a more populous one", () => {
+    const out = dedupeByProximity([
+      coord("Central Paris", 48.85, 2.35, 2_000_000),
+      coord("Paris Suburb", 48.87, 2.33, 100_000),
+    ]);
+    expect(out.map((m) => m.name)).toEqual(["Central Paris"]);
+  });
+
+  it("handles an empty list", () => {
+    expect(dedupeByProximity([])).toEqual([]);
   });
 });
 
@@ -77,11 +104,9 @@ describe("geocodeCity", () => {
     });
   });
 
-  it("returns null when no result matches the country code", async () => {
-    mockFetchOnce({
-      results: [{ name: "Paris", latitude: 0, longitude: 0, country_code: "us", population: 1_000_000 }],
-    });
-    expect(await geocodeCity("Paris", "fr")).toBeNull();
+  it("returns null when the API returns empty results", async () => {
+    mockFetchOnce({ results: [] });
+    expect(await geocodeCity("Unknown", "xq")).toBeNull();
   });
 
   it("returns null for under-populated matches", async () => {

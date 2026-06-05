@@ -21,7 +21,7 @@ export default function HomeLanding() {
   return (
     <div className={styles.shell}>
       <ParticleField />
-      <Header />
+      <Header hideSearch />
       <main id="main-content" className={styles.main}>
         <div className={styles.inner}>
           <div className={styles.hero}>

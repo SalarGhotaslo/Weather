@@ -93,7 +93,7 @@ export default async function CountryPage({
           <p className={styles.sectionSub}>Click any city to see its weather forecast</p>
 
           {cities.length > 0 ? (
-            <CitiesFilter cities={cities} countryName={country.name.common} />
+            <CitiesFilter cities={cities} countryName={country.name.common} countryCode={country.cca2} />
           ) : (
             <div className={styles.emptyCities}>
               <p className={styles.emptyCitiesText}>City data unavailable for {country.name.common}.</p>

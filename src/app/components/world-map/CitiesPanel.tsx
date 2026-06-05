@@ -16,13 +16,14 @@ export interface CitiesPanelProps {
   cardError: boolean;
   card: Card | null;
   onCityClick: (city: string) => void;
+  majorCities?: string[];
 }
 
 // The map's right-hand cities panel: country header, inline weather card, city
 // filter + list, footer deep link — or the "explore the world" empty state.
 export default function CitiesPanel({
   panelCountry, panelCities, panelLoading, cityFilter, setCityFilter,
-  displayedCities, cardLoading, cardError, card, onCityClick,
+  displayedCities, cardLoading, cardError, card, onCityClick, majorCities,
 }: CitiesPanelProps) {
   return (
     <div className={styles.panel}>
@@ -49,6 +50,21 @@ export default function CitiesPanel({
               className={styles.input}
             />
           </div>
+
+          {!cityFilter && majorCities && majorCities.length > 0 && (
+            <div className={styles.popular}>
+              <div className={styles.popularHeader}>
+                <span className={styles.popularTitle}>Popular</span>
+              </div>
+              <div className={styles.popularGrid}>
+                {majorCities.map((city) => (
+                  <button key={city} type="button" onClick={() => onCityClick(city)} className={styles.popularBtn}>
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className={styles.list}>
             {panelLoading ? (

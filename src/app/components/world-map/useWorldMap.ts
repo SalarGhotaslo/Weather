@@ -37,9 +37,11 @@ export function useWorldMap() {
   const citiesCache = useRef<Record<string, string[]>>({});
   const markersCache = useRef<Record<string, CityMarker[]>>({});
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  // Monotonic token so a slow request from an earlier click can't overwrite the
-  // card with stale data after a newer click has started.
+  // Monotonic tokens so a slow request from an earlier click can't overwrite
+  // with stale data after a newer click has started.
   const cardReq = useRef(0);
+  const markersReq = useRef(0);
+  const panelReq = useRef(0);
 
   const loadWeather = useCallback(
     async (params: { country: string; lat?: number; lon?: number; name?: string; cityQuery?: string }) => {
@@ -107,31 +109,38 @@ export function useWorldMap() {
 
   const showPanel = useCallback(
     async (name: string) => {
+      const token = ++panelReq.current;
       setCityFilter("");
       setPanelCountry(name);
       if (citiesCache.current[name]) {
-        setPanelCities(citiesCache.current[name]);
-        setPanelLoading(false);
+        if (token === panelReq.current) {
+          setPanelCities(citiesCache.current[name]);
+          setPanelLoading(false);
+        }
         return;
       }
       setPanelCities([]);
       setPanelLoading(true);
       const cities = await loadCities(name);
-      setPanelCities(cities);
-      setPanelLoading(false);
+      if (token === panelReq.current) {
+        setPanelCities(cities);
+        setPanelLoading(false);
+      }
     },
     [loadCities],
   );
 
   const fetchCityMarkers = useCallback(async (countryName: string) => {
+    const token = ++markersReq.current;
     if (markersCache.current[countryName]) {
-      setCityMarkers(markersCache.current[countryName]);
+      if (token === markersReq.current) setCityMarkers(markersCache.current[countryName]);
       return;
     }
     try {
       const res = await fetch(`/api/city-markers?country=${encodeURIComponent(countryName)}`);
-      if (!res.ok) return;
+      if (!res.ok || token !== markersReq.current) return;
       const markers: CityMarker[] = await res.json();
+      if (token !== markersReq.current) return;
       markersCache.current[countryName] = markers;
       setCityMarkers(markers);
     } catch {
@@ -161,6 +170,14 @@ export function useWorldMap() {
       const name = normalizeCountryName(rawName);
       const centroid = geoCentroid(geo as unknown as Feature) as [number, number];
 
+      // Prevent a hover-triggered panel from overwriting after the click
+      clearTimeout(hoverTimer.current);
+
+      // Cancel any in-flight requests from a previous click or hover
+      cardReq.current++;
+      markersReq.current++;
+      panelReq.current++;
+
       setSelectedCountry(rawName); // raw name for Geography colour comparison
       setPosition({ coordinates: centroid, zoom: 4 });
       setCityMarkers([]);
@@ -174,13 +191,17 @@ export function useWorldMap() {
   );
 
   const handleReset = useCallback(() => {
+    clearTimeout(hoverTimer.current);
     setPosition({ coordinates: [0, 20], zoom: 1 });
     setSelectedCountry(null);
     setPanelCountry(null);
     setPanelCities([]);
     setCityFilter("");
     setCityMarkers([]);
-    cardReq.current++; // cancel any in-flight card request
+    // Cancel any in-flight requests from a previous click
+    cardReq.current++;
+    markersReq.current++;
+    panelReq.current++;
     setCard(null);
     setCardLoading(false);
     setCardError(false);
@@ -203,7 +224,7 @@ export function useWorldMap() {
 
   const displayedCities = cityFilter.trim()
     ? panelCities.filter((c) => c.toLowerCase().includes(cityFilter.toLowerCase()))
-    : panelCities.slice(0, 60);
+    : panelCities.slice(0, 60); // first 60 alphabetical — popular cities shown separately via cityMarkers
 
   return {
     position, setPosition,

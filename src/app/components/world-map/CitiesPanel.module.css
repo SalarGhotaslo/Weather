@@ -41,6 +41,26 @@
   @apply block w-full text-left px-4 py-2 text-[var(--text-muted)] hover:text-white hover:bg-[#162535] text-xs transition-colors border-b border-[#1e3347]/40 last:border-0;
 }
 
+.popular {
+  @apply shrink-0 border-b border-[#1e3347] px-4 py-3;
+}
+
+.popularHeader {
+  @apply mb-2;
+}
+
+.popularTitle {
+  @apply text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider;
+}
+
+.popularGrid {
+  @apply flex flex-wrap gap-1.5;
+}
+
+.popularBtn {
+  @apply bg-[#1c2f3f] hover:bg-[#253f55] text-white text-xs px-2.5 py-1 rounded transition-colors;
+}
+
 .note {
   @apply text-[var(--text-muted)] text-xs text-center py-3 px-4;
 }

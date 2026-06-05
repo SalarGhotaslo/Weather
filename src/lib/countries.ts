@@ -106,9 +106,10 @@ export async function getCountriesByRegion(region: string): Promise<Country[]> {
 }
 
 export async function getCitiesForCountry(countryName: string): Promise<string[]> {
+  const normalized = normalizeCountryName(countryName);
   try {
     const res = await fetch(
-      `https://countriesnow.space/api/v0.1/countries/cities/q?country=${encodeURIComponent(countryName)}`,
+      `https://countriesnow.space/api/v0.1/countries/cities/q?country=${encodeURIComponent(normalized)}`,
       { next: { revalidate: 86400 } },
     );
     if (!res.ok) return [];

@@ -3,7 +3,7 @@ import SearchAutocomplete from "./SearchAutocomplete";
 import NavTabs from "./NavTabs";
 import styles from "./Header.module.css";
 
-export default function Header({ defaultSearch = "" }: { defaultSearch?: string }) {
+export default function Header({ defaultSearch = "", hideSearch }: { defaultSearch?: string; hideSearch?: boolean }) {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
@@ -11,9 +11,11 @@ export default function Header({ defaultSearch = "" }: { defaultSearch?: string 
           <span className={styles.brandText}>Salar Weather</span>
         </Link>
         <NavTabs />
-        <div className={styles.searchWrap}>
-          <SearchAutocomplete defaultValue={defaultSearch} />
-        </div>
+        {!hideSearch && (
+          <div className={styles.searchWrap}>
+            <SearchAutocomplete defaultValue={defaultSearch} />
+          </div>
+        )}
       </div>
     </header>
   );
