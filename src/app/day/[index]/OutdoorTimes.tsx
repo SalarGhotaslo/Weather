@@ -1,9 +1,5 @@
-import {
-  formatHour,
-  getOutdoorSummary,
-  type HourData,
-  type OutdoorWindow,
-} from "@/lib/weather";
+import { formatHour } from "@/lib/forecast";
+import { getOutdoorSummary, type HourData, type OutdoorWindow } from "@/lib/outdoor";
 import styles from "./OutdoorTimes.module.css";
 
 interface OutdoorAnalysis {

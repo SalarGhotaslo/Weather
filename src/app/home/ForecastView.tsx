@@ -1,10 +1,7 @@
 import Link from "next/link";
-import {
-  getWindDirection,
-  getWindArrow,
-  type WeatherResponse,
-  type GeocodingResult,
-} from "@/lib/weather";
+import { type WeatherResponse } from "@/lib/forecast";
+import { type GeocodingResult } from "@/lib/geocoding";
+import { getWindDirection, getWindArrow } from "@/lib/weather";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
 import SearchTracker from "@/app/components/SearchTracker";

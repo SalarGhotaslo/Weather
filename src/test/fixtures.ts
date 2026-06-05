@@ -1,4 +1,5 @@
-import { type WeatherResponse, type GeocodingResult, type HourlyEntry } from "@/lib/weather";
+import { type WeatherResponse, type HourlyEntry } from "@/lib/forecast";
+import { type GeocodingResult } from "@/lib/geocoding";
 
 // Shared test fixtures. Lives outside src/lib + src/app so it isn't counted by
 // the coverage gate.

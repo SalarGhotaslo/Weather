@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
-  getHourlyAnalysis,
+  fetchForecast,
   getDayHourlyData,
   getDayAverages,
-  fetchForecast,
   validateCoord,
   type WeatherResponse,
-} from "@/lib/weather";
+} from "@/lib/forecast";
+import { getHourlyAnalysis } from "@/lib/outdoor";
 import Header from "@/app/components/Header";
 import AppFooter from "@/app/components/AppFooter";
 import WeatherBackground from "@/app/components/WeatherBackground";

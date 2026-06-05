@@ -1,15 +1,17 @@
 import {
   buildHourlyForecastUrl,
   getHistoricalApiUrl,
+  type HistoricalDay,
+  type HourlyForecastResponse,
+} from "@/lib/forecast";
+import {
   buildAirQualityUrl,
   getDayPollen,
   getDayAqi,
-  type HistoricalDay,
-  type HourlyForecastResponse,
   type PollenInfo,
   type AqiInfo,
   type AirQualityResponse,
-} from "@/lib/weather";
+} from "@/lib/airQuality";
 
 // Server-side fetch helpers for the day detail page. Kept out of page.tsx so the
 // page component stays focused on orchestration + layout.

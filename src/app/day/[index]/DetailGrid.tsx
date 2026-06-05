@@ -1,5 +1,5 @@
 import StatTooltip from "@/app/components/StatTooltip";
-import { type PollenInfo, type AqiInfo } from "@/lib/weather";
+import { type PollenInfo, type AqiInfo } from "@/lib/airQuality";
 import styles from "./DetailGrid.module.css";
 
 // ── UV index colour meter ─────────────────────────────────────────────

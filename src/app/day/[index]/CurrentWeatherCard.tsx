@@ -1,4 +1,5 @@
-import { getWeatherInfo, getHourWeatherInfo, type HourlyEntry } from "@/lib/weather";
+import { getWeatherInfo, getHourWeatherInfo } from "@/lib/weather";
+import { type HourlyEntry } from "@/lib/forecast";
 import styles from "./CurrentWeatherCard.module.css";
 
 export interface CurrentWeatherCardProps {

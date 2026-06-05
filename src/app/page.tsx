@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { geocodeLocation, fetchForecast, type WeatherResponse } from "@/lib/weather";
+import { geocodeLocation } from "@/lib/geocoding";
+import { fetchForecast, type WeatherResponse } from "@/lib/forecast";
 import WeatherError from "@/app/components/WeatherError";
 import HomeLanding from "./home/HomeLanding";
 import LocationNotFound from "./home/LocationNotFound";

@@ -1,4 +1,4 @@
-import { type HistoricalDay } from "@/lib/weather";
+import { type HistoricalDay } from "@/lib/forecast";
 import styles from "./YearComparison.module.css";
 
 // One year-over-year tile: current value + colour-coded delta + prior-year value.

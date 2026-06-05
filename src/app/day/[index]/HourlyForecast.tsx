@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  getHourWeatherInfo,
-  getHourAnimClass,
-  type HourlyEntry,
-} from "@/lib/weather";
+import { getHourWeatherInfo, getHourAnimClass } from "@/lib/weather";
+import { type HourlyEntry } from "@/lib/forecast";
 import styles from "./HourlyForecast.module.css";
 
 // Horizontal hour-by-hour strip for the day detail page. Night hours are dimmed
