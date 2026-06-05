@@ -15,19 +15,29 @@ export interface WeatherTheme {
   isNight: boolean;
 }
 
+/** Open-Meteo's daily weather code takes the most severe condition for the
+ *  day.  Code 80 (slight rain showers) with negligible precipitation (<0.5mm)
+ *  is downgraded to overcast so a brief 0.1mm shower doesn't show the heavy
+ *  rainy theme all day. */
+function resolveCode(weatherCode: number, precipSum?: number): number {
+  if (weatherCode === 80 && precipSum !== undefined && precipSum < 0.5) return 3;
+  return weatherCode;
+}
+
 // Map a raw Open-Meteo weather code to a coarse theme type.
-export function getWeatherThemeType(weatherCode: number): WeatherThemeType {
-  if (weatherCode === 0) return "clear";
-  if (weatherCode <= 2) return "partly-cloudy";
-  if (weatherCode === 3) return "overcast";
-  if (weatherCode === 45 || weatherCode === 48) return "foggy";
-  if (weatherCode >= 95) return "thunderstorm";
-  if (weatherCode >= 71 && weatherCode <= 77) return "snowy";
-  if (weatherCode >= 85 && weatherCode <= 86) return "snowy";
+export function getWeatherThemeType(weatherCode: number, precipSum?: number): WeatherThemeType {
+  const code = resolveCode(weatherCode, precipSum);
+  if (code === 0) return "clear";
+  if (code <= 2) return "partly-cloudy";
+  if (code === 3) return "overcast";
+  if (code === 45 || code === 48) return "foggy";
+  if (code >= 95) return "thunderstorm";
+  if (code >= 71 && code <= 77) return "snowy";
+  if (code >= 85 && code <= 86) return "snowy";
   if (
-    (weatherCode >= 51 && weatherCode <= 57) ||
-    (weatherCode >= 61 && weatherCode <= 67) ||
-    (weatherCode >= 80 && weatherCode <= 82)
+    (code >= 51 && code <= 57) ||
+    (code >= 61 && code <= 67) ||
+    (code >= 80 && code <= 82)
   ) {
     return "rainy";
   }
@@ -93,8 +103,8 @@ const GRADIENTS: Record<WeatherThemeType, { day: string; night: string }> = {
  * Resolve the page theme for a weather code, optionally using the night variant
  * (e.g. when it is currently after sunset / before sunrise in the viewed city).
  */
-export function getWeatherTheme(weatherCode: number, isNight = false): WeatherTheme {
-  const type = getWeatherThemeType(weatherCode);
+export function getWeatherTheme(weatherCode: number, isNight = false, precipSum?: number): WeatherTheme {
+  const type = getWeatherThemeType(weatherCode, precipSum);
   return {
     type,
     bgGradient: isNight ? GRADIENTS[type].night : GRADIENTS[type].day,

@@ -90,7 +90,8 @@ export function getWindArrow(degrees: number): string {
 
 // ── Core weather display ──────────────────────────────────────────────
 
-export function getWeatherInfo(code: number): { emoji: string; label: string } {
+export function getWeatherInfo(code: number, precipSum?: number): { emoji: string; label: string } {
+  if (code === 80 && precipSum !== undefined && precipSum < 0.5) return { emoji: "☁️", label: "Overcast" };
   if (code === 0) return { emoji: "☀️", label: "Clear Sky" };
   if (code === 1 || code === 2) return { emoji: "⛅", label: "Partly Cloudy" };
   if (code === 3) return { emoji: "☁️", label: "Overcast" };

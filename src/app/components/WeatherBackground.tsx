@@ -24,11 +24,13 @@ const overlayMap: Record<string, React.FC> = {
 export default function WeatherBackground({
   weatherCode,
   isNight = false,
+  precipSum,
 }: {
   weatherCode: number;
   isNight?: boolean;
+  precipSum?: number;
 }) {
-  const type = getWeatherThemeType(weatherCode);
+  const type = getWeatherThemeType(weatherCode, precipSum);
   // At night, swap the sun for a moon-and-stars sky on clear / partly-cloudy.
   if (isNight && (type === "clear" || type === "partly-cloudy")) {
     return <StarsEffect />;

@@ -24,8 +24,8 @@ function YoyStat({
   const deltaColor = !isUp && !isDown
     ? "text-[var(--text-muted)]"
     : higherWarmer
-      ? isUp ? "text-orange-400" : "text-sky-400"
-      : isUp ? "text-blue-400" : "text-emerald-400";
+      ? isUp ? "text-orange-300" : "text-sky-300"
+      : isUp ? "text-blue-300" : "text-emerald-300";
   const arrow = isUp ? "▲" : isDown ? "▼" : "—";
   const diffStr = isUp ? `+${diff}` : isDown ? `${diff}` : "±0";
 

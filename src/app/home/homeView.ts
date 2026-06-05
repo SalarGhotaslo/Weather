@@ -43,7 +43,7 @@ export function buildHomeView(weather: WeatherResponse, location: GeocodingResul
     current, daily, locationLabel,
     overallMin, overallMax,
     tempRange: overallMax - overallMin || 1,
-    todayInfo: getWeatherInfo(current.weather_code),
+    todayInfo: getWeatherInfo(current.weather_code, daily.precipitation_sum[0]),
     animClass: getWeatherAnimClass(current.weather_code),
     // At night, a clear/partly-cloudy sky should read as a moon, not a sun.
     isClearish: current.weather_code <= 2,
@@ -61,7 +61,7 @@ export function buildHomeView(weather: WeatherResponse, location: GeocodingResul
     cityTimeInitial: formatCityTime(location.timezone),
     isNight,
     timeOfDay: getTimeOfDayLabel(cityHour),
-    theme: getWeatherTheme(current.weather_code, isNight),
+    theme: getWeatherTheme(current.weather_code, isNight, daily.precipitation_sum[0]),
     alert: getWeatherAlert(
       daily.weather_code[0],
       daily.wind_speed_10m_max[0],

@@ -31,7 +31,7 @@ export default function ForecastView({
 
   return (
     <div className={styles.shell} style={{ background: vm.theme.bgGradient }} data-weather={vm.theme.type}>
-      <WeatherBackground weatherCode={current.weather_code} isNight={vm.isNight} />
+      <WeatherBackground weatherCode={current.weather_code} isNight={vm.isNight} precipSum={daily.precipitation_sum[0]} />
       <Header defaultSearch={query} />
       <SearchTracker cityLabel={vm.locationLabel} />
 

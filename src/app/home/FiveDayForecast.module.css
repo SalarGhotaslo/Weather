@@ -29,11 +29,11 @@
 }
 
 .dayToday {
-  @apply rounded-lg p-3 text-center flex flex-col items-center transition-colors bg-[var(--card-bg-secondary)] hover:bg-[#22405f];
+  @apply rounded-lg p-3 text-center flex flex-col items-center transition-colors bg-[var(--card-bg-secondary)] hover:bg-[#22405f] text-white;
 }
 
 .day {
-  @apply rounded-lg p-3 text-center flex flex-col items-center transition-colors bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)];
+  @apply rounded-lg p-3 text-center flex flex-col items-center transition-colors bg-[var(--card-bg)] hover:bg-[var(--card-bg-alt)] text-white;
 }
 
 .dayNameToday {
@@ -69,7 +69,7 @@
 }
 
 .precipHigh {
-  @apply text-[10px] font-medium text-blue-400;
+  @apply text-[10px] font-medium text-blue-300;
 }
 
 .precipLow {

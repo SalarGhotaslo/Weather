@@ -85,7 +85,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
 
   return (
     <div className={styles.shell} style={{ background: vm.theme.bgGradient }} data-weather={vm.theme.type}>
-      <WeatherBackground weatherCode={vm.weatherCode} isNight={vm.isNight} />
+      <WeatherBackground weatherCode={vm.weatherCode} isNight={vm.isNight} precipSum={vm.precip} />
       <Header defaultSearch={locationName} />
 
       <main id="main-content" className={styles.main}>

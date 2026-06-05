@@ -40,15 +40,18 @@ export function buildDayView({
   weather, dayIndex, dateStr, lat, lon, locationName, code, tz, hourlyEntries, dayAverages,
 }: BuildDayViewArgs) {
   const { current, daily } = weather;
+  const isToday = dayIndex === 0;
 
-  const weatherCode = daily.weather_code[dayIndex];
+  // For today, use the current conditions (actual weather now) rather than
+  // the daily aggregate (which takes the most severe condition of the day
+  // and can show "Rain Showers" for a brief 4pm shower on an otherwise
+  // overcast day).  Future days fall back to the daily code.
+  const weatherCode = isToday ? current.weather_code : daily.weather_code[dayIndex];
   const maxTemp = daily.temperature_2m_max[dayIndex];
   const minTemp = daily.temperature_2m_min[dayIndex];
   const precip = daily.precipitation_sum[dayIndex];
   const uvIndex = daily.uv_index_max[dayIndex];
   const windMax = daily.wind_speed_10m_max[dayIndex];
-
-  const isToday = dayIndex === 0;
 
   // Per-day stat values so every day shows the same cards. "Today" uses live
   // current conditions; other days use daily aggregates / hourly-mean fallbacks.
@@ -79,10 +82,10 @@ export function buildDayView({
     timeOfDay: getTimeOfDayLabel(cityHour),
     currentHourEntry,
     countryFlag: countryCodeToFlag(code ?? ""),
-    info: getWeatherInfo(weatherCode),
+    info: getWeatherInfo(weatherCode, precip),
     animClass: getWeatherAnimClass(weatherCode),
     uv: describeUV(uvIndex),
-    theme: getWeatherTheme(weatherCode, isNight),
+    theme: getWeatherTheme(weatherCode, isNight, precip),
     dayName: getDayName(dateStr),
     formattedDate: getFormattedDate(dateStr),
     dayLabels: daily.time.slice(0, 7).map(getDayName),

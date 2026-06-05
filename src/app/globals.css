@@ -193,8 +193,9 @@ body {
 [data-weather="overcast"] {
   --card-bg: #2e4357;
   --card-bg-alt: #30475a;
-  --text-muted: #9aabba;
+  --text-muted: #a8bbcb;
   --text-faint: #aac0d4;
+  --text-accent: #7bb8e8;
 }
 
 [data-weather="thunderstorm"] {
@@ -282,10 +283,10 @@ body {
 }
 
 @keyframes fog-drift {
-  0%   { transform: translateX(0); opacity: 0; }
-  15%  { opacity: 1; }
-  85%  { opacity: 1; }
-  100% { transform: translateX(40px); opacity: 0; }
+  0%   { transform: translateX(-8px); opacity: 0.5; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(8px); opacity: 0.5; }
 }
 
 /* ── Weather emoji animations ─────────────────────────────────────── */
@@ -391,7 +392,22 @@ body {
 .weather-snowy    { animation: snow-swirl 4s linear infinite; display: inline-block; }
 .weather-thunder  { animation: lightning-flash 6s ease-in-out infinite; display: inline-block; }
 .weather-hail     { animation: shake 0.5s ease-in-out infinite; display: inline-block; }
-.weather-foggy    { animation: fog-drift 7s ease-in-out infinite; display: inline-block; opacity: 0.7; }
+.weather-foggy {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+}
+.weather-foggy::before {
+  content: '';
+  position: absolute;
+  inset: -0.1em;
+  background:
+    radial-gradient(ellipse 65% 55% at 30% 50%, rgba(255,255,255,0.65) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 45% at 65% 40%, rgba(255,255,255,0.5) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 50% 60%, rgba(255,255,255,0.3) 0%, transparent 60%);
+  filter: blur(0.06em);
+  animation: fog-drift 6s ease-in-out infinite;
+}
 
 /* ── Reduced motion ───────────────────────────────────────────────────
  * Respect users who prefer reduced motion (WCAG 2.3.3): disable the ambient
@@ -419,6 +435,11 @@ body {
   .weather-thunder,
   .weather-hail,
   .weather-foggy {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .weather-foggy::before {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
